@@ -1,0 +1,1 @@
+A tracked vehicle from band D (VCI₁ 26 psi) plans on 15 June 2025 for a trip 7 days later. On the planning day the ground reads 128 psi and the direct route (orange) looks open. On the travel day it reads 34 psi and that route crosses NO-GO soil (×). The route planned on the forecast (blue, margin 19.5 psi) avoids it. Circle: start; square: end; grey lines: OpenStreetMap roads.

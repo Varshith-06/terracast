@@ -1,0 +1,35 @@
+Field,Value
+Study site,"Pachmarhi, Narmadapuram district, Madhya Pradesh"
+Coordinates,"22.4675 N, 78.4336 E"
+Coordinate system,"EPSG:4326 (WGS84), decimal degrees"
+Site elevation (actual),1067 m AMSL (Satpura plateau)
+Grid-cell elevation (ERA5-Land),1064 m AMSL
+"RAINFALL - source, 2015-2024","IMD gridded rainfall, 0.25 deg (~28 km), interpolated from the IMD rain-gauge network; retrieved with imdlib. Observation-based."
+"RAINFALL - source, 2025","ERA5 reanalysis, 0.25 deg, via Open-Meteo. Used only because the IMD archive lags ~1 year. Per-row provenance is in the Rainfall Source column."
+RAINFALL - rain-day caveat,IMD rain day runs 08:30-08:30 IST; the ERA5 rain day here runs 00:00-24:00 IST. The day definition therefore changes at 2025-01-01.
+TEMPERATURE / HUMIDITY / SOIL MOISTURE - source,"ERA5-Land reanalysis, 0.1 deg (~9 km), via Open-Meteo Historical Weather API"
+  - variables,"temperature_2m, relative_humidity_2m, soil_moisture_0_7cm, soil_moisture_7_28cm"
+TEMPERATURE - why IMD was NOT used,"IMD's temperature grid is 1.0 deg (~110 km); that cell averages the plateau with the hot Narmada lowlands, running 5.06 C warmer at Tmax. ERA5-Land's cell sits at 1064 m against 1067 m actual, so it resolves the site. Deliberate exception to preferring observational data."
+PRESSURE / CLOUD / WIND - source,"ERA5 reanalysis, 0.25 deg (~28 km), via Open-Meteo Historical Weather API"
+  - variables,"surface_pressure, cloud_cover, wind_speed_10m, wind_direction_10m"
+Nature of the reanalysis variables,ERA5/ERA5-Land are a physical model constrained by assimilated observations. Temperature and humidity are strongly observation-informed; soil moisture is an unassimilated land-surface model state.
+Native temporal resolution,Hourly (ERA5/ERA5-Land); daily (IMD)
+Delivered temporal resolution,"Daily (hourly data aggregated locally, not server-side)"
+Time zone,Asia/Kolkata (IST)
+Date range,2015-01-01 to 2025-12-31
+Records,4018 daily records
+Missing values,"0 in every data column, all 4018 days"
+File format,"CSV, UTF-8, comma-delimited; dates DD-MM-YYYY"
+Aggregation rules,Rainfall = daily total; Tmax = hourly max; Tmin = hourly min; Tmean/RH/wind/pressure/cloud/soil = mean; wind direction = speed-weighted vector mean
+Units,"Rainfall mm; temperature deg C; RH %; wind m/s; direction deg from N; pressure hPa (station level, ~893 hPa at 1064 m, NOT sea level); soil moisture volumetric %; cloud cover %"
+Validation: ERA5 vs IMD monthly rainfall,r = 0.939 over 120 months (2015-2024) - the agreement that justifies using ERA5 rainfall for the 2025 tail
+Validation: mean Tmax bias (ERA5-Land - IMD 1 deg),-5.06 C (see the temperature note above)
+Validation: mean Tmin bias (ERA5-Land - IMD 1 deg),-1.05 C
+EXTREME EVENTS - file,"pachmarhi_extreme_events.csv (assignment section 3), derived by extract_extreme_events.py from the IMD gridded record, 2015-2024"
+EXTREME EVENTS - heavy rainfall,"Derived from IMD 0.25 deg rainfall using IMD daily categories: heavy 64.5-115.5, very heavy 115.6-204.4, extremely heavy >=204.5 mm"
+EXTREME EVENTS - drought,"Deficient monsoon: JJAS rainfall departure <= -20 % (large deficient <= -60 %) against the 2015-2024 JJAS mean. Also dry spells of >=7 days within Jun-Sep, split into delayed onset and mid-season break"
+EXTREME EVENTS - heat / cold waves,"Departure of >= +4.5 C (Tmax) or <= -4.5 C (Tmin), severe at 6.5 C, sustained >=2 days. NOTE: derived from the IMD 1.0 deg temperature grid, so these describe the REGION, not the plateau"
+EXTREME EVENTS - departure base period,"Departures use a 2015-2024 day-of-year climatology from this same record. IMD declares waves against a 30-year normal, so departures here are indicative; absolute temperatures are given in Magnitude"
+EXTREME EVENTS - thunderstorms,"NOT DERIVABLE from gridded data. Needs IMD station observations (dsp.imdpune.gov.in, paid) or lightning network data"
+EXTREME EVENTS - floods,"NOT DERIVABLE. Needs river gauge data (indiawris.gov.in) or a disaster database (EM-DAT, or IMD's annual Disastrous Weather Events volumes at imdpune.gov.in/library)"
+Known limitations,"No station record for Pachmarhi is included; IMD station data is paywalled. IMD gridded rainfall is itself interpolated from gauges that may be distant. ERA5's 0.25 deg cell averages plateau and lowland, so orographic rainfall maxima are smoothed and extreme daily totals are under-represented."

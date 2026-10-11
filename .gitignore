@@ -1,0 +1,10 @@
+__pycache__/
+*.pyc
+# large inputs: kept on disk, not in version control (re-export from Earth Engine)
+data/terrain/*.tif
+data/terrain/*.parquet
+data/**/*.zip
+# third-party papers
+docs/references/
+# local LaTeX engine (conda-forge tectonic + DLLs)
+tools/

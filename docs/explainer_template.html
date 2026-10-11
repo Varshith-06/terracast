@@ -1,0 +1,623 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<title>Forecast-aware route planning: project explainer</title>
+<style>
+@import url("../poster/fonts/fonts.css");
+@page { size: A4; margin: 20mm 20mm 22mm;
+  @bottom-left { content: "Forecast-aware route planning — project explainer"; font: 8.5pt "IBM Plex Sans"; color: #8a8d91; }
+  @bottom-right { content: counter(page); font: 8.5pt "IBM Plex Sans"; color: #8a8d91; } }
+@page :first { @bottom-left { content: none; } @bottom-right { content: none; } }
+:root { --ink:#16191d; --ink2:#4b4f55; --muted:#8a8d91; --rule:#d8d6cd; --ours:#2a78d6; --foil:#eb6834; }
+* { box-sizing: border-box; }
+body { font-family: "IBM Plex Sans", sans-serif; font-size: 10.5pt; line-height: 1.5; color: var(--ink);
+       margin: 0; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+h1 { font-family: "IBM Plex Sans Condensed"; font-weight: 700; font-size: 30pt; line-height: 1.08; margin: 60mm 0 6mm; }
+h2 { font-size: 19pt; line-height: 1.2; margin: 0 0 4mm; padding-top: 2mm; break-before: page; }
+h2.cont { break-before: auto; margin-top: 9mm; }
+h3 { font-size: 12.5pt; margin: 6mm 0 2mm; break-after: avoid; }
+p { margin: 0 0 3mm; } ul, ol { margin: 0 0 3mm; padding-left: 6mm; } li { margin-bottom: 1.2mm; }
+.lede { font-size: 13pt; color: var(--ink2); line-height: 1.4; margin-bottom: 10mm; }
+table { width: 100%; border-collapse: collapse; margin: 2mm 0 5mm; font-size: 9.6pt; break-inside: avoid;
+        font-variant-numeric: tabular-nums; }
+th { text-align: left; font-weight: 600; border-bottom: 1.2pt solid var(--ink); padding: 1.6mm 2mm 1.6mm 0; vertical-align: bottom; }
+td { border-bottom: 0.6pt solid var(--rule); padding: 1.6mm 2mm 1.6mm 0; vertical-align: top; }
+td.r, th.r { text-align: right; }
+table.num td:not(:first-child), table.num th:not(:first-child) { text-align: right; }
+tr.us td { font-weight: 600; } tr.us td:first-child { color: var(--ours); }
+tr.foil td:first-child { color: var(--foil); }
+.box { border-left: 3pt solid; padding: 3mm 4.5mm; margin: 4mm 0 5mm; break-inside: avoid; }
+.box b.t { display: block; margin-bottom: 1mm; }
+.box p:last-child, .box ul:last-child { margin-bottom: 0; }
+.blue { background: #eef4fc; border-color: #2a78d6; }
+.orange { background: #fdf2e9; border-color: #eb6834; }
+.green { background: #ecf7ee; border-color: #1f9d55; }
+.purple { background: #f3f0fb; border-color: #7a5ad1; }
+.fig { margin: 4mm 0 5mm; break-inside: avoid; }
+.fig img, .fig svg { width: 100%; height: auto; display: block; }
+.fig.half img { width: 72%; margin: 0 auto; }
+.cap { font-size: 9pt; color: var(--ink2); margin-top: 2mm; line-height: 1.4; }
+.meta td:first-child { width: 42mm; color: var(--ink2); }
+.toc td:first-child { width: 12mm; color: var(--ink2); }
+code { font-family: "IBM Plex Mono"; font-size: 9pt; background: #f1efe7; padding: 0 1mm; }
+.math { font-style: italic; }
+</style></head>
+<body>
+
+<h1>Forecast-aware route planning for military vehicles on the Pachmarhi plateau</h1>
+<p class="lede">A from-scratch explainer of the project, the data, what was built and what it
+found, and what goes to the ICDCN 2027 poster track.</p>
+<table class="meta">
+  <tr><td>Updated</td><td><b><<today>></b>. Replaces the 10 October version.</td></tr>
+  <tr><td>Poster deadline</td><td><b>15 October 2026</b> (<<days_left>> days from this document)</td></tr>
+  <tr><td>Venue</td><td>ICDCN 2027, NITK Surathkal, India, 4–7 January 2027</td></tr>
+  <tr><td>Project folder</td><td>Documents\meteorology</td></tr>
+</table>
+<div class="box green"><b class="t">What changed since the 10 October version</b>
+<ul>
+  <li><b>Every step of the plan is now built and tested</b>: vehicle profiles, terrain scores, the
+  forecast-aware planner, the convoy experiment, a backtest over 2024–25, and the edge numbers.</li>
+  <li><b>Vehicles:</b> the scope is all vehicles in the file (tracked, wheeled and half-tracks),
+  not only wheeled ones.</li>
+  <li><b>Ground firmness:</b> the wettest value was lowered from 25 to <<rci_sat>> psi (Section 4.2).
+  Every forecasting number was recomputed.</li>
+  <li><b>Satellite data:</b> your GeoTIFF export arrived and replaced the picture-only maps.</li>
+  <li><b>Deliverables:</b> the A0 poster and the 2-page abstract are both built. Your names,
+  logo and links are the only gaps.</li>
+  <li><b>Corrections:</b> ZIS-30 is a tracked tank destroyer, not a truck. The September
+  forecasting numbers no longer apply (Section 5).</li>
+</ul></div>
+<div class="box blue"><b class="t">How to read this</b>
+<p>Each section builds on the one before. Blue boxes explain an idea in plain words. Orange
+boxes are warnings. Green boxes are decisions made. Purple boxes are formulas, which you can
+skip. Every number here is read from the project's result files when this document is built,
+so it matches the poster and the abstract exactly.</p></div>
+
+<h2>Contents</h2>
+<table class="toc">
+<tr><td>1</td><td>The problem in one page</td></tr>
+<tr><td>2</td><td>Ideas you need first</td></tr>
+<tr><td>3</td><td>The conference: what ICDCN wants</td></tr>
+<tr><td>4</td><td>The data, file by file</td></tr>
+<tr><td>5</td><td>The forecaster</td></tr>
+<tr><td>6</td><td>What was built, step by step</td></tr>
+<tr><td>7</td><td>Your questions, answered</td></tr>
+<tr><td>8</td><td>Limitations to be honest about</td></tr>
+<tr><td>9</td><td>Status and what is needed from you</td></tr>
+<tr><td>10</td><td>Where everything is</td></tr>
+<tr><td>A</td><td>Glossary</td></tr>
+<tr><td>B</td><td>References</td></tr>
+</table>
+
+<h2>1. The problem in one page</h2>
+<p>Military vehicles often have to leave the road: to get around a blocked bridge, to reach a
+position with no road to it, or because the road is too exposed. Off the road, the ground
+decides whether a vehicle can move. Dry, firm soil carries a heavy truck easily. The same soil
+after three days of monsoon rain can turn to mud that swallows the wheels.</p>
+<p>Whether a piece of ground can carry a particular vehicle is called <b>trafficability</b>.
+Planners describe it with three labels:</p>
+<table>
+<tr><th>Label</th><th>Meaning</th></tr>
+<tr><td><b>GO</b></td><td>The vehicle crosses normally, and many vehicles can follow in its tracks.</td></tr>
+<tr><td><b>SLOW-GO</b></td><td>It gets across slowly, leaving ruts. Only a few vehicles can use the same track.</td></tr>
+<tr><td><b>NO-GO</b></td><td>The vehicle gets stuck (or cannot climb, or cannot cross water).</td></tr>
+</table>
+<p>Two things make this hard. <b>It changes over time:</b> the ground is firm in May, soft in
+July and firm again by November, so a map of where vehicles can go is right for one day only.
+<b>It depends on the vehicle:</b> a light tracked carrier crosses ground that would trap a
+wheeled armoured car.</p>
+<div class="box blue"><b class="t">The question this project answers</b>
+<p><b>A vehicle (or a convoy) has to cross the Pachmarhi plateau in the next few days. Which
+route avoids getting stuck, given that the ground will be wetter or drier by the time it gets
+there?</b></p></div>
+<p>Earlier work plans a route on the conditions <i>today</i>. We plan on a <i>forecast</i> of the
+travel day, made on the vehicle itself, and then check against two past monsoons whether
+that avoids routes that looked fine on planning day but failed later.</p>
+<p>Pachmarhi is a hill station on the Satpura plateau in Madhya Pradesh, about 1,067 m above
+sea level. Most of its rain falls from June to September, so the ground swings from very firm
+to very soft every year. That makes it a good test site.</p>
+
+<h2>2. Ideas you need first</h2>
+<h3>2.1 How firm the ground is: the cone index</h3>
+<p>Engineers measure ground firmness with a <b>cone penetrometer</b>: a rod with a small cone
+on the tip, pushed into the soil. The harder you have to push, the firmer the ground. The
+<b>rating cone index (RCI)</b> is a version of that reading that also allows for how much the
+soil weakens when vehicles knead it. Higher RCI means firmer ground. In this project RCI is the
+single number that says how firm the ground is on a given day.</p>
+<h3>2.2 What a vehicle needs: the vehicle cone index</h3>
+<p>Every vehicle has a <b>vehicle cone index (VCI)</b>, the firmness it needs to get through.
+Heavy vehicles on narrow tyres need firm ground; light vehicles on wide tracks manage softer
+ground. <b>VCI₁</b> is what one vehicle needs to pass once. <b>VCI₅₀</b> is what fifty vehicles
+need to use the same track, and it is higher, because each vehicle churns the soil for the
+next.</p>
+<div class="box blue"><b class="t">The rule that turns firmness into GO / SLOW-GO / NO-GO</b>
+<ul><li>RCI at least VCI₅₀: <b>GO</b></li><li>RCI between VCI₁ and VCI₅₀: <b>SLOW-GO</b></li>
+<li>RCI below VCI₁: <b>NO-GO</b> (the first vehicle gets stuck)</li></ul></div>
+<div class="box green"><b class="t">Decision: units are psi</b>
+<p>The 10 October version warned that the code labelled cone index in kPa when the numbers
+were really in pounds per square inch (psi). The vehicle formulas (Section 6) produce psi, the
+field readings we rely on are in psi, and everything is now labelled psi.</p></div>
+<h3>2.3 Terrain</h3>
+<ul>
+<li><b>Slope:</b> how steep the ground is, in degrees.</li>
+<li><b>Land cover:</b> forest, water, grass, crops, bare soil, buildings. A wheeled vehicle cannot drive through dense forest.</li>
+<li><b>Wetness index (TWI):</b> a number computed from the elevation map that is high where water collects: low, flat places that drain the land around them [7].</li>
+</ul>
+<h3>2.4 Forecasting terms</h3>
+<ul>
+<li><b>Horizon:</b> how far ahead we predict; "h = 7" means seven days.</li>
+<li><b>Persistence:</b> the lazy forecast "tomorrow is the same as today". Any real model must beat it.</li>
+<li><b>RMSE:</b> the typical size of a forecast's mistake. <b>Skill:</b> how much smaller it is than persistence's.</li>
+<li><b>Training / validation / test:</b> learn on 2015–21, tune on 2022–23, grade on 2024–25, which the model never saw.</li>
+</ul>
+<h3>2.5 Judging a decision: two kinds of mistake</h3>
+<p>A NO-GO warning can be wrong two ways. Missing a real NO-GO day sends vehicles out to get
+stuck (low <b>recall</b>). Warning on a day that was fine keeps a unit parked for nothing (low
+<b>precision</b>). You can always catch every NO-GO day by warning every day, so both must be
+reported together.</p>
+<p>Routes have the same pair. A planner can send a vehicle along a route that turns out to be
+NO-GO (<b>stuck</b>), or find no route when one existed (<b>held back</b>). Every route result
+in this document reports both.</p>
+<h3>2.6 Route planning on a grid</h3>
+<p>The map is cut into 90 m square cells, each with a cost: cheap if the ground is easy,
+expensive if it is slow, forbidden if it is NO-GO. A route is a chain of neighbouring cells
+and its cost is the sum. <b>A*</b> and <b>Dijkstra's algorithm</b> both find the cheapest
+route exactly. We use Dijkstra, because one run gives routes from a start to every
+destination at once, which the backtest needs. A* would find the same routes.</p>
+<h3>2.7 Fuzzy sets</h3>
+<p>A fuzzy set lets things belong partly, with a degree between 0 and 1: a 12° slope can be
+"passable" to degree 0.55 [8]. Fuzzy AND is usually the <b>minimum</b>: "passable by slope AND by
+soil" is only as true as the weaker of the two. That is why a lake cell scores 0 however good
+its slope is.</p>
+<h3>2.8 Edge computing</h3>
+<p>Running software on a device in the field (a vehicle, a drone, a computer at a forward
+base) rather than in a distant data centre. It matters when the network is slow, unreliable
+or jammed, which is normal in military operations.</p>
+
+<h2>3. The conference: what ICDCN wants</h2>
+<p><b>ICDCN</b> is the International Conference on Distributed Computing and Networking. The
+2027 edition (the 28th) is at NITK Surathkal, 4–7 January 2027, and has a poster track for
+early-stage work.</p>
+<table>
+<tr><th>Item</th><th>Detail</th></tr>
+<tr><td>What you submit</td><td>A <b>2-page extended abstract</b>, two-column ACM format, fonts embedded, through EasyChair (track "ICDCN 2027 — Poster")</td></tr>
+<tr><td>What you print</td><td>The poster itself, shown on an easel if accepted. ICDCN sets no size; we used <b>A0 portrait</b>, the usual default (MobiSys requires A0, COMSNETS accepts A0)</td></tr>
+<tr><td>Review</td><td>Single-blind: reviewers see author names, so names go on page 1</td></tr>
+<tr><td>Dates</td><td>Submit by <b>15 October 2026</b>. Notification 7 Nov. Camera-ready and registration 14 Nov</td></tr>
+<tr><td>Judged on</td><td>"Technical merit and innovation as well as the potential to stimulate interesting discussions"</td></tr>
+<tr><td>Presentation</td><td>In person only. No remote presentation</td></tr>
+<tr><td>Publication</td><td>ACM Digital Library. ACM is now fully open access: authors at non-member institutions may owe a fee unless waived</td></tr>
+</table>
+<h3>3.1 The catch: this is a computing-and-networking conference</h3>
+<p>A poster that only says "we forecast soil strength with machine learning" sits outside
+ICDCN's main subjects. Applied work does get in when it ties to the call's topics, which
+include machine learning applications, edge computing, cyber-physical systems and vehicular
+networks.</p>
+<div class="box green"><b class="t">Decision: how we frame the work</b>
+<p>The planner runs <b>on a vehicle with no weather service and no network</b>. We back that
+with systems numbers: <<params_k>> parameters, <<cpu_ms>> ms per forecast on one CPU core, and
+<<msg_bytes>> bytes to send a 7-day forecast. The convoy experiment adds a genuinely
+distributed problem: vehicles planning on a shared map that they change as they drive, and
+exchanging only their tracks.</p></div>
+
+<h2>4. The data, file by file</h2>
+<h3>4.1 The weather record</h3>
+<p>One row per day from 1 January 2015 to 31 December 2025 (<<n_days>> days, none missing), with
+rainfall, temperature, humidity, wind, pressure, cloud cover and, most importantly, <b>soil
+moisture in two layers</b> (0–7 cm and 7–28 cm).</p>
+<ul>
+<li>Rainfall for 2015–2024 comes from the India Meteorological Department (IMD) gauge grid.
+2025 comes from ERA5, because IMD's archive lags about a year.</li>
+<li>Soil moisture and temperature come from <b>ERA5-Land</b> [4], a computer model of the land
+surface steered by observations, on a grid cell about 9 km across.</li>
+</ul>
+<div class="box orange"><b class="t">Watch out</b><p>ERA5-Land soil moisture is a model output,
+not a measurement. Everything built on it inherits that.</p></div>
+
+<h3>4.2 From weather to ground firmness</h3>
+<p>The weather file has no trafficability column, so the project derives one. ERA5-Land has
+already turned rain and evaporation into soil moisture. We combine the two layers into a soil
+wetness index (SWI), turn that into RCI, and compare it with each vehicle's VCI.</p>
+<div class="box purple"><b class="t">The exact formula</b>
+<p><span class="math">SWI</span> = 0.35 · <span class="math">s</span><sub>0–7 cm</sub> + 0.65 · <span class="math">s</span><sub>7–28 cm</sub>, each layer scaled to 0 (driest) – 1 (wettest) over the 11 years.</p>
+<p><span class="math">RCI</span> = 300 · e<sup>−<<k_decay>> · SWI</sup> · (1 − 0.15 · min(<span class="math">R</span><sub>3 days</sub> / 50 mm, 1)) psi.</p>
+<p>The deeper layer weighs more because vehicles sink about 15–30 cm. The last factor briefly
+lowers firmness after rain, by at most 15%.</p></div>
+<div class="box green"><b class="t">Decision: the wettest ground was lowered from 25 to <<rci_sat>> psi</b>
+<p>With 25 psi as the wettest possible value, the ground never got softer than about 22 psi.
+Most light and medium tracked vehicles need less than that, so 695 of 1,004 of them could
+<i>never</i> be NO-GO. That was an artefact of one assumed number, not a finding. Roșca et al.
+[2] measured 14–25 psi on the field lanes where their 4×4 bogged down, so the wettest value is
+now <<rci_sat>> psi. Every vehicle band now has real NO-GO days (<<nogo_lo>>–<<nogo_hi>>% of
+days), and the forecaster was retrained on the new target.</p></div>
+<div class="fig"><img src="explainer_figs/f1_season.png">
+<div class="cap"><b>Figure 1.</b> Rainfall (top) and ground firmness, RCI (bottom), over the
+2024–25 test years. Each monsoon takes the ground into NO-GO within days. Red lines are the
+one-pass limits of three vehicle bands.</div></div>
+
+<h3>4.3 The satellite maps: your Earth Engine export</h3>
+<p>The GeoTIFF export arrived: three files, one per season (monsoon, summer, winter), each a
+17-layer stack on one 30 m grid of 945 × 761 cells, about 28 × 23 km, in UTM zone 43N. It
+holds exactly what was asked for, and more:</p>
+<table>
+<tr><th>Layers</th><th>Source</th><th>Used for</th></tr>
+<tr><td>Elevation, slope, aspect, roughness (TRI)</td><td>Elevation model</td><td>Slope scores; wetness index</td></tr>
+<tr><td>ESA WorldCover land cover [5]</td><td>Sentinel-1/2</td><td>Land-cover scores</td></tr>
+<tr><td>NDVI, NDWI, bare-soil and snow indices</td><td>Sentinel-2</td><td>Canopy density (NDVI)</td></tr>
+<tr><td>Radar VV, VH, ratio, 4 texture layers</td><td>Sentinel-1</td><td>Not used (see below)</td></tr>
+<tr><td>Land surface temperature</td><td>Thermal</td><td>Not used</td></tr>
+</table>
+<p>The parquet tables beside them hold the same pixels without map coordinates, so the
+project reads the GeoTIFFs. The old <code>maps.zip</code> pictures are kept but no longer used.
+The road network comes from OpenStreetMap [9]: <<n_roads>> road segments a vehicle can use
+(footpaths and steps dropped).</p>
+<div class="box orange"><b class="t">Two things the data showed</b>
+<ul>
+<li><b>About <<tree_pct>>% of the area is tree cover.</b> Liu et al. score forest as impassable for
+every vehicle, which would close almost the whole plateau. Tree cover is therefore split by
+canopy density into Liu's forest, bush-wood and grassland rows (Section 6, Step 2).</li>
+<li><b>Radar is not used.</b> Under this much canopy the radar signal mostly measures vegetation, not
+soil wetness, so using it to spread soil wetness would be a guess.</li>
+</ul></div>
+
+<h3>4.4 The vehicle file</h3>
+<p><<n_raw_rows>> rows, one per vehicle, with 34 columns such as mass, engine power, armour and weapons.</p>
+<div class="box orange"><b class="t">What this file actually is</b>
+<p>A datamine of the video game War Thunder (game-engine fields such as <code>bone_gun</code>,
+joke entries such as "santa" and railway wagons). Two problems turned out to be bigger than first
+thought:</p>
+<ul>
+<li><b>Masses are game templates.</b> Of <<n_plausible>> rows with a believable mass and power,
+there are only <<n_mass_values>> distinct masses, and <<top15_share>>% of rows sit on 15 of them. The
+game copies one weight to many vehicles: the M1 Abrams' 54 t is right, a T-72's 50 t is not.</li>
+<li><b><<n_placeholder>> rows carry exactly 5,500 kg</b>, which is the game's default for wheeled
+vehicles. So wheeled armour (BTR-80, Boxer, Centauro and so on) has no real mass in the file.</li>
+</ul></div>
+<div class="box green"><b class="t">Decisions: which vehicles, and how to treat the masses</b>
+<ul>
+<li><b>Scope:</b> every usable ground vehicle, tracked, wheeled and half-track. The earlier
+reading ("Class B", then "wheeled only") was wrong.</li>
+<li><b>Kept:</b> <<n_vehicles>> vehicles: <<n_tracked>> tracked, <<n_wheeled>> wheeled and <<n_half>> half-tracks. Wrecks,
+tutorials, event copies, scenery and joke entries were dropped.</li>
+<li><b>Masses:</b> <<n_public>> placeholder rows were corrected from rounded public figures for about 60
+base models, each marked in the table. Placeholder rows with no match were dropped.</li>
+<li><b>Results are reported by firmness band, never by named vehicle</b>, because a name may carry a
+template mass. A band is a real range of vehicle needs, whichever names fall in it.</li>
+</ul></div>
+<div class="box orange"><b class="t">Corrections to the 10 October version</b>
+<p>The ZIS-30, listed as a "truck", is a tracked tank destroyer on an artillery-tractor chassis.
+The ZIS-43 is a half-track. Classification is now done by name with checked keyword lists.</p></div>
+<table class="num">
+<tr><th>Band</th><th>VCI₁ range (psi)</th><th>Mostly</th><th>Vehicles</th><th>Typical VCI₁ / VCI₅₀</th><th>Days NO-GO, 2015–25</th></tr>
+<<t_bands>>
+</table>
+<div class="fig"><img src="explainer_figs/f2_fleet.png">
+<div class="cap"><b>Figure 2.</b> One-pass vehicle cone index of every vehicle, coloured by type,
+with the five bands and how often each band is stuck.</div></div>
+
+<h3>4.5 The inspiration paper: Liu et al. (2025)</h3>
+<p><i>Construction of dynamic trafficability map for unmanned vehicles considering multiple
+environmental factors and path planning</i>, Scientific Reports 15:9957 [1]. They scored 11
+factors (slope, land cover, rainfall and others) from lookup tables, combined them with a
+weighted average whose weights came from expert comparisons (AHP), forced any cell that is
+NO-GO in one factor to NO-GO, and planned routes with A* for one wheeled and one tracked
+vehicle.</p>
+<p><b>What we take from them:</b> their slope and land-cover tables, and their weights as the
+comparison baseline. <b>What we add:</b> planning on a forecast of the travel day instead of
+the conditions at the time, checking the routes against what really happened, a fleet of
+1,145 vehicles instead of two, and vehicles that change the ground for each other.</p>
+
+<h2>5. The forecaster</h2>
+<h3>5.1 The trick that makes learning work</h3>
+<p>Ground firmness changes slowly: today's value is almost exactly yesterday's. A model asked
+to predict tomorrow's <i>level</i> learns to copy today. So every model predicts the
+<b>change</b> from today, and today's value is added back afterwards.</p>
+<h3>5.2 The model, retrained on the new target</h3>
+<p>The September comparison chose a GRU (a recurrent neural network, 128 units in 2 layers)
+averaged with a ridge regression. Width helped more than architecture; attention and
+bidirectional variants made it worse. That model was retrained for the new firmness target
+(Section 4.2), with three GRUs from different random starts averaged.</p>
+<table class="num">
+<tr><th>Model</th><th>RMSE, 1 day (psi)</th><th>3 days</th><th>7 days</th><th>Skill at 7 days</th></tr>
+<<t_rmse>>
+</table>
+<div class="box orange"><b class="t">The September numbers no longer apply</b>
+<p>The model comparison in <code>outputs/forecasting</code> (the ensemble table, the TFT results)
+was computed with the old firmness target. Its conclusions about which model to use stand; its
+numbers must not be quoted. The figures above are the current ones.</p></div>
+<h3>5.3 From a forecast to a NO-GO call: safety margins</h3>
+<p>The model's average error rewards predicting values near the middle, and NO-GO days are
+the extreme. So the forecast is lowered by a <b>safety margin</b> before it is compared with
+VCI₁, and borderline days get called NO-GO. There is one margin per firmness band and lead
+time, set to the smallest that catches 90% of NO-GO days.</p>
+<div class="box green"><b class="t">Decision: margins are tuned on one year and scored on the other</b>
+<p>A margin tuned and tested on the same days always looks good. Each margin is tuned on 2024 and
+scored on 2025, then the other way round, and the two results are pooled.</p></div>
+<table class="num">
+<tr><th>Band (7 days ahead)</th><th>Today's value + margin: recall / false alarms per vehicle-year</th><th>Forecast + margin: same</th><th>Margin tuned on 2024 / 2025 (psi)</th></tr>
+<<t_decisions>>
+</table>
+<p>At the same catch rate, the forecast raises <<fa_red_lo>>–<<fa_red_hi>>% fewer false alarms at 7
+days than putting the same kind of margin on today's value.</p>
+<div class="fig"><img src="explainer_figs/f3_decisions.png">
+<div class="cap"><b>Figure 3.</b> False NO-GO calls per vehicle-year, 3 and 7 days ahead, with about
+90% of real NO-GO days caught in every case.</div></div>
+<div class="box orange"><b class="t">Margins move between years</b>
+<p>The same band's margin can differ by up to <<margin_gap_max>> psi depending on which year it was
+tuned on. The cross-year scoring above already includes that cost, but a field system would
+need margins re-checked as more years come in.</p></div>
+<div class="box orange"><b class="t">Still true from the 10 October version: do not quote the TFT's 91.4%</b>
+<p>The TFT model's "P10" rule reached 91.4% NO-GO recall by calling NO-GO far too often, and its
+margin was unstable across years. It was rejected in September, and the README now says so.</p></div>
+<h3>5.4 What the forecast cannot see</h3>
+<p>The forecaster sees only the local weather log, not a weather forecast. Nothing in that log
+announces the day the monsoon breaks, so on the first days of the monsoon every planner gets
+caught out. The gain comes in the days around the transitions, when the ground keeps
+changing and the forecast tracks it.</p>
+<div class="fig"><img src="explainer_figs/f7_onset.png">
+<div class="cap"><b>Figure 4.</b> Monsoon onset, 2024: real firmness (black) against today's value
+and the forecast, both made three days earlier.</div></div>
+
+<h2>6. What was built, step by step</h2>
+<div class="fig"><<pipeline>>
+<div class="cap"><b>Figure 5.</b> The pipeline. Steps 2–6 run on the vehicle.</div></div>
+<h3>Step 1. Vehicle profiles</h3>
+<p>Each vehicle needs VCI₁ and VCI₅₀. They come from the US Army's <b>Mobility Index</b> method
+(NRMM; test procedure TOP 02-2-619A), which turns weight, track or tyre size, ground clearance,
+power and gearbox into one number. Wheeled formulas follow Roșca et al. [2], tracked ones
+Ciobotaru [3].</p>
+<div class="box purple"><b class="t">The formulas</b>
+<p><b>Tracked:</b> MI = (CPF·WF / (TEF·GF) + BF − CF) · EF · TF, with CPF = W / (2·L·B), TEF = B/100,
+BF = W / (10 · road wheels · shoe area), CF = clearance/10. VCI₁ = 7.0 + 0.2·MI − 39.2/(MI + 5.6);
+VCI₅₀ = 19.27 + 0.43·MI − 125.79/(MI + 7.08).</p>
+<p><b>Wheeled:</b> MI = (CPF·WF / (TEF·GF) + WLF − CF) · EF · TF, with CPF = axle load / (0.5 · tyres
+per axle · diameter · width), TEF = (10 + width)/100, WLF = axle load/2000.
+VCI₁ = 11.48 + 0.2·MI − 39.2/(MI + 3.74); VCI₅₀ = 28.23 + 0.43·MI − 92.67/(MI + 3.74). Loads in lb,
+lengths in inches, VCI in psi.</p></div>
+<div class="box green"><b class="t">Checked against a published example</b>
+<p>With the M1 Abrams' public specifications, the tracked code gives MI 98.61, VCI₁ 26.35 and
+VCI₅₀ 60.48. Ciobotaru [3] reports 98.59, 26.34 and 60.48.</p></div>
+<p><b>What had to be assumed.</b> The file has no track or tyre sizes, so they come from weight:
+tracks interpolated between real vehicles from the M22 Locust to the Tiger II, tyres by the
+load each axle carries. Transmissions are taken as automatic and tyres at road pressure.
+Half-tracks have no standard formula: the track unit is rated as tracked, the front axle as a
+wheeled axle carrying 25% of the weight, and the worse of the two governs.</p>
+
+<h3>Step 2. Terrain scores</h3>
+<p>Each 90 m cell gets a 0–1 score for slope and for land cover, per vehicle type, from Liu et
+al.'s tables. The slope steps are smoothed into a curve, so a 0.2° change cannot flip a
+decision. Tree cover is split by canopy density, using each cell's greenest NDVI across the
+three seasons. The plateau forest is deciduous, so one season's NDVI tracks leaves, not trees.</p>
+<ul>
+<li>Dense canopy (NDVI ≥ 0.75): Liu's "forest", 0 for every vehicle.</li>
+<li>Open canopy (0.60–0.75): "bush-wood", 0 wheeled, 0.2 tracked.</li>
+<li>Sparse (below 0.60): "grassland", 0.4 wheeled, 0.6 tracked.</li>
+<li>Water is 0 for all. Road cells score 1 for slope and land cover.</li>
+</ul>
+<p>Before any soil is considered, <<pass_w>>% of the plateau is passable for wheeled vehicles
+(mostly roads and open land) and <<pass_t>>% for tracked ones.</p>
+<div class="fig half"><img src="explainer_figs/slope_curve.png">
+<div class="cap"><b>Figure 6.</b> Liu et al.'s slope steps (faint) and the smooth curves the planner uses.</div></div>
+
+<h3>Step 3. Spreading firmness across the map</h3>
+<p>The forecast is one value for a 9 km weather cell, which on its own would make the whole map
+wet or dry at once. Each cell's soil wetness is shifted by its wetness index: low, convergent
+cells up to 0.2 wetter, ridges up to 0.2 drier, the average unchanged. In the firmness formula
+that is RCI<sub>cell</sub> = RCI · e<sup>−<<k_decay>> · shift</sup>. Paved roads ignore soil;
+unpaved tracks soften like any ground.</p>
+<div class="box orange"><b class="t">A rule of thumb</b><p>This spreading has no field
+measurements behind it. The poster and abstract say so.</p></div>
+
+<h3>Step 4. Combining into one score</h3>
+<p>Soil scores 0 below VCI₁ (NO-GO) and rises to 1 at VCI₅₀, so SLOW-GO ground is slow but
+allowed. The three scores combine by <b>fuzzy AND, the minimum</b>. A cell is as passable as its
+worst factor, so a deal-breaker can never be averaged away.</p>
+
+<h3>Step 5. Planning routes</h3>
+<p>The planner finds the fastest route, with speed proportional to the cell's score, on a grid
+of <<grid_rows>> × <<grid_cols>> cells. Five planners are compared:</p>
+<table>
+<tr><th>Planner</th><th>Map it uses</th></tr>
+<tr><td>Terrain only</td><td>Slope and land cover, no soil</td></tr>
+<tr><td>Today's map</td><td>Today's ground, which is what Liu et al. do</td></tr>
+<tr><td>Today + margin</td><td>Today's ground minus a safety margin</td></tr>
+<tr><td><b>Forecast + margin (ours)</b></td><td>The forecast for the travel day minus the band's margin</td></tr>
+<tr><td>Oracle</td><td>The real ground on the travel day, used only to score the others</td></tr>
+</table>
+
+<h3>Step 6. The backtest</h3>
+<p>For every day of 2024–25 (<<bt_days>> planning days), each of the five bands, and departures 1, 3
+or 7 days after planning: 30 trips of 8–25 km between points on the plateau's road network.
+That is <<bt_trips>> trips per planner. Every route is checked against the real ground on the
+travel day.</p>
+<table class="num">
+<tr><th>Planner: stuck / held back</th><th>1 day</th><th>3 days</th><th>7 days</th></tr>
+<<t_backtest>>
+</table>
+<div class="box green"><b class="t">What the backtest supports, and what it does not</b>
+<ul>
+<li><b>Against today's map:</b> at 3 days, <<stuck_ours3>>% of forecast-planned trips got stuck
+against <<stuck_today3>>% (<<stuck_cut3>>% fewer), and fewer were held back (<<held_ours3>>% against
+<<held_today3>>%). At 7 days, <<stuck_cut7>>% fewer stuck.</li>
+<li><b>Against a margin on today's map:</b> the forecast does <i>not</i> get fewer trips stuck at the
+tuned setting. What it does is hold back far fewer trips at the same risk. Turning each planner's
+margin from none up to three times the tuned value (Figure 7), the forecast holds back
+<<held_cut3>>% (3 days) and <<held_cut7>>% (7 days) fewer trips at an equal stuck rate.</li>
+<li><b>Cost:</b> forecast-planned routes are only <<extra3_ours>>% slower than the best possible route.</li>
+<li>Ignoring soil altogether sends <<static_stuck>>% of trips into mud.</li>
+</ul></div>
+<div class="fig"><img src="explainer_figs/f5_tradeoff.png">
+<div class="cap"><b>Figure 7.</b> Both errors as each planner's margin goes from none to three times the
+tuned value (ringed). Lower left is better.</div></div>
+<table class="num">
+<tr><th>Combining slope, cover and soil: stuck</th><th>1 day</th><th>3 days</th><th>7 days</th></tr>
+<<t_methods>>
+</table>
+<p>Liu et al.'s weighted mean needs their veto to work: without it, a third of trips go into mud.
+With the veto it is close to the minimum, slightly worse.</p>
+<div class="fig"><img src="explainer_figs/f4_map.png">
+<div class="cap"><b>Figure 8.</b> One real trip from the backtest. <<map_caption>></div></div>
+
+<h3>Step 7. Vehicles changing the ground: convoys</h3>
+<p>Every vehicle that crosses soft ground churns it, so the next one needs firmer ground. Each
+cell counts how many vehicles have crossed it.</p>
+<div class="box purple"><b class="t">The wear rule</b>
+<p>Firmness needed on pass <span class="math">n</span> = VCI₁ + (VCI₅₀ − VCI₁) · ln(n) / ln(50).
+The curve is our own assumption, chosen so that pass 1 gives VCI₁ and pass 50 gives VCI₅₀; it is
+not a published law. The start and finish areas are not churned, because every vehicle has to use them.</p></div>
+<div class="fig half"><img src="explainer_figs/wear_curve.png">
+<div class="cap"><b>Figure 9.</b> Heavy tracked band D (VCI₁ <<d_vci1>>, VCI₅₀ <<d_vci50>> psi): on ground of
+40 psi, vehicle <<first_stuck>> would be the first to get stuck on a shared track.</div></div>
+<p>Two ways of moving ten vehicles, on <<cv_days>> soft days:</p>
+<ul>
+<li><b>Follow the leader:</b> everyone takes the first vehicle's route; when one gets stuck the column behind it is blocked.</li>
+<li><b>Wear-aware:</b> each vehicle plans on the shared pass-count map and broadcasts its own track (4 bytes per cell).</li>
+</ul>
+<p>Heavy tracked vehicles: <b><<cv_d_follow>></b> of 10 get through following the leader,
+<b><<cv_d_wear>></b> with the shared map, for <<cv_bytes>> kB of track updates per convoy. Wheeled
+vehicles: <<cv_e_follow>> and <<cv_e_wear>>. In this forest they have few parallel lanes to spread
+onto.</p>
+<div class="fig"><img src="explainer_figs/f6_convoy.png">
+<div class="cap"><b>Figure 10.</b> Vehicles of ten that get through, by band and convoy method.</div></div>
+
+<h3>Step 8. Edge numbers</h3>
+<table class="num">
+<tr><th>What</th><th>Value</th></tr>
+<tr><td>Model size (3 GRUs of <<gru_each>> parameters, plus ridge)</td><td><<params_k>> parameters, <<size_mb>> MB</td></tr>
+<tr><td>One 7-day forecast, one CPU thread</td><td><<cpu_ms>> ms (+ <<feat_ms>> ms to build inputs)</td></tr>
+<tr><td>Re-planning one route, <<map_kb>>k-cell map</td><td><<replan_ms>> ms</td></tr>
+<tr><td>Sending a 7-day forecast</td><td><<msg_bytes>> bytes</td></tr>
+<tr><td>Sending one passability map instead</td><td><<map_kb>> kB (<<map_ratio>>× more)</td></tr>
+<tr><td>Maps for 5 bands × 7 days</td><td><<maps_mb>> MB</td></tr>
+</table>
+<p>Because every vehicle rebuilds its own maps from the forecast and the shared tracks, the
+radio link only ever carries the small things.</p>
+
+<h2>7. Your questions, answered</h2>
+<h3>7.1 Should we use JEPA?</h3>
+<p><b>Not for this poster.</b> JEPA teaches an image model without labels by predicting hidden
+parts of images. It needs a large amount of imagery and a labelled task to show it helped. We
+have three seasonal snapshots of one area and no labels. It is a good future-work line: a
+JEPA-style model trained on years of Sentinel-1 and Sentinel-2 images could learn how the
+terrain changes over time.</p>
+<h3>7.2 Did the forecasting models need retraining?</h3>
+<p><b>Yes, but not because of the new data.</b> The vehicle file and the maps still add nothing
+the forecaster can use, since it predicts one plateau-wide firmness from the weather log. It was
+retrained because the firmness target itself changed (Section 4.2). That took under a minute on
+the GPU.</p>
+<h3>7.3 Should we train a separate GO / SLOW-GO / NO-GO classifier?</h3>
+<p><b>No.</b> The labels are firmness with cut-offs applied, so a classifier would learn a blurrier
+copy of the forecast. One forecaster serves every vehicle, because only the cut-offs change.
+There are no ground-truth labels for the map. The per-band margin does the decision job.</p>
+<h3>7.4 Can we model how vehicles change the terrain?</h3>
+<p><b>Yes, and it is built</b> (Step 7): pass-count wear on a shared map. Ruts that persist and recover
+over days, and full soil physics, remain future work. Both need measurements we do not have.</p>
+<h3>7.5 Can we use fuzzy sets?</h3>
+<p><b>Yes, and it is built.</b> Smooth curves replace Liu's step tables, and the fuzzy AND (minimum)
+combines factors without needing a veto. The comparison against Liu's weighted average is in Step 6.</p>
+<h3>7.6 Do the vehicles have to be Indian?</h3>
+<p><b>No.</b> This is preliminary work. The poster uses every usable vehicle in the file, of any
+origin, reported by firmness band.</p>
+
+<h2>8. Limitations to be honest about</h2>
+<table>
+<tr><th>Limitation</th><th>Why it matters</th><th>What we do</th></tr>
+<tr><td>Ground firmness is computed, not measured</td><td>No cone-penetrometer readings from Pachmarhi</td><td>State it; field readings are the first next step</td></tr>
+<tr><td>Wettest firmness value (<<rci_sat>> psi) from one field study</td><td>It sets how often light vehicles are stuck</td><td>Cite the study; note it on the poster</td></tr>
+<tr><td>One 9 km weather cell</td><td>Real firmness varies over metres</td><td>Spread by wetness index; say it is a rule of thumb</td></tr>
+<tr><td>Vehicle data from a video game</td><td>Masses are template values</td><td>Correct the worst; disclose; report bands only</td></tr>
+<tr><td>Track and tyre sizes assumed by weight</td><td>They drive the cone index</td><td>Interpolate between real vehicles; state it</td></tr>
+<tr><td>Margins move between years</td><td>By up to <<margin_gap_max>> psi</td><td>Score across years; state it</td></tr>
+<tr><td>No weather forecast input</td><td>Monsoon onset cannot be foreseen</td><td>Show it openly (Figure 4)</td></tr>
+<tr><td>Convoy wear curve is our assumption</td><td>Not a published law</td><td>Say so</td></tr>
+<tr><td>Rainfall source changes in 2025</td><td>IMD to ERA5, with a different day definition</td><td>Documented</td></tr>
+</table>
+
+<h2>9. Status and what is needed from you</h2>
+<div class="box green"><b class="t">Done</b>
+<ul>
+<li>Vehicle table (<<n_vehicles>> vehicles), terrain grid, roads, forecaster, margins, planner,
+backtest, trade-off sweep, convoy experiment, edge numbers.</li>
+<li>A0 poster: <code>poster/poster.pdf</code>. 2-page abstract: <code>paper/abstract.pdf</code>.</li>
+<li>Both checked: the abstract is exactly 2 pages, ACM format, with all fonts embedded.</li>
+</ul></div>
+<h3>Needed from you before 15 October</h3>
+<ol>
+<li><b>Author names, affiliations and emails</b>, for both files. Review is single-blind, so they must be on the abstract.</li>
+<li><b>Institution logo</b>, a <b>project URL</b> (for the poster's QR code) and a <b>contact email</b>.</li>
+<li><b>A read-through by co-authors or your advisor.</b> The modelling choices listed in Section 8
+should be agreed by everyone whose name goes on it.</li>
+<li><b>Check whether your institution must approve defence-related publications.</b> All data is
+public, but some institutions require sign-off.</li>
+<li><b>Submit</b> <code>paper/abstract.pdf</code> on EasyChair, track "ICDCN 2027 — Poster".</li>
+</ol>
+<h3>After acceptance (7 November)</h3>
+<ol>
+<li>Camera-ready and registration by 14 November. The abstract needs ACM's rights text added
+back; page 2 has room for it.</li>
+<li>Check the ACM open-access fee for your institution.</li>
+<li>Print the poster at A0. Proof it at A4 first.</li>
+<li>One author presents in person, 4–7 January 2027.</li>
+</ol>
+
+<h2>10. Where everything is</h2>
+<table>
+<tr><th>Folder</th><th>Contents</th></tr>
+<tr><td><code>data/</code></td><td>Weather record, vehicle file, Earth Engine GeoTIFFs, OpenStreetMap roads</td></tr>
+<tr><td><code>traffic/</code></td><td>All code. <code>paths.py</code> holds every file location</td></tr>
+<tr><td><code>outputs/</code></td><td>Results: <code>forecaster/</code>, <code>terrain/</code>, <code>planner/</code>, <code>vehicles/</code>; <code>forecasting/</code> is the outdated September comparison</td></tr>
+<tr><td><code>poster/</code></td><td><code>poster.pdf</code> (A0), its figures and fonts</td></tr>
+<tr><td><code>paper/</code></td><td>The abstract: edit <code>abstract_template.tex</code>; the folder uploads to Overleaf as it is</td></tr>
+<tr><td><code>docs/</code></td><td>This explainer and its template, the August report, the references; older versions in <code>archive/</code></td></tr>
+</table>
+<h3>Rebuilding after a change</h3>
+<table>
+<tr><th>Command</th><th>What it does</th></tr>
+<tr><td><code>python -m traffic.check</code></td><td>Checks packages, files and data loading</td></tr>
+<tr><td><code>python -m traffic.forecast</code></td><td>Retrains the forecaster and margins (under a minute)</td></tr>
+<tr><td><code>python -m traffic.planner</code></td><td>Backtest and convoys (about 12 minutes); <code>--tradeoff</code> for the margin sweep (about 15)</td></tr>
+<tr><td><code>python -m traffic.poster_figs</code> then <code>poster_build</code></td><td>Rebuilds the poster</td></tr>
+<tr><td><code>python -m traffic.abstract_build</code></td><td>Rebuilds the abstract and reports its page count</td></tr>
+<tr><td><code>python -m traffic.explainer_build</code></td><td>Rebuilds this document</td></tr>
+</table>
+
+<h2>A. Glossary</h2>
+<table>
+<tr><th>Term</th><th>Meaning</th></tr>
+<tr><td>A* / Dijkstra</td><td>Algorithms that find the cheapest route on a grid exactly</td></tr>
+<tr><td>AHP</td><td>Analytic Hierarchy Process: setting weights by having experts compare factors two at a time</td></tr>
+<tr><td>Backtest</td><td>Testing a method on past data as if live, then checking against what happened</td></tr>
+<tr><td>Band (A–E)</td><td>A range of one-pass vehicle cone index; results are reported per band</td></tr>
+<tr><td>Cone index / RCI</td><td>Ground firmness from pushing a cone into the soil; RCI also allows for traffic weakening it</td></tr>
+<tr><td>Edge computing</td><td>Running software on a device in the field instead of a data centre</td></tr>
+<tr><td>ERA5 / ERA5-Land</td><td>Global reconstructions of past weather and land conditions</td></tr>
+<tr><td>Fuzzy AND</td><td>Combining 0–1 scores by taking the smallest</td></tr>
+<tr><td>GEE</td><td>Google Earth Engine, a platform for processing satellite data</td></tr>
+<tr><td>GRU</td><td>Gated recurrent unit: a neural network that reads a sequence of days one at a time [6]</td></tr>
+<tr><td>Held back</td><td>A planner found no route although one existed: the costly error</td></tr>
+<tr><td>Mobility Index (MI)</td><td>A US Army formula turning vehicle specifications into one number, from which VCI follows</td></tr>
+<tr><td>NDVI</td><td>A satellite index of green vegetation; used here for canopy density</td></tr>
+<tr><td>Persistence</td><td>The forecast "tomorrow equals today"</td></tr>
+<tr><td>Precision / recall</td><td>Of warnings given, how many were right / of real events, how many were warned about</td></tr>
+<tr><td>Ridge regression</td><td>A straight-line model protected against over-fitting</td></tr>
+<tr><td>Safety margin</td><td>An amount subtracted from the forecast so borderline days count as NO-GO</td></tr>
+<tr><td>Stuck</td><td>A planner's route crossed ground that was NO-GO on the travel day: the dangerous error</td></tr>
+<tr><td>SWI</td><td>Soil wetness index: the two soil layers combined, 0 driest to 1 wettest</td></tr>
+<tr><td>TWI</td><td>Topographic wetness index: from the elevation map, high where water collects</td></tr>
+<tr><td>VCI₁ / VCI₅₀</td><td>Firmness a vehicle needs to pass once / fifty times on the same track</td></tr>
+</table>
+
+<h2>B. References</h2>
+<ol>
+<li>Liu, Q., You, X., Zhang, X., Zuo, J. (2025). Construction of dynamic trafficability map for unmanned vehicles considering multiple environmental factors and path planning. <i>Scientific Reports</i> 15:9957. doi:10.1038/s41598-025-94377-4</li>
+<li>Roșca, P., Ciobotaru, T., Olaru, G., Puică, C. (2018). Considerations regarding vehicle cone index for fine-grained soil. <i>Journal of Military Technology</i> 1(2):39–44. doi:10.32754/JMT.2018.2.07</li>
+<li>Ciobotaru, T. (2009). Semi-empiric algorithm for assessment of the vehicle mobility. <i>Leonardo Electronic Journal of Practices and Technologies</i> 8(15):19–30.</li>
+<li>Muñoz-Sabater, J. et al. (2021). ERA5-Land: a state-of-the-art global reanalysis dataset for land applications. <i>Earth System Science Data</i> 13:4349–4383. doi:10.5194/essd-13-4349-2021</li>
+<li>Zanaga, D. et al. (2022). ESA WorldCover 10 m 2021 v200. Zenodo. doi:10.5281/zenodo.7254221</li>
+<li>Cho, K. et al. (2014). Learning phrase representations using RNN encoder–decoder for statistical machine translation. <i>EMNLP</i>, 1724–1734.</li>
+<li>Beven, K. J., Kirkby, M. J. (1979). A physically based, variable contributing area model of basin hydrology. <i>Hydrological Sciences Bulletin</i> 24(1):43–69.</li>
+<li>Zadeh, L. A. (1965). Fuzzy sets. <i>Information and Control</i> 8(3):338–353.</li>
+<li>OpenStreetMap contributors (2026). https://www.openstreetmap.org, data under ODbL.</li>
+<li>ICDCN 2027 Call for Posters. cs3-lab.github.io/icdcn/submission/call-for-poster.html</li>
+<li>Project files: README.md, traffic/*.py, outputs/.</li>
+</ol>
+</body></html>

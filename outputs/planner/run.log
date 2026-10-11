@@ -1,0 +1,44 @@
+  2024-01-01  maps cached 95
+  2024-03-01  maps cached 2973
+  2024-04-30  maps cached 4242
+  2024-06-29  maps cached 5259
+  2024-08-28  maps cached 5647
+  2024-10-27  maps cached 6599
+  2024-12-26  maps cached 7305
+  2025-02-24  maps cached 7477
+  2025-04-25  maps cached 7918
+  2025-06-24  maps cached 8059
+  2025-08-23  maps cached 8215
+  2025-10-22  maps cached 8343
+  2025-12-21  maps cached 8615
+backtest 695s
+                                        stuck_rate  held_rate  extra_time_pct
+planner                              h                                       
+Forecast + margin (ours)             1      0.0070     0.0070         -0.0045
+                                     3      0.0160     0.0230          0.0487
+                                     7      0.0290     0.0441          0.0761
+Forecast + margin [liu_weighted]     1      0.0093     0.0070         10.3235
+                                     3      0.0175     0.0230         10.3747
+                                     7      0.0297     0.0441         10.3803
+Forecast + margin [product]          1      0.0074     0.0070          0.0769
+                                     3      0.0161     0.0230          0.1099
+                                     7      0.0290     0.0441          0.1244
+Forecast + margin [weighted_no_veto] 1      0.3460     0.0000         10.3449
+                                     3      0.3484     0.0000         10.2983
+                                     7      0.3488     0.0000         10.1527
+Static (terrain only)                1      0.3551     0.0000          0.4334
+                                     3      0.3551     0.0000          0.4327
+                                     7      0.3546     0.0000          0.4205
+Today (Liu et al.)                   1      0.0077     0.0112          0.0097
+                                     3      0.0209     0.0300          0.0585
+                                     7      0.0393     0.0577          0.0934
+Today + margin                       1      0.0066     0.0146          0.0110
+                                     3      0.0151     0.0442          0.0648
+                                     7      0.0246     0.0835          0.1045
+                 through   time    bytes
+band mode                               
+D    follow         1.29  24.51     0.00
+     wear_aware     1.81  69.46  1750.67
+E    follow         1.27  22.83     0.00
+     wear_aware     1.54  28.16   937.20
+{'replan_ms': 24.8, 'grid_cells': 76218, 'map_bytes_uint8': 76218} total 707s

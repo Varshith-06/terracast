@@ -1,0 +1,24 @@
+{
+  "ensemble_members": [
+    "TCN",
+    "Transformer",
+    "GRU"
+  ],
+  "val_rmse_mean": {
+    "TCN": 18.128,
+    "Transformer": 18.405,
+    "GRU": 18.556,
+    "LSTM": 18.789,
+    "BiGRU-Attn(q)": 19.199,
+    "BiGRU-Attn": 19.954,
+    "TFT": 20.096,
+    "LightGBM": 20.164,
+    "ExtraTrees": 20.187,
+    "N-BEATS": 20.274,
+    "ARIMAX-Fourier (DHR)": 20.406,
+    "Ridge": 20.52,
+    "LightGBM(linear)": 20.544,
+    "RandomForest": 20.847,
+    "ARIMA": 21.157
+  }
+}

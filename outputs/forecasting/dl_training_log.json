@@ -1,0 +1,66 @@
+{
+  "LSTM": {
+    "val_loss_mean": 0.9672908981641134,
+    "val_loss_std": 0.01681006389874876,
+    "seeds": 3,
+    "params": 229895,
+    "epochs_cap": 300,
+    "seconds": 29.3
+  },
+  "GRU": {
+    "val_loss_mean": 0.9166057308514913,
+    "val_loss_std": 0.025495515046238707,
+    "seeds": 3,
+    "params": 176775,
+    "epochs_cap": 300,
+    "seconds": 19.2
+  },
+  "BiGRU-Attn": {
+    "val_loss_mean": 1.0585561990737915,
+    "val_loss_std": 0.017197724968956603,
+    "seeds": 3,
+    "params": 464833,
+    "epochs_cap": 300,
+    "seconds": 32.7
+  },
+  "TCN": {
+    "val_loss_mean": 0.8645991683006287,
+    "val_loss_std": 0.01700722527714244,
+    "seeds": 3,
+    "params": 123463,
+    "epochs_cap": 300,
+    "seconds": 61.7
+  },
+  "Transformer": {
+    "val_loss_mean": 0.9081128040949503,
+    "val_loss_std": 0.013523436963574498,
+    "seeds": 3,
+    "params": 616071,
+    "epochs_cap": 300,
+    "seconds": 58.4
+  },
+  "N-BEATS": {
+    "val_loss_mean": 1.1027253866195679,
+    "val_loss_std": 0.01738824118289722,
+    "seeds": 3,
+    "params": 761875,
+    "epochs_cap": 300,
+    "seconds": 30.8
+  },
+  "TFT": {
+    "val_loss_mean": 0.1494623670975367,
+    "val_loss_std": 0.0048820469531657895,
+    "seeds": 3,
+    "params": 1157811,
+    "epochs_cap": 300,
+    "seconds": 553.1
+  },
+  "BiGRU-Attn(q)": {
+    "val_loss_mean": 0.16092043618361154,
+    "val_loss_std": 0.004227617798836933,
+    "seeds": 3,
+    "params": 465219,
+    "epochs_cap": 300,
+    "seconds": 134.9
+  }
+}

@@ -1,0 +1,52 @@
+C:\Users\Varshith\Documents\meteorology\traffic\run.py:235: InterpolationWarning: The test statistic is outside of the range of p-values available in the look-up table. The actual p-value is greater than the p-value returned.
+  kpss_p = kpss(endog, regression="c", nlags="auto")[1]
+C:\Users\Varshith\Documents\meteorology\traffic\run.py:235: InterpolationWarning: The test statistic is outside of the range of p-values available in the look-up table. The actual p-value is greater than the p-value returned.
+  kpss_p = kpss(endog, regression="c", nlags="auto")[1]
+features: 128 tabular / 27 sequence
+origins: train 2498  val 730  test 724
+test window: 2024-01-01 .. 2025-12-24
+
+[1/4] baselines
+[2/4] tabular
+[3/4] arima
+  ARIMA: order=(1, 0, 5)  AIC=21778.7  (87s)
+  ARIMAX-Fourier (DHR): order=(1, 0, 5)  AIC=21695.3  (117s)
+[4/4] deep (GPU)
+  device: cuda  NVIDIA GeForce RTX 4060 Laptop GPU
+  LSTM         val=0.96729  params=229,895  29s
+  GRU          val=0.91661  params=176,775  19s
+  BiGRU-Attn   val=1.05856  params=464,833  33s
+  TCN          val=0.86460  params=123,463  62s
+  Transformer  val=0.90811  params=616,071  58s
+  N-BEATS      val=1.10273  params=761,875  31s
+  TFT          val=0.14946  params=1,157,811  553s
+  BiGRU-Attn(q) val=0.16092  params=465,219  135s
+
+ensemble members (chosen on validation): ['TCN', 'Transformer', 'GRU']
+
+=== test RMSE (kPa RCI) by horizon ===
+horizon                            1      3      7  skill@7%
+model                                                       
+Ensemble(top3)                  5.76  12.82  19.95      23.9
+TCN                             5.76  13.13  20.60      21.4
+Transformer                     5.86  13.00  20.63      21.3
+GRU                             6.14  13.51  20.81      20.6
+N-BEATS                         6.20  13.59  20.83      20.5
+BiGRU-Attn                      6.78  14.35  21.08      19.6
+TFT                             6.15  13.06  21.11      19.5
+Ridge                           6.37  13.98  21.96      16.2
+ARIMAX-Fourier (DHR)            5.76  14.05  22.32      14.9
+LightGBM(linear)                6.27  14.81  23.04      12.1
+LSTM                            7.84  17.81  23.20      11.5
+RandomForest                    6.57  14.89  23.58      10.0
+ExtraTrees                      6.93  15.64  23.86       9.0
+ARIMA                           5.85  14.72  25.11       4.2
+LightGBM                        6.26  14.76  25.15       4.0
+BiGRU-Attn(q)                   7.07  15.79  25.43       3.0
+Persistence                     6.79  15.33  26.21       0.0
+TFT P10 (safe rule)             8.47  19.20  32.76     -25.0
+Climatology                    34.65  34.54  33.83     -29.1
+BiGRU-Attn(q) P10 (safe rule)  12.56  28.32  43.44     -65.8
+SeasonalNaive365               53.08  52.95  52.50    -100.3
+
+total 1159s -> outputs/results_full.csv

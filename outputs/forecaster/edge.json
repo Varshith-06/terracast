@@ -1,0 +1,9 @@
+{
+  "params": 531484,
+  "gru_params_each": 176775,
+  "gru_count": 3,
+  "size_mb_float32": 2.03,
+  "cpu_forecast_ms": 12.19,
+  "cpu_feature_build_ms": 21.1,
+  "forecast_message_bytes": 18
+}

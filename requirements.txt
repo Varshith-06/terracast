@@ -1,0 +1,14 @@
+# Python 3.14. torch is the CUDA 12.6 build (RTX 4060); install it from the PyTorch index:
+#   pip install torch==2.13.0 --index-url https://download.pytorch.org/whl/cu126
+numpy==2.4.6
+pandas==3.0.3
+scipy==1.18.0
+scikit-learn==1.9.0
+statsmodels==0.15.0
+lightgbm==4.7.0
+torch==2.13.0
+matplotlib==3.10.9
+pyarrow==24.0.0
+rasterio==1.5.2
+shapely==2.1.2
+networkx==3.6.1

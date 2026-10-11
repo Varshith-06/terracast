@@ -1,0 +1,813 @@
+<title>Pachmarhi Trafficability Models</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --paper:#f4f3ee; --surface:#fbfaf7; --ink:#171a17; --ink2:#474d46;
+  --muted:#7c827a; --rule:#dcd9ce; --rule2:#eae7de;
+  --accent:#2a6fbf; --accent-soft:rgba(42,111,191,.12);
+  --go:#0e8f24; --slow:#c98500; --nogo:#c33a3a;
+  --go-bg:rgba(14,143,36,.10); --slow-bg:rgba(201,133,0,.13); --nogo-bg:rgba(195,58,58,.11);
+  --fam-baseline:#8d9389; --fam-classical:#6b5bbd; --fam-tabular:#c06a2e;
+  --fam-deep:#2a6fbf; --fam-ensemble:#0e8f24;
+  --shadow:0 1px 2px rgba(23,26,23,.05), 0 8px 24px -18px rgba(23,26,23,.35);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --paper:#0e100e; --surface:#161915; --ink:#e9ece7; --ink2:#b2b8b0;
+    --muted:#848a82; --rule:#2b302a; --rule2:#222621;
+    --accent:#5c9ae8; --accent-soft:rgba(92,154,232,.16);
+    --go:#3fb857; --slow:#e0a52a; --nogo:#e26a6a;
+    --go-bg:rgba(63,184,87,.13); --slow-bg:rgba(224,165,42,.15); --nogo-bg:rgba(226,106,106,.14);
+    --fam-baseline:#7d837a; --fam-classical:#9a8ce4; --fam-tabular:#dd8a4c;
+    --fam-deep:#5c9ae8; --fam-ensemble:#3fb857;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 26px -18px rgba(0,0,0,.8);
+  }
+}
+:root[data-theme="dark"] {
+  --paper:#0e100e; --surface:#161915; --ink:#e9ece7; --ink2:#b2b8b0;
+  --muted:#848a82; --rule:#2b302a; --rule2:#222621;
+  --accent:#5c9ae8; --accent-soft:rgba(92,154,232,.16);
+  --go:#3fb857; --slow:#e0a52a; --nogo:#e26a6a;
+  --go-bg:rgba(63,184,87,.13); --slow-bg:rgba(224,165,42,.15); --nogo-bg:rgba(226,106,106,.14);
+  --fam-baseline:#7d837a; --fam-classical:#9a8ce4; --fam-tabular:#dd8a4c;
+  --fam-deep:#5c9ae8; --fam-ensemble:#3fb857;
+  --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 26px -18px rgba(0,0,0,.8);
+}
+
+body {
+  background:var(--paper); color:var(--ink);
+  font-family:"Source Serif 4", Georgia, serif; font-size:17px; line-height:1.62;
+  margin:0; padding:0 20px 96px;
+  -webkit-font-smoothing:antialiased;
+}
+.wrap { max-width:900px; margin:0 auto; }
+.prose { max-width:64ch; }
+
+h1, h2, h3, .eyebrow, .stat-k, th, .lbl, .veh-name {
+  font-family:"Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
+}
+h1 { font-size:clamp(2.6rem,7vw,4.1rem); line-height:.98; font-weight:700;
+     letter-spacing:-.012em; margin:.15em 0 .18em; text-wrap:balance; }
+h2 { font-size:1.72rem; font-weight:600; letter-spacing:.004em; margin:0 0 .1em;
+     text-wrap:balance; }
+h3 { font-size:1.16rem; font-weight:600; margin:2.1em 0 .35em; color:var(--ink); }
+p { margin:0 0 1.05em; color:var(--ink2); }
+strong { color:var(--ink); font-weight:600; }
+a { color:var(--accent); }
+code { font-family:"JetBrains Mono", ui-monospace, monospace; font-size:.83em;
+        background:var(--rule2); padding:.1em .38em; border-radius:3px; color:var(--ink); }
+
+.eyebrow { font-size:.82rem; font-weight:600; letter-spacing:.15em;
+            text-transform:uppercase; color:var(--muted); }
+header { padding:72px 0 12px; border-bottom:1px solid var(--rule); margin-bottom:38px; }
+.deck { font-size:1.2rem; color:var(--ink2); max-width:56ch; margin:.5em 0 1.6em; }
+
+section { margin:64px 0 0; }
+section > .eyebrow { display:block; margin-bottom:.5em; }
+.lede { font-size:1.05rem; }
+
+/* ---------- stats ---------- */
+.stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(184px,1fr));
+          gap:1px; background:var(--rule); border:1px solid var(--rule);
+          border-radius:8px; overflow:hidden; margin:0 0 8px; }
+.stat { background:var(--surface); padding:18px 20px 16px; }
+.stat-k { font-size:.76rem; font-weight:600; letter-spacing:.12em;
+           text-transform:uppercase; color:var(--muted); margin-bottom:.35em; }
+.stat-v { font-family:"Barlow Condensed",sans-serif; font-size:2.1rem; font-weight:700;
+           line-height:1.05; letter-spacing:-.01em; font-variant-numeric:tabular-nums; }
+.stat-v .u { font-size:.95rem; font-weight:500; color:var(--muted); margin-left:.12em; }
+.stat-n { font-size:.83rem; color:var(--muted); margin-top:.3em; line-height:1.35; }
+
+/* ---------- chain ---------- */
+.chain { display:flex; flex-wrap:wrap; align-items:stretch; gap:8px; margin:1.4em 0 1.8em; }
+.chain-step { flex:1 1 150px; background:var(--surface); border:1px solid var(--rule);
+               border-radius:7px; padding:13px 15px; }
+.chain-step .k { font-family:"Barlow Condensed",sans-serif; font-size:.74rem;
+                  font-weight:600; letter-spacing:.13em; text-transform:uppercase;
+                  color:var(--muted); }
+.chain-step .v { font-size:.96rem; color:var(--ink); line-height:1.4; margin-top:.2em; }
+.chain-step code { font-size:.78em; background:none; padding:0; color:var(--accent); }
+.chain-step.is-target { border-color:var(--accent); box-shadow:inset 3px 0 0 var(--accent); }
+
+/* ---------- vehicles ---------- */
+.vehs { display:grid; grid-template-columns:repeat(auto-fit,minmax(210px,1fr)); gap:10px;
+         margin:1.3em 0 0; }
+.veh { background:var(--surface); border:1px solid var(--rule); border-radius:7px;
+        padding:14px 16px; }
+.veh-name { font-size:1.02rem; font-weight:600; letter-spacing:.005em; }
+.veh-th { display:flex; gap:14px; margin:.45em 0 .5em; font-family:"JetBrains Mono",monospace;
+           font-size:.78rem; color:var(--ink2); }
+.veh-share { display:flex; height:9px; border-radius:5px; overflow:hidden; }
+.veh-share i { display:block; }
+.veh-share i.go { background:var(--go); }
+.veh-share i.slow { background:var(--slow); }
+.veh-share i.nogo { background:var(--nogo); }
+.share-key { display:flex; gap:16px; margin-top:1em; font-size:.82rem; color:var(--muted);
+              font-family:"Barlow Condensed",sans-serif; letter-spacing:.06em;
+              text-transform:uppercase; }
+.share-key span::before { content:""; display:inline-block; width:9px; height:9px;
+        border-radius:2px; margin-right:6px; vertical-align:baseline; }
+.share-key .go::before { background:var(--go); }
+.share-key .slow::before { background:var(--slow); }
+.share-key .nogo::before { background:var(--nogo); }
+
+/* ---------- figures ---------- */
+figure { margin:1.6em 0 0; }
+figcaption { font-size:.87rem; color:var(--muted); margin-top:.7em; max-width:62ch; }
+.chart-box { background:var(--surface); border:1px solid var(--rule); border-radius:8px;
+              padding:16px 12px 10px; overflow-x:auto; }
+svg.chart { display:block; min-width:600px; }
+.chart .grid { stroke:var(--rule2); stroke-width:1; }
+.chart .axis { stroke:var(--rule); stroke-width:1.2; }
+.chart .tick { fill:var(--muted); font:500 11px "JetBrains Mono",monospace; }
+.chart .axtitle { fill:var(--muted); font:600 11px "Barlow Condensed",sans-serif;
+                   letter-spacing:.1em; text-transform:uppercase; }
+.chart .name { fill:var(--ink); font:600 13px "Barlow Condensed",sans-serif;
+                letter-spacing:.02em; }
+.chart .val { fill:var(--muted); font:400 11px "JetBrains Mono",monospace; }
+.chart .bar { fill:var(--accent); }
+.chart .bar-baseline { fill:var(--fam-baseline); }
+.chart .bar-classical { fill:var(--fam-classical); }
+.chart .bar-tabular { fill:var(--fam-tabular); }
+.chart .bar-deep { fill:var(--fam-deep); }
+.chart .bar-ensemble { fill:var(--fam-ensemble); }
+.chart polyline { fill:none; stroke-width:2; stroke-linejoin:round; stroke-linecap:round; }
+.chart .dot { stroke:var(--surface); stroke-width:1.4; }
+.chart .ln0, .chart .s0 { stroke:var(--accent); fill:var(--accent); }
+.chart .ln1, .chart .s1 { stroke:#c06a2e; fill:#c06a2e; }
+.chart .ln2, .chart .s2 { stroke:#0e8f24; fill:#0e8f24; }
+.chart .ln3, .chart .s3 { stroke:#6b5bbd; fill:#6b5bbd; }
+.chart .ln4, .chart .s4 { stroke:#b8477e; fill:#b8477e; }
+.chart .ln5, .chart .s5 { stroke:#0f7f86; fill:#0f7f86; }
+:root[data-theme="dark"] .chart .ln1, :root[data-theme="dark"] .chart .s1 { stroke:#dd8a4c; fill:#dd8a4c; }
+:root[data-theme="dark"] .chart .ln2, :root[data-theme="dark"] .chart .s2 { stroke:#3fb857; fill:#3fb857; }
+:root[data-theme="dark"] .chart .ln3, :root[data-theme="dark"] .chart .s3 { stroke:#9a8ce4; fill:#9a8ce4; }
+:root[data-theme="dark"] .chart .ln4, :root[data-theme="dark"] .chart .s4 { stroke:#e07aab; fill:#e07aab; }
+:root[data-theme="dark"] .chart .ln5, :root[data-theme="dark"] .chart .s5 { stroke:#3fadb5; fill:#3fadb5; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .chart .ln1, :root:not([data-theme="light"]) .chart .s1 { stroke:#dd8a4c; fill:#dd8a4c; }
+  :root:not([data-theme="light"]) .chart .ln2, :root:not([data-theme="light"]) .chart .s2 { stroke:#3fb857; fill:#3fb857; }
+  :root:not([data-theme="light"]) .chart .ln3, :root:not([data-theme="light"]) .chart .s3 { stroke:#9a8ce4; fill:#9a8ce4; }
+  :root:not([data-theme="light"]) .chart .ln4, :root:not([data-theme="light"]) .chart .s4 { stroke:#e07aab; fill:#e07aab; }
+  :root:not([data-theme="light"]) .chart .ln5, :root:not([data-theme="light"]) .chart .s5 { stroke:#3fadb5; fill:#3fadb5; }
+}
+.chart .ln-base { stroke:var(--fam-baseline); fill:var(--fam-baseline);
+                   stroke-dasharray:5 4; }
+.chart .series-lbl { font:600 12px "Barlow Condensed",sans-serif; letter-spacing:.02em;
+                      stroke:none; }
+.chart .band-go { fill:var(--go-bg); }
+.chart .band-slow { fill:var(--slow-bg); }
+.chart .band-nogo { fill:var(--nogo-bg); }
+.chart .thresh { stroke:var(--rule); stroke-width:1; stroke-dasharray:3 3; }
+.chart .line-obs { stroke:var(--ink); stroke-width:1.7; }
+.chart .line-pred { stroke:var(--accent); stroke-width:1.7; }
+.legend { display:flex; flex-wrap:wrap; gap:18px; margin-top:.9em; font-size:.84rem;
+           color:var(--ink2); font-family:"Barlow Condensed",sans-serif;
+           letter-spacing:.05em; text-transform:uppercase; }
+.legend span::before { content:""; display:inline-block; width:16px; height:2.5px;
+        margin-right:7px; vertical-align:middle; border-radius:2px; }
+.legend .obs::before { background:var(--ink); }
+.legend .pred::before { background:var(--accent); }
+
+/* ---------- tables ---------- */
+.tbl-wrap { overflow-x:auto; border:1px solid var(--rule); border-radius:8px;
+             background:var(--surface); margin-top:1.4em; }
+table { border-collapse:collapse; width:100%; min-width:640px; font-size:.92rem; }
+th { text-align:right; font-size:.78rem; font-weight:600; letter-spacing:.1em;
+      text-transform:uppercase; color:var(--muted); padding:13px 14px 10px;
+      border-bottom:1px solid var(--rule); white-space:nowrap; }
+th:first-child { text-align:left; }
+td { padding:9px 14px; border-bottom:1px solid var(--rule2); color:var(--ink2); }
+tr:last-child td { border-bottom:none; }
+td.n { text-align:right; font-family:"JetBrains Mono",monospace; font-size:.85rem;
+        font-variant-numeric:tabular-nums; }
+td.mdl { color:var(--ink); font-weight:600; white-space:nowrap; }
+td.skill { color:var(--ink2); }
+tr.row-best td { background:var(--accent-soft); color:var(--ink); }
+tr.row-best td.mdl::after { content:"best"; font-family:"Barlow Condensed",sans-serif;
+        font-size:.68rem; letter-spacing:.12em; text-transform:uppercase;
+        color:var(--accent); margin-left:9px; vertical-align:1px; }
+.dot-fam { display:inline-block; width:8px; height:8px; border-radius:2px;
+            margin-right:9px; vertical-align:1px; }
+.fam-baseline { background:var(--fam-baseline); }
+.fam-classical { background:var(--fam-classical); }
+.fam-tabular { background:var(--fam-tabular); }
+.fam-deep { background:var(--fam-deep); }
+.fam-ensemble { background:var(--fam-ensemble); }
+.fam-rule { background:var(--slow); }
+tr.row-rule td { background:var(--slow-bg); color:var(--ink); }
+tr.row-rule td.mdl::after { content:"decision rule";
+        font-family:"Barlow Condensed",sans-serif; font-size:.68rem; letter-spacing:.12em;
+        text-transform:uppercase; color:var(--slow); margin-left:9px; vertical-align:1px; }
+.fam-key { display:flex; flex-wrap:wrap; gap:16px; margin-top:.9em; font-size:.8rem;
+            color:var(--muted); font-family:"Barlow Condensed",sans-serif;
+            letter-spacing:.07em; text-transform:uppercase; }
+
+/* ---------- features ---------- */
+ul.feats { list-style:none; padding:0; margin:1.3em 0 0; }
+ul.feats li { display:grid; grid-template-columns:210px 1fr 52px; align-items:center;
+               gap:14px; padding:5px 0; border-bottom:1px solid var(--rule2); }
+ul.feats code { background:none; padding:0; color:var(--ink); font-size:.8rem; }
+.fbar { height:8px; border-radius:4px; background:var(--accent); width:var(--w);
+         min-width:2px; }
+.fval { font-family:"JetBrains Mono",monospace; font-size:.78rem; color:var(--muted);
+         text-align:right; font-variant-numeric:tabular-nums; }
+
+/* ---------- model roster ---------- */
+.roster { margin-top:1.5em; }
+.fam-block { margin-bottom:2.4em; }
+.fam-block h3 { margin:0 0 .12em; font-size:1.14rem; }
+.fam-blurb { font-size:.93rem; color:var(--muted); max-width:60ch; margin:0 0 1em; }
+.m-row { display:grid; grid-template-columns:172px 1fr; gap:6px 20px;
+          padding:13px 0; border-top:1px solid var(--rule2); align-items:baseline; }
+.m-name { font-family:"Barlow Condensed",sans-serif; font-size:1.06rem; font-weight:600;
+           letter-spacing:.01em; color:var(--ink); }
+.m-desc { font-size:.95rem; color:var(--ink2); line-height:1.5; }
+.m-chips { grid-column:2; display:flex; flex-wrap:wrap; gap:6px; margin-top:.25em; }
+.chip { font-family:"JetBrains Mono",monospace; font-size:.72rem; padding:2px 8px;
+         border-radius:4px; background:var(--accent-soft); color:var(--accent);
+         font-variant-numeric:tabular-nums; }
+.chip-ghost { background:var(--rule2); color:var(--muted); }
+.chip-safe { background:var(--slow-bg); color:var(--slow); }
+
+/* ---------- bias chart ---------- */
+.chart .bias-hi { fill:var(--nogo); }
+.chart .bias-lo { fill:var(--accent); }
+
+/* ---------- two-lead feature comparison ---------- */
+.feat-cols { display:grid; grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+              gap:14px 40px; margin:1.4em 0 1.6em; }
+.feat-head { font-family:"Barlow Condensed",sans-serif; font-size:1rem; font-weight:600;
+              letter-spacing:.04em; color:var(--ink); border-bottom:1px solid var(--rule);
+              padding-bottom:.4em; }
+.feat-head span { font-family:"JetBrains Mono",monospace; font-size:.72rem;
+                   color:var(--muted); margin-left:.5em; letter-spacing:0; }
+.feat-cols ul.feats { margin-top:.3em; }
+.feat-cols ul.feats li { grid-template-columns:150px 1fr 44px; gap:10px; }
+
+/* ---------- callout ---------- */
+.note { border-left:2px solid var(--accent); padding:2px 0 2px 18px; margin:1.5em 0;
+         color:var(--ink2); }
+.note strong { color:var(--ink); }
+ul.plain { padding-left:1.1em; color:var(--ink2); }
+ul.plain li { margin-bottom:.5em; }
+footer { margin-top:80px; padding-top:24px; border-top:1px solid var(--rule);
+          font-size:.85rem; color:var(--muted); }
+@media (max-width:620px) {
+  body { font-size:16px; }
+  ul.feats li { grid-template-columns:150px 1fr 46px; gap:9px; }
+}
+</style>
+
+<div class="wrap">
+<header>
+  <div class="eyebrow">Pachmarhi · Satpura plateau · 4,018 daily records, 2015–2025</div>
+  <h1>Forecasting whether the ground will hold</h1>
+  <p class="deck">Fifteen time-series models, trained to predict soil bearing strength
+  seven days out, and scored on the decision that actually matters: can the vehicle
+  cross or not.</p>
+  <div class="stats"><div class="stat"><div class="stat-k">Best model</div><div class="stat-v">Ensemble(top3)</div><div class="stat-n">lowest RMSE at 7 days</div></div>
+<div class="stat"><div class="stat-k">RMSE at 7 days</div><div class="stat-v">19.9 <span class='u'>kPa</span></div><div class="stat-n">vs 26.2 for persistence</div></div>
+<div class="stat"><div class="stat-k">Skill vs persistence</div><div class="stat-v">+24<span class='u'>%</span></div><div class="stat-n">error removed beyond yesterday&#x27;s value</div></div>
+<div class="stat"><div class="stat-k">NO-GO days caught</div><div class="stat-v">54<span class='u'>%</span></div><div class="stat-n">MBT immobilisation, 7 days out</div></div></div>
+</header>
+
+<section>
+  <div class="eyebrow">The target</div>
+  <h2>The record has no trafficability column, so it is derived</h2>
+  <div class="prose">
+  <p class="lede">The dataset carries rainfall, temperature, humidity, wind, pressure,
+  cloud and two soil-moisture layers. Trafficability is built from those by way of
+  soil strength — the quantity a cone penetrometer measures in the field and the one
+  vehicle mobility is actually specified against.</p>
+  </div>
+
+  <div class="chain">
+    <div class="chain-step"><div class="k">Observed</div>
+      <div class="v">Soil moisture at <code>0–7 cm</code> and <code>7–28 cm</code></div></div>
+    <div class="chain-step"><div class="k">Wetness</div>
+      <div class="v">SWI, profile-weighted <code>0.35 / 0.65</code> toward the
+      15–30 cm critical layer</div></div>
+    <div class="chain-step is-target"><div class="k">Modelled target</div>
+      <div class="v">RCI <code>= 300·e<sup>−2.485·SWI</sup>·f(rain)</code>, in kPa</div></div>
+    <div class="chain-step"><div class="k">Decision</div>
+      <div class="v">RCI against each vehicle's cone index →
+      <strong>GO / SLOW-GO / NO-GO</strong></div></div>
+  </div>
+
+  <div class="prose">
+  <p>Weighting the deep layer more heavily than the surface is what a tracked vehicle
+  actually feels: sinkage is governed by the 15–30 cm horizon, not the skin. It also
+  means the target depends on both soil layers plus recent rainfall, so it is not a
+  relabelling of a single input column.</p>
+  </div>
+
+  <div class="vehs"><div class="veh veh-tracked_light"><div class="veh-name">Tracked light (ICV, ~14 t)</div><div class="veh-th"><span>VCI<sub>1</sub> 20</span><span>VCI<sub>50</sub> 30</span></div><div class="veh-share"><i class="go" style="width:85.09%"></i><i class="slow" style="width:14.91%"></i><i class="nogo" style="width:0.00%"></i></div></div>
+<div class="veh veh-tracked_heavy"><div class="veh-name">Tracked heavy (MBT, ~46 t)</div><div class="veh-th"><span>VCI<sub>1</sub> 30</span><span>VCI<sub>50</sub> 45</span></div><div class="veh-share"><i class="go" style="width:72.47%"></i><i class="slow" style="width:12.62%"></i><i class="nogo" style="width:14.91%"></i></div></div>
+<div class="veh veh-wheeled_6x6"><div class="veh-name">Wheeled 6x6 logistics truck</div><div class="veh-th"><span>VCI<sub>1</sub> 40</span><span>VCI<sub>50</sub> 60</span></div><div class="veh-share"><i class="go" style="width:67.40%"></i><i class="slow" style="width:7.67%"></i><i class="nogo" style="width:24.94%"></i></div></div></div>
+  <div class="share-key"><span class="go">GO</span><span class="slow">SLOW-GO</span>
+    <span class="nogo">NO-GO</span><span style="text-transform:none;letter-spacing:0">
+    share of all 4,018 days</span></div>
+</section>
+
+<section>
+  <div class="eyebrow">The setup</div>
+  <h2>No weather forecast, no peeking</h2>
+  <div class="prose">
+  <p>Every feature at forecast origin <em>t</em> uses observations at time ≤ <em>t</em>.
+  The only inputs known for the future are calendar and Fourier terms — an honest
+  operational setting where no numerical weather prediction is on hand. Models emit
+  days 1 through 7 directly rather than rolling a one-step forecast forward, so error
+  does not compound.</p>
+  <p>Splits are strictly chronological: <strong>2498 training origins</strong>
+  (2015–2021), <strong>730 validation</strong> (2022–2023) for early stopping and
+  hyperparameters, and <strong>724 held-out test origins</strong>
+  (01 Jan 2024 – 24 Dec 2025) touched exactly once.</p>
+  </div>
+  <div class="note">
+  <p><strong>One decision shaped every result.</strong> RCI has a lag-1
+  autocorrelation of 0.99, so a model that predicts the <em>level</em> mostly learns
+  to copy yesterday. All learned models here predict the <em>change</em>,
+  <code>y(t+h) − y(t)</code>, standardised per horizon; the anchor is added back
+  afterwards. Persistence then becomes exactly the zero-change forecast, and the skill
+  score reads directly as signal added beyond yesterday's value. Before this change no
+  model beat persistence at one day; after it, nearly all do.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">The lineup</div>
+  <h2>Eighteen forecasts, five kinds of reasoning</h2>
+  <div class="prose">
+  <p class="lede">Each entry below sees the same data, the same splits and the same
+  target. What differs is the assumption each one makes about how soil strength moves.
+  Figures are RMSE at a 7-day lead and skill against persistence.</p>
+  <p>One thing to hold in mind while reading the feature work later: because every
+  learned model predicts the <em>change</em> rather than the level, none of them is
+  being asked how wet the ground is. They are being asked which way it is moving, and
+  how fast.</p>
+  </div>
+  <div class="roster"><div class="fam-block"><h3>Baselines</h3><p class="fam-blurb">Reference points. A model that cannot clear these has learned nothing about the site that the calendar does not already say.</p><div class="m-row"><div class="m-name"><span class="dot-fam fam-baseline"></span>Persistence</div><div class="m-desc">Tomorrow equals today. With a lag-1 autocorrelation of 0.99 this is a genuinely strong forecast at short lead, and it is the zero point of the skill score.</div><div class="m-chips"><span class="chip">26.21 kPa</span><span class="chip chip-ghost">+0.0%</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-baseline"></span>Climatology</div><div class="m-desc">The average RCI for this day of the year across the training years. Tests whether knowing the season is enough on its own.</div><div class="m-chips"><span class="chip">33.83 kPa</span><span class="chip chip-ghost">-29.1%</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-baseline"></span>SeasonalNaive365</div><div class="m-desc">Whatever the value was 365 days ago. Tests whether last year&#x27;s monsoon timing repeats — it does not.</div><div class="m-chips"><span class="chip">52.50 kPa</span><span class="chip chip-ghost">-100.3%</span></div></div></div>
+<div class="fam-block"><h3>Classical time series</h3><p class="fam-blurb">Explicit statistical structure, fitted by maximum likelihood. Cheap, interpretable, and the standard first answer for a single series.</p><div class="m-row"><div class="m-name"><span class="dot-fam fam-classical"></span>ARIMAX-Fourier (DHR)</div><div class="m-desc">The same ARIMA errors, plus three Fourier pairs carrying the annual cycle as exogenous regressors. A seasonal SARIMA at period 365 is not estimable, so this is the correct form — and the harmonics are genuinely known for the future.</div><div class="m-chips"><span class="chip">22.32 kPa</span><span class="chip chip-ghost">+14.9%</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-classical"></span>ARIMA</div><div class="m-desc">Autoregression on one lag plus a five-term moving average of past shocks, order (1,0,5) by AIC. No seasonal term: d=0 because ADF and KPSS agree the series is stationary.</div><div class="m-chips"><span class="chip">25.11 kPa</span><span class="chip chip-ghost">+4.2%</span></div></div></div>
+<div class="fam-block"><h3>Tabular machine learning</h3><p class="fam-blurb">One model per horizon, reading the 128 engineered features at the forecast origin. No notion of sequence — order is baked into the features.</p><div class="m-row"><div class="m-name"><span class="dot-fam fam-tabular"></span>Ridge</div><div class="m-desc">Linear regression with an L2 penalty over all 128 features. Cross-validated α settled at 1000 for every horizon: heavy shrinkage, because the lag and rolling features are strongly collinear.</div><div class="m-chips"><span class="chip">21.96 kPa</span><span class="chip chip-ghost">+16.2%</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-tabular"></span>LightGBM(linear)</div><div class="m-desc">The same boosting with a linear model in each leaf instead of a constant. The fair comparison against Ridge, and the measure of what the staircase was costing.</div><div class="m-chips"><span class="chip">23.04 kPa</span><span class="chip chip-ghost">+12.1%</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-tabular"></span>RandomForest</div><div class="m-desc">Bagged deep trees over bootstrap samples, predictions averaged.</div><div class="m-chips"><span class="chip">23.58 kPa</span><span class="chip chip-ghost">+10.0%</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-tabular"></span>ExtraTrees</div><div class="m-desc">As RandomForest but with split points drawn at random, trading fit for variance reduction.</div><div class="m-chips"><span class="chip">23.86 kPa</span><span class="chip chip-ghost">+9.0%</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-tabular"></span>LightGBM</div><div class="m-desc">Gradient-boosted trees. Each split is a threshold on one feature, so the fitted response is piecewise constant.</div><div class="m-chips"><span class="chip">25.15 kPa</span><span class="chip chip-ghost">+4.0%</span></div></div></div>
+<div class="fam-block"><h3>Deep sequence models</h3><p class="fam-blurb">Read a 60-day window of 27 raw channels and emit all seven days in one pass. Trained on the RTX 4060, three seeds averaged, early-stopped on the validation block.</p><div class="m-row"><div class="m-name"><span class="dot-fam fam-deep"></span>TCN</div><div class="m-desc">Dilated causal convolutions stacked so the receptive field spans the whole 60-day window. Imposes a strong prior: local patterns at several time scales.</div><div class="m-chips"><span class="chip">20.60 kPa</span><span class="chip chip-ghost">+21.4%</span><span class="chip chip-ghost">123k params</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-deep"></span>Transformer</div><div class="m-desc">Self-attention over the window, so any day can attend to any earlier day directly rather than through a recurrent chain.</div><div class="m-chips"><span class="chip">20.63 kPa</span><span class="chip chip-ghost">+21.3%</span><span class="chip chip-ghost">616k params</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-deep"></span>GRU</div><div class="m-desc">The same idea with two gates and no separate cell state. Fewer parameters to fit, which matters here.</div><div class="m-chips"><span class="chip">20.81 kPa</span><span class="chip chip-ghost">+20.6%</span><span class="chip chip-ghost">177k params</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-deep"></span>N-BEATS</div><div class="m-desc">A stack of residual MLP blocks, each fitting and then subtracting its own contribution, with the exogenous window injected as context.</div><div class="m-chips"><span class="chip">20.83 kPa</span><span class="chip chip-ghost">+20.5%</span><span class="chip chip-ghost">762k params</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-deep"></span>TFT</div><div class="m-desc">Temporal Fusion Transformer: per-variable selection networks, gated residual networks, an LSTM encoder-decoder, interpretable multi-head attention, and a quantile head that emits P10/P50/P90 rather than a single number.</div><div class="m-chips"><span class="chip">21.11 kPa</span><span class="chip chip-ghost">+19.5%</span><span class="chip chip-ghost">1158k params</span></div></div>
+<div class="m-row"><div class="m-name"><span class="dot-fam fam-deep"></span>LSTM</div><div class="m-desc">Recurrent network with input, forget and output gates plus a cell state — the classical long-memory sequence model.</div><div class="m-chips"><span class="chip">23.20 kPa</span><span class="chip chip-ghost">+11.5%</span><span class="chip chip-ghost">230k params</span></div></div></div>
+<div class="fam-block"><h3>Combination</h3><p class="fam-blurb">Members picked on validation RMSE before the test set was touched.</p><div class="m-row"><div class="m-name"><span class="dot-fam fam-ensemble"></span>Ensemble(top3)</div><div class="m-desc">Unweighted mean of the three strongest models on validation (TCN, Transformer, GRU). Averaging decorrelated errors is close to free accuracy.</div><div class="m-chips"><span class="chip">19.95 kPa</span><span class="chip chip-ghost">+23.9%</span></div></div></div>
+<div class="fam-block"><h3>Decision rule</h3><p class="fam-blurb">Not a model — the same TFT, read at a different quantile.</p><div class="m-row"><div class="m-name"><span class="dot-fam fam-rule"></span>TFT P10 (safe rule)</div><div class="m-desc">The TFT&#x27;s 10th percentile used as the decision input instead of its median. Its RMSE is poor by construction — the point is the GO/NO-GO call, not the point estimate.</div><div class="m-chips"><span class="chip chip-safe">91% NO-GO recall</span></div></div></div></div>
+</section>
+
+<section>
+  <div class="eyebrow">Results</div>
+  <h2>What each model adds beyond yesterday's reading</h2>
+  <figure>
+    <div class="chart-box"><svg viewBox="0 0 860 544" width="100%" role="img" aria-label="Skill score versus persistence at 7 days" class="chart">
+<line x1="168.0" y1="22.0" x2="168.0" y2="530.0" class="grid"/>
+<text x="168.0" y="16.0" text-anchor="middle" class="tick">-66%</text>
+<line x1="318.0" y1="22.0" x2="318.0" y2="530.0" class="grid"/>
+<text x="318.0" y="16.0" text-anchor="middle" class="tick">-43%</text>
+<line x1="468.0" y1="22.0" x2="468.0" y2="530.0" class="grid"/>
+<text x="468.0" y="16.0" text-anchor="middle" class="tick">-21%</text>
+<line x1="618.0" y1="22.0" x2="618.0" y2="530.0" class="grid"/>
+<text x="618.0" y="16.0" text-anchor="middle" class="tick">1%</text>
+<line x1="768.0" y1="22.0" x2="768.0" y2="530.0" class="grid"/>
+<text x="768.0" y="16.0" text-anchor="middle" class="tick">24%</text>
+<rect x="608.1" y="34.0" width="159.9" height="15" rx="3" class="bar bar-ensemble"/>
+<text x="156.0" y="46.0" text-anchor="end" class="name">Ensemble(top3)</text>
+<text x="775.0" y="46.0" text-anchor="start" class="val">+23.9%  ·  19.9 kPa</text>
+<rect x="608.1" y="60.0" width="143.4" height="15" rx="3" class="bar bar-deep"/>
+<text x="156.0" y="72.0" text-anchor="end" class="name">TCN</text>
+<text x="758.5" y="72.0" text-anchor="start" class="val">+21.4%  ·  20.6 kPa</text>
+<rect x="608.1" y="86.0" width="142.6" height="15" rx="3" class="bar bar-deep"/>
+<text x="156.0" y="98.0" text-anchor="end" class="name">Transformer</text>
+<text x="757.7" y="98.0" text-anchor="start" class="val">+21.3%  ·  20.6 kPa</text>
+<rect x="608.1" y="112.0" width="137.8" height="15" rx="3" class="bar bar-deep"/>
+<text x="156.0" y="124.0" text-anchor="end" class="name">GRU</text>
+<text x="752.9" y="124.0" text-anchor="start" class="val">+20.6%  ·  20.8 kPa</text>
+<rect x="608.1" y="138.0" width="137.5" height="15" rx="3" class="bar bar-deep"/>
+<text x="156.0" y="150.0" text-anchor="end" class="name">N-BEATS</text>
+<text x="752.5" y="150.0" text-anchor="start" class="val">+20.5%  ·  20.8 kPa</text>
+<rect x="608.1" y="164.0" width="131.1" height="15" rx="3" class="bar bar-tabular"/>
+<text x="156.0" y="176.0" text-anchor="end" class="name">BiGRU-Attn</text>
+<text x="746.2" y="176.0" text-anchor="start" class="val">+19.6%  ·  21.1 kPa</text>
+<rect x="608.1" y="190.0" width="130.3" height="15" rx="3" class="bar bar-deep"/>
+<text x="156.0" y="202.0" text-anchor="end" class="name">TFT</text>
+<text x="745.4" y="202.0" text-anchor="start" class="val">+19.5%  ·  21.1 kPa</text>
+<rect x="608.1" y="216.0" width="108.6" height="15" rx="3" class="bar bar-tabular"/>
+<text x="156.0" y="228.0" text-anchor="end" class="name">Ridge</text>
+<text x="723.6" y="228.0" text-anchor="start" class="val">+16.2%  ·  22.0 kPa</text>
+<rect x="608.1" y="242.0" width="99.4" height="15" rx="3" class="bar bar-classical"/>
+<text x="156.0" y="254.0" text-anchor="end" class="name">ARIMAX-Fourier (DHR)</text>
+<text x="714.5" y="254.0" text-anchor="start" class="val">+14.9%  ·  22.3 kPa</text>
+<rect x="608.1" y="268.0" width="80.9" height="15" rx="3" class="bar bar-tabular"/>
+<text x="156.0" y="280.0" text-anchor="end" class="name">LightGBM(linear)</text>
+<text x="695.9" y="280.0" text-anchor="start" class="val">+12.1%  ·  23.0 kPa</text>
+<rect x="608.1" y="294.0" width="76.9" height="15" rx="3" class="bar bar-deep"/>
+<text x="156.0" y="306.0" text-anchor="end" class="name">LSTM</text>
+<text x="692.0" y="306.0" text-anchor="start" class="val">+11.5%  ·  23.2 kPa</text>
+<rect x="608.1" y="320.0" width="67.2" height="15" rx="3" class="bar bar-tabular"/>
+<text x="156.0" y="332.0" text-anchor="end" class="name">RandomForest</text>
+<text x="682.2" y="332.0" text-anchor="start" class="val">+10.0%  ·  23.6 kPa</text>
+<rect x="608.1" y="346.0" width="59.9" height="15" rx="3" class="bar bar-tabular"/>
+<text x="156.0" y="358.0" text-anchor="end" class="name">ExtraTrees</text>
+<text x="675.0" y="358.0" text-anchor="start" class="val">+9.0%  ·  23.9 kPa</text>
+<rect x="608.1" y="372.0" width="28.1" height="15" rx="3" class="bar bar-classical"/>
+<text x="156.0" y="384.0" text-anchor="end" class="name">ARIMA</text>
+<text x="643.2" y="384.0" text-anchor="start" class="val">+4.2%  ·  25.1 kPa</text>
+<rect x="608.1" y="398.0" width="27.0" height="15" rx="3" class="bar bar-tabular"/>
+<text x="156.0" y="410.0" text-anchor="end" class="name">LightGBM</text>
+<text x="642.1" y="410.0" text-anchor="start" class="val">+4.0%  ·  25.2 kPa</text>
+<rect x="608.1" y="424.0" width="20.0" height="15" rx="3" class="bar bar-tabular"/>
+<text x="156.0" y="436.0" text-anchor="end" class="name">BiGRU-Attn(q)</text>
+<text x="635.1" y="436.0" text-anchor="start" class="val">+3.0%  ·  25.4 kPa</text>
+<rect x="608.1" y="450.0" width="1.2" height="15" rx="3" class="bar bar-baseline"/>
+<text x="156.0" y="462.0" text-anchor="end" class="name">Persistence</text>
+<text x="615.1" y="462.0" text-anchor="start" class="val">+0.0%  ·  26.2 kPa</text>
+<rect x="413.6" y="476.0" width="194.5" height="15" rx="3" class="bar bar-baseline"/>
+<text x="156.0" y="488.0" text-anchor="end" class="name">Climatology</text>
+<text x="406.6" y="488.0" text-anchor="end" class="val">-29.1%  ·  33.8 kPa</text>
+<rect x="168.0" y="502.0" width="440.1" height="15" rx="3" class="bar bar-tabular"/>
+<text x="156.0" y="514.0" text-anchor="end" class="name">BiGRU-Attn(q) P10 (safe rule)</text>
+<text x="161.0" y="514.0" text-anchor="end" class="val">-65.8%  ·  43.4 kPa</text>
+<line x1="608.1" y1="22.0" x2="608.1" y2="530.0" class="axis"/>
+</svg></div>
+    <figcaption>RMSE skill score against persistence at a 7-day lead, on the held-out
+    2024–2025 window. Zero means no better than simply assuming the ground stays as it
+    is today. Bar colour marks the model family.</figcaption>
+  </figure>
+
+  <div class="prose">
+  <p>Ensemble(top3) leads at <strong>19.9 kPa RMSE</strong> seven days out against
+  26.2 for persistence — <strong>24% of the error removed</strong>,
+  R² 0.9308. TCN follows at 20.6 kPa.</p>
+  </div>
+
+  <figure>
+    <div class="chart-box"><svg viewBox="0 0 860 400" width="100%" role="img" aria-label="Test RMSE against forecast horizon" class="chart">
+<line x1="64" y1="352.0" x2="728" y2="352.0" class="grid"/>
+<text x="54.0" y="356.0" text-anchor="end" class="tick">0</text>
+<line x1="64" y1="287.2" x2="728" y2="287.2" class="grid"/>
+<text x="54.0" y="291.2" text-anchor="end" class="tick">6</text>
+<line x1="64" y1="222.4" x2="728" y2="222.4" class="grid"/>
+<text x="54.0" y="226.4" text-anchor="end" class="tick">11</text>
+<line x1="64" y1="157.6" x2="728" y2="157.6" class="grid"/>
+<text x="54.0" y="161.6" text-anchor="end" class="tick">17</text>
+<line x1="64" y1="92.8" x2="728" y2="92.8" class="grid"/>
+<text x="54.0" y="96.8" text-anchor="end" class="tick">22</text>
+<line x1="64" y1="28.0" x2="728" y2="28.0" class="grid"/>
+<text x="54.0" y="32.0" text-anchor="end" class="tick">28</text>
+<text x="64.0" y="372.0" text-anchor="middle" class="tick">1</text>
+<text x="174.7" y="372.0" text-anchor="middle" class="tick">2</text>
+<text x="285.3" y="372.0" text-anchor="middle" class="tick">3</text>
+<text x="396.0" y="372.0" text-anchor="middle" class="tick">4</text>
+<text x="506.7" y="372.0" text-anchor="middle" class="tick">5</text>
+<text x="617.3" y="372.0" text-anchor="middle" class="tick">6</text>
+<text x="728.0" y="372.0" text-anchor="middle" class="tick">7</text>
+<text x="54.0" y="20.0" text-anchor="end" class="axtitle">RMSE</text>
+<text x="396.0" y="388.0" text-anchor="middle" class="axtitle">forecast horizon (days ahead)</text>
+<polyline points="64.0,284.8 174.7,236.8 285.3,202.5 396.0,179.2 506.7,158.2 617.3,137.0 728.0,119.4" class="ln ln0"/>
+<circle cx="64.0" cy="284.8" r="3.4" class="dot ln ln0"/>
+<circle cx="174.7" cy="236.8" r="3.4" class="dot ln ln0"/>
+<circle cx="285.3" cy="202.5" r="3.4" class="dot ln ln0"/>
+<circle cx="396.0" cy="179.2" r="3.4" class="dot ln ln0"/>
+<circle cx="506.7" cy="158.2" r="3.4" class="dot ln ln0"/>
+<circle cx="617.3" cy="137.0" r="3.4" class="dot ln ln0"/>
+<circle cx="728.0" cy="119.4" r="3.4" class="dot ln ln0"/>
+<text x="738.0" y="123.4" text-anchor="start" class="series-lbl s0">Ensemble(top3)</text>
+<polyline points="64.0,284.8 174.7,234.5 285.3,198.9 396.0,175.0 506.7,153.9 617.3,130.4 728.0,111.8" class="ln ln1"/>
+<circle cx="64.0" cy="284.8" r="3.4" class="dot ln ln1"/>
+<circle cx="174.7" cy="234.5" r="3.4" class="dot ln ln1"/>
+<circle cx="285.3" cy="198.9" r="3.4" class="dot ln ln1"/>
+<circle cx="396.0" cy="175.0" r="3.4" class="dot ln ln1"/>
+<circle cx="506.7" cy="153.9" r="3.4" class="dot ln ln1"/>
+<circle cx="617.3" cy="130.4" r="3.4" class="dot ln ln1"/>
+<circle cx="728.0" cy="111.8" r="3.4" class="dot ln ln1"/>
+<text x="738.0" y="115.8" text-anchor="start" class="series-lbl s1">TCN</text>
+<polyline points="64.0,283.6 174.7,235.0 285.3,200.4 396.0,176.8 506.7,154.7 617.3,133.7 728.0,111.4" class="ln ln2"/>
+<circle cx="64.0" cy="283.6" r="3.4" class="dot ln ln2"/>
+<circle cx="174.7" cy="235.0" r="3.4" class="dot ln ln2"/>
+<circle cx="285.3" cy="200.4" r="3.4" class="dot ln ln2"/>
+<circle cx="396.0" cy="176.8" r="3.4" class="dot ln ln2"/>
+<circle cx="506.7" cy="154.7" r="3.4" class="dot ln ln2"/>
+<circle cx="617.3" cy="133.7" r="3.4" class="dot ln ln2"/>
+<circle cx="728.0" cy="111.4" r="3.4" class="dot ln ln2"/>
+<text x="738.0" y="115.4" text-anchor="start" class="series-lbl s2">Transformer</text>
+<polyline points="64.0,280.4 174.7,230.3 285.3,194.5 396.0,168.5 506.7,146.2 617.3,125.2 728.0,109.3" class="ln ln3"/>
+<circle cx="64.0" cy="280.4" r="3.4" class="dot ln ln3"/>
+<circle cx="174.7" cy="230.3" r="3.4" class="dot ln ln3"/>
+<circle cx="285.3" cy="194.5" r="3.4" class="dot ln ln3"/>
+<circle cx="396.0" cy="168.5" r="3.4" class="dot ln ln3"/>
+<circle cx="506.7" cy="146.2" r="3.4" class="dot ln ln3"/>
+<circle cx="617.3" cy="125.2" r="3.4" class="dot ln ln3"/>
+<circle cx="728.0" cy="109.3" r="3.4" class="dot ln ln3"/>
+<text x="738.0" y="113.3" text-anchor="start" class="series-lbl s3">GRU</text>
+<polyline points="64.0,279.7 174.7,229.4 285.3,193.5 396.0,169.0 506.7,149.3 617.3,129.1 728.0,109.1" class="ln ln4"/>
+<circle cx="64.0" cy="279.7" r="3.4" class="dot ln ln4"/>
+<circle cx="174.7" cy="229.4" r="3.4" class="dot ln ln4"/>
+<circle cx="285.3" cy="193.5" r="3.4" class="dot ln ln4"/>
+<circle cx="396.0" cy="169.0" r="3.4" class="dot ln ln4"/>
+<circle cx="506.7" cy="149.3" r="3.4" class="dot ln ln4"/>
+<circle cx="617.3" cy="129.1" r="3.4" class="dot ln ln4"/>
+<circle cx="728.0" cy="109.1" r="3.4" class="dot ln ln4"/>
+<text x="738.0" y="113.1" text-anchor="start" class="series-lbl s4">N-BEATS</text>
+<polyline points="64.0,272.9 174.7,215.9 285.3,173.2 396.0,138.9 506.7,107.4 617.3,76.4 728.0,46.3" class="ln ln5 ln-base"/>
+<circle cx="64.0" cy="272.9" r="3.4" class="dot ln ln5 ln-base"/>
+<circle cx="174.7" cy="215.9" r="3.4" class="dot ln ln5 ln-base"/>
+<circle cx="285.3" cy="173.2" r="3.4" class="dot ln ln5 ln-base"/>
+<circle cx="396.0" cy="138.9" r="3.4" class="dot ln ln5 ln-base"/>
+<circle cx="506.7" cy="107.4" r="3.4" class="dot ln ln5 ln-base"/>
+<circle cx="617.3" cy="76.4" r="3.4" class="dot ln ln5 ln-base"/>
+<circle cx="728.0" cy="46.3" r="3.4" class="dot ln ln5 ln-base"/>
+<text x="738.0" y="50.3" text-anchor="start" class="series-lbl s5 ln-base">Persistence</text>
+</svg></div>
+    <figcaption>Error against lead time. Persistence is competitive at one day and
+    degrades fastest; the gap that matters opens from day three onward, which is also
+    the planning horizon a movement order needs.</figcaption>
+  </figure>
+
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Model</th><th>RMSE h=1</th><th>RMSE h=3</th><th>RMSE h=7</th>
+      <th>MAE h=7</th><th>R² h=7</th><th>Skill h=7</th></tr></thead>
+    <tbody><tr class="row-best"><td class="mdl"><span class="dot-fam fam-ensemble"></span>Ensemble(top3)</td><td class="n">5.76</td><td class="n">12.82</td><td class="n"><strong>19.95</strong></td><td class="n">12.44</td><td class="n">0.9308</td><td class="n skill">+23.9%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>TCN</td><td class="n">5.76</td><td class="n">13.13</td><td class="n"><strong>20.60</strong></td><td class="n">12.31</td><td class="n">0.9262</td><td class="n skill">+21.4%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>Transformer</td><td class="n">5.86</td><td class="n">13.00</td><td class="n"><strong>20.63</strong></td><td class="n">13.51</td><td class="n">0.9260</td><td class="n skill">+21.3%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>GRU</td><td class="n">6.14</td><td class="n">13.51</td><td class="n"><strong>20.81</strong></td><td class="n">12.64</td><td class="n">0.9246</td><td class="n skill">+20.6%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>N-BEATS</td><td class="n">6.20</td><td class="n">13.59</td><td class="n"><strong>20.83</strong></td><td class="n">13.71</td><td class="n">0.9245</td><td class="n skill">+20.5%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>BiGRU-Attn</td><td class="n">6.78</td><td class="n">14.35</td><td class="n"><strong>21.08</strong></td><td class="n">13.34</td><td class="n">0.9227</td><td class="n skill">+19.6%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>TFT</td><td class="n">6.15</td><td class="n">13.06</td><td class="n"><strong>21.11</strong></td><td class="n">10.98</td><td class="n">0.9225</td><td class="n skill">+19.5%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>Ridge</td><td class="n">6.37</td><td class="n">13.98</td><td class="n"><strong>21.96</strong></td><td class="n">13.66</td><td class="n">0.9161</td><td class="n skill">+16.2%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-classical"></span>ARIMAX-Fourier (DHR)</td><td class="n">5.76</td><td class="n">14.05</td><td class="n"><strong>22.32</strong></td><td class="n">13.64</td><td class="n">0.9133</td><td class="n skill">+14.9%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>LightGBM(linear)</td><td class="n">6.27</td><td class="n">14.81</td><td class="n"><strong>23.04</strong></td><td class="n">14.23</td><td class="n">0.9076</td><td class="n skill">+12.1%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>LSTM</td><td class="n">7.84</td><td class="n">17.81</td><td class="n"><strong>23.20</strong></td><td class="n">12.87</td><td class="n">0.9063</td><td class="n skill">+11.5%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>RandomForest</td><td class="n">6.57</td><td class="n">14.89</td><td class="n"><strong>23.58</strong></td><td class="n">13.93</td><td class="n">0.9032</td><td class="n skill">+10.0%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>ExtraTrees</td><td class="n">6.93</td><td class="n">15.64</td><td class="n"><strong>23.86</strong></td><td class="n">14.40</td><td class="n">0.9009</td><td class="n skill">+9.0%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-classical"></span>ARIMA</td><td class="n">5.85</td><td class="n">14.72</td><td class="n"><strong>25.11</strong></td><td class="n">16.92</td><td class="n">0.8903</td><td class="n skill">+4.2%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>LightGBM</td><td class="n">6.26</td><td class="n">14.76</td><td class="n"><strong>25.15</strong></td><td class="n">14.67</td><td class="n">0.8899</td><td class="n skill">+4.0%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>BiGRU-Attn(q)</td><td class="n">7.07</td><td class="n">15.79</td><td class="n"><strong>25.43</strong></td><td class="n">15.50</td><td class="n">0.8875</td><td class="n skill">+3.0%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-baseline"></span>Persistence</td><td class="n">6.79</td><td class="n">15.33</td><td class="n"><strong>26.21</strong></td><td class="n">16.41</td><td class="n">0.8805</td><td class="n skill">+0.0%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-baseline"></span>Climatology</td><td class="n">34.65</td><td class="n">34.54</td><td class="n"><strong>33.83</strong></td><td class="n">24.78</td><td class="n">0.8009</td><td class="n skill">-29.1%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>BiGRU-Attn(q) P10 (safe rule)</td><td class="n">12.56</td><td class="n">28.32</td><td class="n"><strong>43.44</strong></td><td class="n">28.67</td><td class="n">0.6716</td><td class="n skill">-65.8%</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-baseline"></span>SeasonalNaive365</td><td class="n">53.08</td><td class="n">52.95</td><td class="n"><strong>52.50</strong></td><td class="n">38.77</td><td class="n">0.5203</td><td class="n skill">-100.3%</td></tr></tbody>
+  </table></div>
+  <div class="fam-key">
+    <span><span class="dot-fam fam-baseline"></span>baseline</span>
+    <span><span class="dot-fam fam-classical"></span>classical</span>
+    <span><span class="dot-fam fam-tabular"></span>tabular ML</span>
+    <span><span class="dot-fam fam-deep"></span>deep</span>
+    <span><span class="dot-fam fam-ensemble"></span>ensemble</span>
+  </div>
+  <div class="note"><p><strong>Which ARIMA.</strong> Daily data with an annual cycle rules out a seasonal SARIMA — a period of 365 is not estimable. The right form is dynamic harmonic regression: ARIMA errors with three Fourier pairs carrying the seasonality as exogenous regressors, which are also genuinely known for the future. Order chosen by AIC grid search with <em>d</em> set by ADF and KPSS agreement; ARIMA selected <code>(1,0,5)</code>; ARIMAX-Fourier (DHR) selected <code>(1,0,5)</code>. Multi-step forecasts come from the filtered Kalman state, verified against statsmodels' own dynamic prediction to machine precision.</p></div>
+</section>
+
+<section>
+  <div class="eyebrow">The decision</div>
+  <h2>RMSE is not the question a commander asks</h2>
+  <div class="prose">
+  <p>A forecast that is 15 kPa off matters enormously near a threshold and not at all
+  in the middle of the dry season. Scoring the same predictions as the three-way
+  call — and separately as recall on NO-GO days, where a miss sends vehicles into
+  ground that will not hold — reorders the table.</p>
+  </div>
+  <div class="note">
+  <p><strong>The lowest-RMSE model is not the safest model.</strong> Ensemble(top3) catches
+  54% of MBT NO-GO days; plain persistence catches 62%. Squared error
+  rewards a forecast that stays near the middle of the distribution, and a
+  mean-reverting forecast systematically under-shoots the collapse in soil strength
+  that defines a NO-GO day. Ranking on RMSE alone would pick a model that is worse at
+  the one call with a real cost attached.</p>
+  </div>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>Model</th><th>MBT accuracy</th><th>MBT macro F1</th>
+      <th>MBT NO-GO recall</th><th>Truck macro F1</th><th>Truck NO-GO recall</th></tr></thead>
+    <tbody><tr class="row-rule"><td class="mdl"><span class="dot-fam fam-rule"></span>TFT P10 (safe rule)</td><td class="n">85.2</td><td class="n">69.0</td><td class="n">91.4</td><td class="n">69.4</td><td class="n">92.1</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>BiGRU-Attn(q) P10 (safe rule)</td><td class="n">82.9</td><td class="n">65.9</td><td class="n">79.1</td><td class="n">71.6</td><td class="n">89.8</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>GRU</td><td class="n">83.6</td><td class="n">67.9</td><td class="n">64.0</td><td class="n">73.7</td><td class="n">78.6</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>BiGRU-Attn</td><td class="n">83.4</td><td class="n">67.6</td><td class="n">61.9</td><td class="n">73.2</td><td class="n">77.7</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-baseline"></span>Persistence</td><td class="n">79.6</td><td class="n">62.0</td><td class="n">61.9</td><td class="n">60.2</td><td class="n">80.9</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-classical"></span>ARIMAX-Fourier (DHR)</td><td class="n">82.9</td><td class="n">65.8</td><td class="n">59.0</td><td class="n">74.0</td><td class="n">73.0</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>Ridge</td><td class="n">83.3</td><td class="n">67.3</td><td class="n">58.3</td><td class="n">73.6</td><td class="n">77.2</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>BiGRU-Attn(q)</td><td class="n">82.0</td><td class="n">63.7</td><td class="n">57.6</td><td class="n">73.2</td><td class="n">71.2</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-baseline"></span>SeasonalNaive365</td><td class="n">80.1</td><td class="n">63.1</td><td class="n">56.8</td><td class="n">62.3</td><td class="n">75.8</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>N-BEATS</td><td class="n">82.2</td><td class="n">64.9</td><td class="n">56.1</td><td class="n">73.9</td><td class="n">76.3</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>Transformer</td><td class="n">82.7</td><td class="n">66.8</td><td class="n">54.0</td><td class="n">74.6</td><td class="n">77.2</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-ensemble"></span>Ensemble(top3)</td><td class="n">82.3</td><td class="n">65.6</td><td class="n">54.0</td><td class="n">73.8</td><td class="n">79.1</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>LightGBM(linear)</td><td class="n">81.4</td><td class="n">64.1</td><td class="n">44.6</td><td class="n">72.8</td><td class="n">75.8</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>TFT</td><td class="n">79.7</td><td class="n">60.1</td><td class="n">42.4</td><td class="n">76.0</td><td class="n">75.8</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>LightGBM</td><td class="n">80.1</td><td class="n">61.9</td><td class="n">42.4</td><td class="n">74.0</td><td class="n">77.2</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>RandomForest</td><td class="n">81.1</td><td class="n">63.7</td><td class="n">41.0</td><td class="n">74.3</td><td class="n">77.2</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>TCN</td><td class="n">80.7</td><td class="n">63.4</td><td class="n">39.6</td><td class="n">72.8</td><td class="n">79.1</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-deep"></span>LSTM</td><td class="n">80.5</td><td class="n">62.7</td><td class="n">37.4</td><td class="n">76.6</td><td class="n">77.2</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-tabular"></span>ExtraTrees</td><td class="n">80.2</td><td class="n">61.8</td><td class="n">33.8</td><td class="n">74.6</td><td class="n">78.1</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-baseline"></span>Climatology</td><td class="n">78.0</td><td class="n">55.3</td><td class="n">21.6</td><td class="n">63.7</td><td class="n">75.8</td></tr>
+<tr><td class="mdl"><span class="dot-fam fam-classical"></span>ARIMA</td><td class="n">75.1</td><td class="n">49.2</td><td class="n">5.8</td><td class="n">67.8</td><td class="n">64.2</td></tr></tbody>
+  </table></div>
+  <p style="font-size:.85rem;color:var(--muted);margin-top:.8em">All figures percent,
+  7-day lead, sorted by NO-GO recall. MBT = ~46 t tracked; truck = wheeled 6×6.</p>
+  <h3>Why it happens</h3>
+  <div class="prose">
+  <p>Mean signed error explains the whole reordering. A model that shades its forecasts
+  toward the middle of the distribution scores well on squared error, and the days it
+  shades away from are exactly the days the ground gives way.</p>
+  </div>
+  <figure>
+    <div class="chart-box"><svg viewBox="0 0 860 516" width="100%" role="img" aria-label="Mean signed error at seven days by model" class="chart">
+<text x="684.1" y="16.0" text-anchor="middle" class="tick">0</text>
+<text x="672.1" y="16.0" text-anchor="end" class="tick">◀ cautious</text>
+<text x="696.1" y="16.0" text-anchor="start" class="tick">over-states strength ▶</text>
+<rect x="226.9" y="40.0" width="457.2" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="51.0" text-anchor="end" class="name">BiGRU-Attn(q) P10 (safe rule)</text>
+<text x="220.9" y="51.0" text-anchor="end" class="val">-23.17</text>
+<rect x="359.1" y="64.0" width="325.0" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="75.0" text-anchor="end" class="name">TFT P10 (safe rule)</text>
+<text x="353.1" y="75.0" text-anchor="end" class="val">-16.47</text>
+<rect x="613.1" y="88.0" width="71.0" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="99.0" text-anchor="end" class="name">BiGRU-Attn(q)</text>
+<text x="607.1" y="99.0" text-anchor="end" class="val">-3.60</text>
+<rect x="641.8" y="112.0" width="42.3" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="123.0" text-anchor="end" class="name">LightGBM</text>
+<text x="635.8" y="123.0" text-anchor="end" class="val">-2.14</text>
+<rect x="653.5" y="136.0" width="30.6" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="147.0" text-anchor="end" class="name">ExtraTrees</text>
+<text x="647.5" y="147.0" text-anchor="end" class="val">-1.55</text>
+<rect x="654.1" y="160.0" width="30.0" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="171.0" text-anchor="end" class="name">Transformer</text>
+<text x="648.1" y="171.0" text-anchor="end" class="val">-1.52</text>
+<rect x="658.7" y="184.0" width="25.4" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="195.0" text-anchor="end" class="name">BiGRU-Attn</text>
+<text x="652.7" y="195.0" text-anchor="end" class="val">-1.29</text>
+<rect x="659.7" y="208.0" width="24.4" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="219.0" text-anchor="end" class="name">RandomForest</text>
+<text x="653.7" y="219.0" text-anchor="end" class="val">-1.24</text>
+<rect x="660.4" y="232.0" width="23.7" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="243.0" text-anchor="end" class="name">LightGBM(linear)</text>
+<text x="654.4" y="243.0" text-anchor="end" class="val">-1.20</text>
+<rect x="669.0" y="256.0" width="15.1" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="267.0" text-anchor="end" class="name">GRU</text>
+<text x="663.0" y="267.0" text-anchor="end" class="val">-0.76</text>
+<rect x="672.0" y="280.0" width="12.1" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="291.0" text-anchor="end" class="name">Persistence</text>
+<text x="666.0" y="291.0" text-anchor="end" class="val">-0.61</text>
+<rect x="676.8" y="304.0" width="7.3" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="315.0" text-anchor="end" class="name">N-BEATS</text>
+<text x="670.8" y="315.0" text-anchor="end" class="val">-0.37</text>
+<rect x="677.6" y="328.0" width="6.5" height="14" rx="3" class="bias-lo"/>
+<text x="160.0" y="339.0" text-anchor="end" class="name">Ensemble(top3)</text>
+<text x="671.6" y="339.0" text-anchor="end" class="val">-0.33</text>
+<rect x="684.1" y="352.0" width="5.5" height="14" rx="3" class="bias-hi"/>
+<text x="160.0" y="363.0" text-anchor="end" class="name">Ridge</text>
+<text x="695.6" y="363.0" text-anchor="start" class="val">+0.28</text>
+<rect x="684.1" y="376.0" width="5.9" height="14" rx="3" class="bias-hi"/>
+<text x="160.0" y="387.0" text-anchor="end" class="name">ARIMA</text>
+<text x="696.0" y="387.0" text-anchor="start" class="val">+0.30</text>
+<rect x="684.1" y="400.0" width="18.4" height="14" rx="3" class="bias-hi"/>
+<text x="160.0" y="411.0" text-anchor="end" class="name">LSTM</text>
+<text x="708.5" y="411.0" text-anchor="start" class="val">+0.93</text>
+<rect x="684.1" y="424.0" width="25.7" height="14" rx="3" class="bias-hi"/>
+<text x="160.0" y="435.0" text-anchor="end" class="name">TCN</text>
+<text x="715.8" y="435.0" text-anchor="start" class="val">+1.30</text>
+<rect x="684.1" y="448.0" width="32.6" height="14" rx="3" class="bias-hi"/>
+<text x="160.0" y="459.0" text-anchor="end" class="name">ARIMAX-Fourier (DHR)</text>
+<text x="722.6" y="459.0" text-anchor="start" class="val">+1.65</text>
+<rect x="684.1" y="472.0" width="103.5" height="14" rx="3" class="bias-hi"/>
+<text x="160.0" y="483.0" text-anchor="end" class="name">TFT</text>
+<text x="793.6" y="483.0" text-anchor="start" class="val">+5.24</text>
+<line x1="684.1" y1="24.0" x2="684.1" y2="500.0" class="axis"/>
+</svg></div>
+    <figcaption>Mean signed error at a 7-day lead. Bars to the right mean the model
+    claims the ground is firmer than it turned out to be — the direction that puts
+    vehicles into ground that will not hold. The TFT's median carries the largest
+    positive bias of any model here, which is precisely why its median makes poor
+    NO-GO calls and its lower quantile makes excellent ones.</figcaption>
+  </figure>
+
+  <div class="note"><p><strong>Reading the TFT's lower quantile fixes this — and costs nothing.</strong> The TFT is trained on quantile loss, so it already emits a P10 alongside its median. Making the GO/NO-GO call against the P10 instead of the median lifts MBT NO-GO recall to <strong>91%</strong>, the best of anything tested, and it does so while <em>also</em> posting the best overall accuracy (85.2%) and macro F1. That combination is the tell: this is not the usual recall-for-precision trade. The median forecast is genuinely biased high near the transitions — mean reversion pulls it toward the dry-season level just as the ground is giving way — and reading the lower quantile corrects a real bias rather than merely moving a threshold. The band it comes from is well calibrated (below), so the P10 means what it says.</p></div>
+  <h3>Is the band honest?</h3><div class="prose"><p>A quantile is only useful if it is calibrated. Measured on the hold-out, the P10–P90 interval covers the truth about 84% of the time against a nominal 80%, and the P10 is undershot 9–12% of the time against a nominal 10% — slightly conservative, in the safe direction, and it holds in the monsoon as well as the dry season.</p></div><div class="tbl-wrap"><table><thead><tr><th>Lead</th><th>P10–P90 coverage %</th><th>Below P10 %</th><th>Above P90 %</th><th>Mean width kPa</th></tr></thead><tbody><tr><td class="mdl">1 day</td><td class="n">84.8</td><td class="n">9.4</td><td class="n">5.8</td><td class="n">8.0</td></tr>
+<tr><td class="mdl">2 days</td><td class="n">85.1</td><td class="n">9.2</td><td class="n">5.7</td><td class="n">13.9</td></tr>
+<tr><td class="mdl">3 days</td><td class="n">84.5</td><td class="n">10.4</td><td class="n">5.1</td><td class="n">18.7</td></tr>
+<tr><td class="mdl">4 days</td><td class="n">83.8</td><td class="n">11.5</td><td class="n">4.7</td><td class="n">22.8</td></tr>
+<tr><td class="mdl">5 days</td><td class="n">83.3</td><td class="n">12.0</td><td class="n">4.7</td><td class="n">26.5</td></tr>
+<tr><td class="mdl">6 days</td><td class="n">83.6</td><td class="n">11.6</td><td class="n">4.8</td><td class="n">30.1</td></tr>
+<tr><td class="mdl">7 days</td><td class="n">84.0</td><td class="n">11.3</td><td class="n">4.7</td><td class="n">33.4</td></tr></tbody></table></div><p style="font-size:.85rem;color:var(--muted);margin-top:.8em">Nominal values: 80 / 10 / 10.</p>
+
+  <figure>
+    <div class="chart-box"><svg viewBox="0 0 860 330" width="100%" role="img" aria-label="Observed and forecast RCI through 2025" class="chart">
+<rect x="52" y="262.1" width="792" height="25.9" class="band-nogo"/>
+<rect x="52" y="249.1" width="792" height="13.0" class="band-slow"/>
+<rect x="52" y="20.0" width="792" height="229.1" class="band-go"/>
+<line x1="52" y1="262.1" x2="844" y2="262.1" class="thresh"/>
+<text x="838.0" y="257.1" text-anchor="end" class="tick">VCI₁ 30</text>
+<line x1="52" y1="249.1" x2="844" y2="249.1" class="thresh"/>
+<text x="838.0" y="244.1" text-anchor="end" class="tick">VCI₅₀ 45</text>
+<text x="43.0" y="292.0" text-anchor="end" class="tick">0</text>
+<text x="43.0" y="205.5" text-anchor="end" class="tick">100</text>
+<text x="43.0" y="119.1" text-anchor="end" class="tick">200</text>
+<text x="43.0" y="32.6" text-anchor="end" class="tick">300</text>
+<text x="167.4" y="308.0" text-anchor="middle" class="tick">Mar</text>
+<text x="302.7" y="308.0" text-anchor="middle" class="tick">May</text>
+<text x="438.0" y="308.0" text-anchor="middle" class="tick">Jul</text>
+<text x="575.6" y="308.0" text-anchor="middle" class="tick">Sep</text>
+<text x="710.9" y="308.0" text-anchor="middle" class="tick">Nov</text>
+<polyline points="52.0,161.7 54.2,159.1 56.4,156.2 58.7,153.5 60.9,155.5 63.1,156.6 65.3,154.6 67.5,151.4 69.7,148.8 72.0,146.2 74.2,143.9 76.4,141.5 78.6,139.3 80.8,137.3 83.1,135.1 85.3,133.1 87.5,131.3 89.7,130.1 91.9,128.7 94.2,127.0 96.4,125.3 98.6,123.5 100.8,122.4 103.0,121.3 105.2,119.7 107.5,118.5 109.7,117.6 111.9,116.2 114.1,115.0 116.3,114.2 118.6,113.3 120.8,112.6 123.0,111.8 125.2,110.9 127.4,110.4 129.6,109.4 131.9,108.8 134.1,108.1 136.3,107.8 138.5,107.1 140.7,106.4 143.0,105.9 145.2,105.4 147.4,104.6 149.6,104.2 151.8,103.3 154.1,103.3 156.3,102.8 158.5,102.2 160.7,101.5 162.9,100.6 165.1,100.6 167.4,100.3 169.6,99.7 171.8,99.7 174.0,99.3 176.2,98.9 178.5,98.5 180.7,98.5 182.9,98.0 185.1,97.2 187.3,96.9 189.5,96.9 191.8,96.4 194.0,95.8 196.2,95.8 198.4,95.8 200.6,95.8 202.9,95.3 205.1,94.8 207.3,94.7 209.5,97.7 211.7,100.1 213.9,98.5 216.2,96.3 218.4,95.7 220.6,95.1 222.8,94.6 225.0,94.1 227.3,93.3 229.5,92.6 231.7,92.6 233.9,92.3 236.1,92.6 238.4,92.7 240.6,94.4 242.8,95.1 245.0,93.9 247.2,92.5 249.4,92.0 251.7,91.8 253.9,91.5 256.1,93.0 258.3,94.2 260.5,93.3 262.8,92.2 265.0,91.5 267.2,90.6 269.4,90.4 271.6,90.4 273.8,90.2 276.1,89.8 278.3,89.8 280.5,89.8 282.7,89.7 284.9,89.3 287.2,88.7 289.4,88.7 291.6,88.8 293.8,88.8 296.0,88.8 298.3,88.9 300.5,89.0 302.7,88.8 304.9,92.0 307.1,97.7 309.3,98.3 311.6,97.4 313.8,96.9 316.0,104.5 318.2,110.5 320.4,107.6 322.7,106.9 324.9,108.0 327.1,105.1 329.3,102.4 331.5,102.5 333.7,111.2 336.0,115.4 338.2,111.6 340.4,110.8 342.6,115.5 344.8,116.2 347.1,120.9 349.3,127.8 351.5,127.4 353.7,157.8 355.9,187.4 358.2,184.5 360.4,178.7 362.6,180.2 364.8,184.0 367.0,181.3 369.2,178.3 371.5,169.1 373.7,160.9 375.9,155.9 378.1,158.1 380.3,154.9 382.6,148.3 384.8,142.1 387.0,136.7 389.2,131.0 391.4,125.7 393.6,121.9 395.9,120.6 398.1,117.5 400.3,129.1 402.5,160.7 404.7,181.3 407.0,175.1 409.2,168.9 411.4,173.8 413.6,223.9 415.8,234.4 418.1,245.8 420.3,250.3 422.5,255.6 424.7,255.7 426.9,261.6 429.1,261.4 431.4,262.5 433.6,264.6 435.8,264.5 438.0,266.2 440.2,267.1 442.5,266.1 444.7,266.2 446.9,266.0 449.1,262.4 451.3,265.7 453.5,266.5 455.8,266.6 458.0,267.5 460.2,266.0 462.4,265.6 464.6,264.2 466.9,262.9 469.1,262.2 471.3,263.8 473.5,264.8 475.7,263.7 477.9,260.1 480.2,253.9 482.4,250.4 484.6,256.3 486.8,265.9 489.0,266.8 491.3,266.1 493.5,267.0 495.7,266.7 497.9,267.4 500.1,268.2 502.4,265.9 504.6,265.2 506.8,261.8 509.0,258.6 511.2,257.1 513.4,254.9 515.7,252.3 517.9,249.6 520.1,246.7 522.3,244.2 524.5,250.6 526.8,257.2 529.0,261.4 531.2,260.9 533.4,265.7 535.6,264.0 537.8,266.9 540.1,266.9 542.3,263.9 544.5,264.7 546.7,266.4 548.9,266.7 551.2,262.7 553.4,265.5 555.6,266.3 557.8,262.3 560.0,265.4 562.3,263.9 564.5,264.6 566.7,264.2 568.9,266.6 571.1,266.0 573.3,266.8 575.6,266.5 577.8,262.2 580.0,265.1 582.2,263.6 584.4,260.5 586.7,264.2 588.9,264.5 591.1,262.9 593.3,262.9 595.5,262.9 597.7,260.3 600.0,262.7 602.2,264.2 604.4,264.9 606.6,266.0 608.8,262.3 611.1,266.5 613.3,265.7 615.5,260.7 617.7,261.8 619.9,259.8 622.2,256.8 624.4,254.1 626.6,253.0 628.8,252.0 631.0,251.2 633.2,262.9 635.5,264.6 637.7,262.9 639.9,262.4 642.1,260.9 644.3,258.3 646.6,255.6 648.8,256.0 651.0,260.4 653.2,262.6 655.4,258.0 657.6,254.7 659.9,250.6 662.1,247.8 664.3,245.4 666.5,242.4 668.7,238.9 671.0,235.9 673.2,234.2 675.4,233.0 677.6,230.7 679.8,227.3 682.1,223.9 684.3,220.1 686.5,233.4 688.7,243.4 690.9,239.6 693.1,233.4 695.4,236.9 697.6,264.5 699.8,263.2 702.0,262.9 704.2,258.0 706.5,260.2 708.7,262.0 710.9,259.7 713.1,257.0 715.3,255.2 717.5,253.5 719.8,251.3 722.0,248.7 724.2,245.7 726.4,243.1 728.6,240.5 730.9,237.9 733.1,235.3 735.3,232.7 737.5,230.0 739.7,227.4 741.9,224.6 744.2,222.0 746.4,219.4 748.6,216.9 750.8,214.5 753.0,211.9 755.3,209.6 757.5,207.1 759.7,204.6 761.9,202.4 764.1,200.1 766.4,197.9 768.6,195.6 770.8,193.0 773.0,190.6 775.2,188.4 777.4,186.3 779.7,184.3 781.9,182.2 784.1,180.0 786.3,177.9 788.5,176.0 790.8,174.0 793.0,172.1 795.2,170.2 797.4,168.6 799.6,166.6 801.8,164.9 804.1,163.3 806.3,161.6 808.5,160.1 810.7,158.5 812.9,157.1 815.2,155.6 817.4,154.2 819.6,152.9 821.8,151.7 824.0,150.4 826.3,149.3 828.5,148.2 830.7,147.1 832.9,145.9 835.1,144.8 837.3,143.7 839.6,142.6 841.8,141.3 844.0,140.2" class="line-obs"/>
+<polyline points="52.0,169.9 54.2,166.5 56.4,165.2 58.7,162.5 60.9,162.8 63.1,161.6 65.3,158.5 67.5,155.6 69.7,154.3 72.0,158.7 74.2,156.9 76.4,158.6 78.6,153.6 80.8,149.4 83.1,147.9 85.3,145.7 87.5,140.5 89.7,137.5 91.9,135.2 94.2,133.8 96.4,133.0 98.6,131.7 100.8,129.6 103.0,127.7 105.2,125.6 107.5,123.1 109.7,121.9 111.9,120.1 114.1,120.0 116.3,118.2 118.6,117.1 120.8,115.7 123.0,114.3 125.2,114.4 127.4,116.4 129.6,113.0 131.9,110.2 134.1,110.2 136.3,111.1 138.5,110.2 140.7,109.9 143.0,108.6 145.2,106.8 147.4,105.8 149.6,106.2 151.8,106.7 154.1,106.5 156.3,106.0 158.5,106.6 160.7,107.4 162.9,108.3 165.1,105.7 167.4,105.4 169.6,104.8 171.8,104.4 174.0,104.0 176.2,103.2 178.5,106.1 180.7,112.0 182.9,108.2 185.1,107.8 187.3,108.8 189.5,109.2 191.8,105.4 194.0,106.4 196.2,105.8 198.4,105.2 200.6,104.1 202.9,102.7 205.1,102.7 207.3,102.7 209.5,102.7 211.7,102.4 213.9,103.8 216.2,105.2 218.4,104.8 220.6,102.8 222.8,102.3 225.0,107.0 227.3,102.0 229.5,98.7 231.7,95.2 233.9,94.5 236.1,95.4 238.4,95.7 240.6,95.4 242.8,94.5 245.0,93.4 247.2,93.4 249.4,94.2 251.7,98.3 253.9,103.4 256.1,102.9 258.3,94.5 260.5,91.1 262.8,90.6 265.0,90.8 267.2,90.7 269.4,91.6 271.6,93.7 273.8,94.3 276.1,93.7 278.3,92.8 280.5,93.4 282.7,91.2 284.9,91.2 287.2,90.5 289.4,89.9 291.6,89.0 293.8,88.6 296.0,87.9 298.3,87.2 300.5,87.8 302.7,87.1 304.9,87.8 307.1,89.0 309.3,88.5 311.6,88.4 313.8,89.5 316.0,88.4 318.2,88.1 320.4,91.6 322.7,96.6 324.9,97.1 327.1,98.5 329.3,96.2 331.5,102.2 333.7,107.6 336.0,98.9 338.2,94.4 340.4,93.8 342.6,93.5 344.8,94.2 347.1,93.7 349.3,102.5 351.5,109.8 353.7,100.6 355.9,103.1 358.2,108.3 360.4,111.9 362.6,116.0 364.8,129.5 367.0,130.2 369.2,157.0 371.5,175.8 373.7,171.2 375.9,172.8 378.1,175.6 380.3,178.7 382.6,171.3 384.8,164.4 387.0,157.4 389.2,156.2 391.4,169.7 393.6,188.1 395.9,176.3 398.1,173.9 400.3,175.1 402.5,168.6 404.7,163.8 407.0,171.6 409.2,183.2 411.4,179.8 413.6,170.1 415.8,187.1 418.1,213.1 420.3,218.1 422.5,220.2 424.7,227.1 426.9,226.9 429.1,231.2 431.4,234.7 433.6,241.1 435.8,246.0 438.0,250.9 440.2,253.5 442.5,257.6 444.7,256.2 446.9,257.2 449.1,259.6 451.3,259.9 453.5,260.5 455.8,262.1 458.0,262.3 460.2,261.5 462.4,261.1 464.6,259.0 466.9,261.4 469.1,262.5 471.3,263.7 473.5,265.1 475.7,264.3 477.9,263.6 480.2,263.1 482.4,262.5 484.6,262.9 486.8,264.0 489.0,263.8 491.3,263.1 493.5,261.0 495.7,257.5 497.9,256.2 500.1,259.3 502.4,265.8 504.6,265.9 506.8,265.0 509.0,265.5 511.2,265.5 513.4,265.8 515.7,263.1 517.9,262.6 520.1,263.2 522.3,261.1 524.5,258.8 526.8,258.6 529.0,257.0 531.2,255.1 533.4,255.1 535.6,253.8 537.8,255.2 540.1,256.8 542.3,260.4 544.5,262.2 546.7,262.6 548.9,264.0 551.2,263.5 553.4,266.9 555.6,266.5 557.8,263.8 560.0,264.7 562.3,265.7 564.5,265.4 566.7,261.0 568.9,263.2 571.1,263.8 573.3,260.3 575.6,263.1 577.8,262.9 580.0,263.7 582.2,263.1 584.4,265.1 586.7,263.1 588.9,264.4 591.1,264.5 593.3,261.5 595.5,264.1 597.7,262.9 600.0,259.6 602.2,262.0 604.4,262.6 606.6,261.4 608.8,260.6 611.1,260.5 613.3,258.9 615.5,261.2 617.7,261.4 619.9,262.0 622.2,263.9 624.4,260.4 626.6,263.0 628.8,262.5 631.0,257.9 633.2,258.7 635.5,256.5 637.7,253.9 639.9,252.5 642.1,251.3 644.3,250.2 646.6,250.5 648.8,258.3 651.0,259.1 653.2,258.2 655.4,257.4 657.6,254.1 659.9,253.2 662.1,252.5 664.3,250.4 666.5,254.6 668.7,255.1 671.0,247.2 673.2,243.9 675.4,240.1 677.6,237.7 679.8,233.9 682.1,229.6 684.3,227.2 686.5,228.6 688.7,227.7 690.9,226.3 693.1,220.4 695.4,219.0 697.6,212.5 699.8,207.5 702.0,223.1 704.2,229.6 706.5,224.4 708.7,217.9 710.9,226.1 713.1,248.4 715.3,246.6 717.5,245.9 719.8,243.2 722.0,246.6 724.2,248.6 726.4,244.9 728.6,242.7 730.9,240.8 733.1,239.5 735.3,237.0 737.5,232.4 739.7,229.5 741.9,226.5 744.2,224.6 746.4,222.0 748.6,219.5 750.8,216.9 753.0,214.0 755.3,211.3 757.5,208.8 759.7,205.9 761.9,203.7 764.1,202.3 766.4,200.3 768.6,198.1 770.8,195.8 773.0,194.3 775.2,194.7 777.4,192.0 779.7,190.4 781.9,188.8 784.1,184.8 786.3,181.5 788.5,183.0 790.8,182.3 793.0,181.2 795.2,181.2 797.4,177.1 799.6,174.7 801.8,173.2 804.1,175.4 806.3,175.2 808.5,169.6 810.7,168.3 812.9,169.3 815.2,169.1 817.4,167.5 819.6,166.0 821.8,164.5 824.0,164.4 826.3,161.5 828.5,160.0 830.7,157.3 832.9,158.6 835.1,156.9 837.3,165.2 839.6,163.2 841.8,157.2 844.0,163.3" class="line-pred"/>
+<text x="43.0" y="16.0" text-anchor="end" class="axtitle">kPa</text>
+</svg></div>
+    <figcaption>Observed against forecast RCI through 2025 at a 7-day lead. The model
+    tracks the monsoon collapse and the October recovery — the two transitions that
+    decide the season — and is least certain exactly at the crossings.</figcaption>
+    <div class="legend"><span class="obs">Observed</span>
+      <span class="pred">Ensemble(top3), 7-day forecast</span></div>
+  </figure>
+</section>
+
+<section>
+  <div class="eyebrow">Drivers</div>
+  <h2>What the forecast keys on</h2>
+  <div class="prose">
+  <p>Share of LightGBM split gain across the 128 causal features. The interesting
+  part is not the ranking at either lead but the <strong>shift between them</strong> —
+  and nothing in the setup asked for it.</p>
+  </div>
+  <div class="feat-cols">
+    <div>
+      <div class="feat-head">Tomorrow <span>h = 1</span></div>
+      <ul class="feats"><li><code>cloud_lag1</code><span class="fbar" style="--w:100.0%"></span><span class="fval">10.7%</span></li>
+<li><code>tmin_rmean30</code><span class="fbar" style="--w:72.8%"></span><span class="fval">7.8%</span></li>
+<li><code>sm_surf_lag1</code><span class="fbar" style="--w:46.3%"></span><span class="fval">5.0%</span></li>
+<li><code>rci_d1</code><span class="fbar" style="--w:29.9%"></span><span class="fval">3.2%</span></li>
+<li><code>rci_lag1</code><span class="fbar" style="--w:28.5%"></span><span class="fval">3.1%</span></li>
+<li><code>rh_lag1</code><span class="fbar" style="--w:20.5%"></span><span class="fval">2.2%</span></li>
+<li><code>rci_rstd14</code><span class="fbar" style="--w:20.3%"></span><span class="fval">2.2%</span></li>
+<li><code>pres_rmean30</code><span class="fbar" style="--w:19.4%"></span><span class="fval">2.1%</span></li></ul>
+    </div>
+    <div>
+      <div class="feat-head">A week out <span>h = 7</span></div>
+      <ul class="feats"><li><code>tmin_rmean7</code><span class="fbar" style="--w:100.0%"></span><span class="fval">7.4%</span></li>
+<li><code>tmin_rmean30</code><span class="fbar" style="--w:82.9%"></span><span class="fval">6.2%</span></li>
+<li><code>api_95</code><span class="fbar" style="--w:75.7%"></span><span class="fval">5.6%</span></li>
+<li><code>pres_rmean30</code><span class="fbar" style="--w:70.3%"></span><span class="fval">5.2%</span></li>
+<li><code>wbal_rsum14</code><span class="fbar" style="--w:63.1%"></span><span class="fval">4.7%</span></li>
+<li><code>wbal_rsum30</code><span class="fbar" style="--w:55.0%"></span><span class="fval">4.1%</span></li>
+<li><code>rci_rmin14</code><span class="fbar" style="--w:46.7%"></span><span class="fval">3.5%</span></li>
+<li><code>sm_surf_lag1</code><span class="fbar" style="--w:41.3%"></span><span class="fval">3.1%</span></li></ul>
+    </div>
+  </div>
+  <div class="prose">
+  <p>At one day the forecast leans on <strong>instantaneous drivers</strong>:
+  yesterday's cloud cover — cloud suppresses evaporation, so the ground stays wet —
+  and current surface moisture. At seven days it switches to
+  <strong>slow accumulators</strong>: the antecedent precipitation index and the
+  14- and 30-day running water balance, rainfall minus reference evapotranspiration.
+  That is the physically correct answer to each question, learned rather than
+  imposed.</p>
+  </div>
+</section>
+
+<section>
+  <div class="eyebrow">Reading it</div>
+  <h2>What this does and does not establish</h2>
+  <div class="prose">
+  <ul class="plain">
+    <li><strong>Deep sequence models earn their place, narrowly.</strong> The gap over
+    a tuned linear model on the same 128 features is real but not dramatic. On 2,498
+    training origins that is the expected outcome, and it is worth saying plainly
+    rather than overselling the architecture.</li>
+    <li><strong>Pick the model on the decision, not on RMSE.</strong> The two rankings
+    disagree, and they disagree in the dangerous direction: the sharpest regressor is
+    among the weaker models at flagging the days the ground gives way. Whatever gets
+    deployed should be selected against NO-GO recall at the vehicle class in question.</li>
+    <li><strong>The TFT's quantiles are the practical advantage.</strong> A planner
+    reads risk off the P10–P90 band, and the P10 doubles as a safety-biased decision
+    rule; a point forecast at a threshold gives no way to tell a marginal call from a
+    confident one.</li>
+    <li><strong>Soil moisture here is a model state, not an observation.</strong>
+    ERA5-Land's soil moisture is unassimilated, so the RCI target inherits that.
+    Calibrating <code>RCI_DRY</code> and the decay constant needs field cone-penetrometer
+    readings from this site.</li>
+    <li><strong>One 9 km grid cell.</strong> Real off-road mobility also turns on slope,
+    vegetation, drainage and soil texture, none of which are in this record. Treat the
+    output as the weather-driven component of trafficability, not the whole answer.</li>
+    <li><strong>The rainfall day definition changes inside the test window</strong>
+    (IMD 08:30–08:30 IST to ERA5 00:00–24:00 IST at 2025-01-01), which adds a small
+    inhomogeneity to the 2025 half of the hold-out.</li>
+  </ul>
+  </div>
+</section>
+
+<footer>
+  Trained on an RTX 4060 Laptop GPU. Deep models: 3 seeds averaged, early stopping on the validation
+  block, 15 min total for all six architectures. Full metrics in <code>outputs/forecasting/results_full.csv</code>;
+  reproduce with <code>python -m traffic.run</code>.
+</footer>
+</div>
