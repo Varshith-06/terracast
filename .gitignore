@@ -8,3 +8,8 @@ data/**/*.zip
 docs/references/
 # local LaTeX engine (conda-forge tectonic + DLLs)
 tools/
+# edge bundle: zip for sending, and local benchmark / test-bed runs
+dist/
+edge/benchmark_*.json
+edge/source_results_*.csv
+edge/__pycache__/

@@ -68,6 +68,7 @@ pip install -r requirements.txt   # torch: see the note at the top of the file
 python -m traffic.check           # setup check: packages, inputs, loaders, terrain grids
 python -m traffic.vehicles        # vehicle table + VCI1/VCI50 -> outputs/vehicles/
 python -m traffic.forecast        # GRU+Ridge forecaster, per-band margins, edge numbers -> outputs/forecaster/
+python -m traffic.edge_bundle     # edge test bundle (2 pickles + runtime + benchmark) -> edge/, dist/*.zip
 python -m traffic.terrain         # 90 m terrain grid, OSM roads, wetness index -> outputs/terrain/
 python -m traffic.planner         # route backtest + convoy (~12 min) -> outputs/planner/
 python -m traffic.planner --tradeoff      # margin-scale sweep (~15 min)
