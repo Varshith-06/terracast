@@ -76,8 +76,13 @@ wetness index (SWI) and soil strength on day $t$ are:
   \left(1 - 0.15\min\!\left(R^{3d}_t / 50\,\mathrm{mm},\ 1\right)\right),
   \label{eq:rci}
 \end{gather}
-where $k = \ln(300/15)$ sets the saturated strength to 15, following field readings at
-immobilisation~\cite{rosca2018}.
+where $k = \ln(300/15)$. As in the strength--moisture model used in~\cite{liu2025},
+$\ln\mathrm{RCI}$ falls linearly with a moisture term; here that term is the SWI, as soil-type
+coefficients are not available for the site. The constants are ours: an assumed air-dry
+strength of 300, and a saturated strength of 15 from field readings at
+immobilisation~\cite{rosca2018}. The layer weights cover both NRMM critical layers, 0--15\,cm
+for one pass and 15--30\,cm for 50 passes~\cite{haley1979}, and the rain factor adds up to a
+15\% loss for surface water after heavy rain, which daily soil moisture does not capture.
 
 \subsubsection{Vehicle Cone Index}
 Each vehicle is characterised by its Mobility Index (MI)~\cite{rula1971,haley1979}. For a
@@ -98,14 +103,17 @@ reproduces the published M1 example (MI 98.6, $\mathrm{VCI}_1$ 26.3)~\cite{ciobo
 
 \subsubsection{Interaction}
 A vehicle is NO-GO when $\mathrm{RCI} < \mathrm{VCI}_1$, SLOW-GO when
-$\mathrm{VCI}_1 \le \mathrm{RCI} < \mathrm{VCI}_{50}$, and GO otherwise. SLOW-GO is quantified
-by the number of vehicles one track can carry:
+$\mathrm{VCI}_1 \le \mathrm{RCI} < \mathrm{VCI}_{50}$, and GO otherwise~\cite{rula1971,rosca2018}.
+SLOW-GO is quantified by the number of vehicles one track can carry:
 \begin{equation}
   n(\mathrm{RCI}) = 50^{(\mathrm{RCI} - \mathrm{VCI}_1)/(\mathrm{VCI}_{50} - \mathrm{VCI}_1)},
   \label{eq:passes}
 \end{equation}
 and by the speed from the fine-grained soil relations of the NATO Reference Mobility
-Model~\cite{haley1979}, where rim pull meets soil and slope resistance.
+Model~\cite{haley1979}, where rim pull meets soil and slope resistance. Equation
+(\ref{eq:passes}) is ours: the sources give only the 1-pass and 50-pass
+requirements~\cite{rula1971}, so the required strength is taken to rise with $\ln n$ between
+them, giving 1 pass at $\mathrm{VCI}_1$ and 50 at $\mathrm{VCI}_{50}$.
 
 \subsection{GRU--Ridge Forecaster}
 The forecaster uses only the local weather log, without numerical weather prediction. As RCI
@@ -118,25 +126,30 @@ $h = 1, \dots, 7$ days:
 \end{equation}
 where $\bar g_h$ is the mean of three gated recurrent unit (GRU) networks~\cite{cho2014}
 (2 layers, 128 hidden units) over a 60-day input window $\mathbf{X}$, and $r_h$ is a ridge
-regression on 128 causal features $\boldsymbol{\phi}_t$ (lags, rolling statistics and seasonal
-terms). The GRU is nonlinear in the raw sequence and the ridge is linear in the engineered
-features, so their errors partly cancel. A vehicle of band $b$ is called NO-GO when:
+regression~\cite{hoerl1970} on 128 causal features $\boldsymbol{\phi}_t$ (lags, rolling
+statistics and seasonal terms). Equation (\ref{eq:forecast}) is ours: predicting the change
+makes persistence the zero-change forecast, and the equal-weight mean pairs a model nonlinear
+in the raw sequence with one linear in the engineered features, so their errors partly cancel.
+A vehicle of band $b$ is called NO-GO when:
 \begin{equation}
   \widehat{\mathrm{RCI}}_{t+h} - m_{b,h} < \mathrm{VCI}_1 ,
   \label{eq:decision}
 \end{equation}
-where $m_{b,h}$ is the smallest safety margin that catches 90\% of NO-GO days. The GRUs are
+where $m_{b,h}$ is the smallest safety margin that catches 90\% of NO-GO days. This rule is
+ours: subtracting a margin biases the call towards safety, and tuning it per band and lead time
+fixes the miss rate for each vehicle class. The GRUs are
 trained with AdamW optimizer, Batch Size: 128, Epochs: 300 with early stopping (patience 30),
 Learning Rate: 0.001 with a one-cycle schedule, Weight Decay: 0.0001 and mean squared error
 loss. The forecaster has 531,228 parameters.
 
 \subsection{Trafficability Mapping and Route Planning}
 The forecast is spread over a 90\,m terrain grid by the topographic wetness
-index~\cite{beven1979}, which shifts the SWI of each cell by up to $\pm 0.2$. The soil
-membership of a cell is 0 below $\mathrm{VCI}_1$ and rises from 0.25 to 1 at
-$\mathrm{VCI}_{50}$, so SLOW-GO ground is slow rather than forbidden. With slope and land-cover
-memberships from Liu et al.~\cite{liu2025}, the memberships combine by fuzzy
-AND~\cite{zadeh1965}, which vetoes any cell with a single impassable factor:
+index~\cite{beven1979}, which shifts the SWI of each cell by up to $\pm 0.2$ in~(\ref{eq:rci}).
+The soil membership of a cell is 0 below $\mathrm{VCI}_1$ and rises from 0.25 to 1 at
+$\mathrm{VCI}_{50}$. Both steps are ours: wetter hollows soften first, and the floor of 0.25
+keeps SLOW-GO ground slow rather than forbidden. With slope and land-cover memberships from Liu
+et al.~\cite{liu2025}, the memberships combine by fuzzy AND~\cite{zadeh1965}, which vetoes any
+cell with a single impassable factor, as the improved map of~\cite{liu2025} does:
 \begin{equation}
   \mu_c = \min\left(\mu^{\mathrm{slope}}_c,\ \mu^{\mathrm{cover}}_c,\ \mu^{\mathrm{soil}}_c\right).
   \label{eq:fuzzy}
@@ -147,7 +160,8 @@ algorithm~\cite{dijkstra1959}. In a convoy, each pass weakens the track; inverti
 \begin{equation}
   \mathrm{VCI}(n) = \mathrm{VCI}_1 + (\mathrm{VCI}_{50} - \mathrm{VCI}_1)\ln n / \ln 50 ,
 \end{equation}
-so each vehicle re-plans on the pass counts left by the vehicles ahead of it.
+which is ours and follows directly from~(\ref{eq:passes}). Each vehicle then re-plans on the
+pass counts left by the vehicles ahead of it.
 
 \begin{figure}[t]
   \centering
@@ -418,13 +432,14 @@ Re-planning on the pass counts gets 9.2 through. Wheeled vehicles (band E) gain 
 
 \begin{thebibliography}{00}
 \bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
+\bibitem{liu2025} Q. Liu, X. You, X. Zhang, and J. Zuo, ``Construction of dynamic trafficability map for unmanned vehicles considering multiple environmental factors and path planning,'' Scientific Reports, vol. 15, p. 9957, 2025.
 \bibitem{rosca2018} P. Ro\c{s}ca, T. Ciobotaru, G. Olaru, and C. Puic\u{a}, ``Considerations regarding vehicle cone index for fine-grained soil,'' Journal of Military Technology, vol. 1, no. 2, pp. 39--44, 2018.
-\bibitem{rula1971} A. A. Rula and C. J. Nuttall, Jr., ``An analysis of ground mobility models (ANAMOB),'' U.S. Army Engineer Waterways Experiment Station, Vicksburg, MS, Tech. Rep. M-71-4, 1971.
 \bibitem{haley1979} P. W. Haley, M. P. Jurkat, and P. M. Brady, Jr., ``NATO reference mobility model, Edition I, users guide, volume I,'' U.S. Army Tank-Automotive Research and Development Command, Warren, MI, Tech. Rep. 12503, 1979.
+\bibitem{rula1971} A. A. Rula and C. J. Nuttall, Jr., ``An analysis of ground mobility models (ANAMOB),'' U.S. Army Engineer Waterways Experiment Station, Vicksburg, MS, Tech. Rep. M-71-4, 1971.
 \bibitem{ciobotaru2009} T. Ciobotaru, ``Semi-empiric algorithm for assessment of the vehicle mobility,'' Leonardo Electronic Journal of Practices and Technologies, vol. 8, no. 15, pp. 19--30, 2009.
 \bibitem{cho2014} K. Cho, B. van Merri\"{e}nboer, C. Gulcehre, D. Bahdanau, F. Bougares, H. Schwenk, and Y. Bengio, ``Learning phrase representations using RNN encoder--decoder for statistical machine translation,'' in Proc. EMNLP, 2014, pp. 1724--1734.
+\bibitem{hoerl1970} A. E. Hoerl and R. W. Kennard, ``Ridge regression: Biased estimation for nonorthogonal problems,'' Technometrics, vol. 12, no. 1, pp. 55--67, 1970.
 \bibitem{beven1979} K. J. Beven and M. J. Kirkby, ``A physically based, variable contributing area model of basin hydrology,'' Hydrological Sciences Bulletin, vol. 24, no. 1, pp. 43--69, 1979.
-\bibitem{liu2025} Q. Liu, X. You, X. Zhang, and J. Zuo, ``Construction of dynamic trafficability map for unmanned vehicles considering multiple environmental factors and path planning,'' Scientific Reports, vol. 15, p. 9957, 2025.
 \bibitem{zadeh1965} L. A. Zadeh, ``Fuzzy sets,'' Information and Control, vol. 8, no. 3, pp. 338--353, 1965.
 \bibitem{dijkstra1959} E. W. Dijkstra, ``A note on two problems in connexion with graphs,'' Numerische Mathematik, vol. 1, pp. 269--271, 1959.
 \bibitem{munoz2021} J. Mu\~{n}oz-Sabater et al., ``ERA5-Land: A state-of-the-art global reanalysis dataset for land applications,'' Earth System Science Data, vol. 13, no. 9, pp. 4349--4383, 2021.
