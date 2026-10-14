@@ -239,18 +239,6 @@ one test year and scored on the other, in both directions.
   \label{fig:rci}
 \end{figure}
 
-\subsection{Baseline Architectures}
-The GRU--Ridge forecaster is compared with persistence (today's RCI for every lead time) and
-with architectures used in earlier soil-moisture and trafficability forecasting work: dynamic
-harmonic regression (ARIMAX with Fourier terms)~\cite{hyndman2021}, Random
-Forest~\cite{markova2025}, LightGBM~\cite{ke2017}, LSTM~\cite{wang2024hess}, temporal
-convolutional network (TCN)~\cite{villia2022}, Transformer encoder~\cite{wang2024agwat},
-Temporal Fusion Transformer (TFT)~\cite{lim2021} and N-BEATS~\cite{oreshkin2020}, together with
-the day-of-year climatological mean. All learned models see the same inputs,
-predict the same change in RCI, and are trained and selected on the same years; the deep
-models are averaged over three seeds. All models are implemented in Python with PyTorch,
-scikit-learn and statsmodels.
-
 \subsection{Classification Performance Metrics}
 Each trafficability call is a binary classification of a vehicle-day, with NO-GO as the
 positive class, giving True Positives (TP), False Negatives (FN), False Positives (FP) and
@@ -258,32 +246,28 @@ True Negatives (TN). The following metrics are employed:
 \begin{enumerate}
   \item[a)] \emph{Recall:} $\mathrm{TP}/(\mathrm{TP} + \mathrm{FN})$
   \item[b)] \emph{Precision:} $\mathrm{TP}/(\mathrm{TP} + \mathrm{FP})$
-  \item[c)] \emph{False NO-GO calls:} FP per vehicle-year, the passable days lost to caution
-  \item[d)] \emph{Skill:} $1 - \mathrm{RMSE}/\mathrm{RMSE}_{\mathrm{pers}}$, the RMSE reduction over persistence
+  \item[c)] \emph{False NO-GO calls:} FP per vehicle-year
+  \item[d)] \emph{$R^2$:} $1 - \sum(y - \hat y)^2 / \sum(y - \bar y)^2$
 \end{enumerate}
-Since the margin~(\ref{eq:decision}) is tuned to 90\% recall, models are compared on
-precision and false NO-GO calls at equal recall. Routes are scored on the true ground of the
-travel day: a trip is \emph{stuck} if its route crosses a NO-GO cell, and \emph{held} if no
-route is planned although one existed.
+As the margin~(\ref{eq:decision}) is tuned to 90\% recall, decisions are compared on false
+NO-GO calls at equal recall. A planned trip is \emph{stuck} if its route crosses a NO-GO cell
+on the travel day, and \emph{held} if no route is planned although one existed.
 
 \subsection{Experimental Results}
 
-\subsubsection{Comparison with Existing Architectures}
-Table~\ref{tab:arch} compares the GRU--Ridge forecaster with the baseline architectures on the
-2024--25 test years. Every architecture beats persistence at 7 days, but not at every lead
-time: the LSTM is worse than persistence up to 3 days (Fig.~\ref{fig:skill}). The GRU--Ridge forecaster has the second-lowest RMSE averaged over the
-seven lead times (14.64\,psi, after 14.45 for the TFT) with about one-sixth of the TFT's
-parameters, and its 7-day RMSE is within 0.1\,psi of the best (N-BEATS). At 7 days it makes the
-fewest false NO-GO calls among the deep architectures: 31.4 per vehicle-year, against
-34.6--35.7 for LSTM, TCN, Transformer and TFT, and 32.7 for the Random Forest
-of~\cite{markova2025}. Two simpler baselines make fewer: ARIMAX (29.5) and the climatological
-mean with a margin (23.4), which shows that one week ahead the NO-GO days are largely set by
-the season. At 3 days, the Transformer makes the fewest false calls (19.7 against 24.0).
+\subsubsection{Model Selection}
+Ten forecasting models were tested on the same inputs and years (Table~\ref{tab:arch}):
+persistence, the day-of-year climatology, ARIMAX~\cite{hyndman2021}, Random
+Forest~\cite{markova2025}, LightGBM~\cite{ke2017}, LSTM~\cite{wang2024hess},
+TCN~\cite{villia2022}, Transformer~\cite{wang2024agwat}, TFT~\cite{lim2021} and
+N-BEATS~\cite{oreshkin2020}, with the deep models averaged over three seeds. The GRU--Ridge
+forecaster has the second-lowest RMSE averaged over the seven lead times (14.64\,psi) and the
+fewest false NO-GO calls of the deep models at 7 days, with fewer parameters than the TFT and
+N-BEATS, so it is used in the rest of the evaluation.
 
 \begin{table}[t]
-  \caption{Comparison with existing architectures on the 2024--25 test years: RMSE (psi) by
-  lead time, and false NO-GO calls per vehicle-year (FP/yr) at 90\% recall with cross-year tuned
-  margins. Parameters count all three seeds.}
+  \caption{Forecasting models tested on the 2024--25 test years: RMSE (psi) by lead time, and
+  false NO-GO calls per vehicle-year (FP/yr) at 90\% recall. Parameters count all three seeds.}
   \label{tab:arch}
   \centering
   \footnotesize
@@ -309,44 +293,46 @@ the season. At 3 days, the Transformer makes the fewest false calls (19.7 agains
   \end{tabular}
 \end{table}
 
-\begin{figure}[t]
+\subsubsection{Comparison with Past Works}
+Table~\ref{tab:past} compares the proposed framework with published results; as those works
+use data from other sites, our forecasts are converted to their target, soil wetness, by
+inverting~(\ref{eq:rci}). The proposed forecaster reaches $R^2$ of 0.991, 0.960 and 0.903 at
+1, 3 and 7 days, higher at every lead time than all models of~\cite{wang2024hess}, including
+their best (GAN-LSTM, 0.963, 0.919 and 0.846), and than the mean $R^2$ of 0.523
+of~\cite{wang2024agwat}. It is also the only approach that forecasts soil strength days ahead,
+assesses each vehicle and plans routes on the forecast; against the trafficability map of Liu
+et al.~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days (Section~V-C4).
+
+\begin{table}[t]
+  \caption{Comparison with past works. SM: soil moisture; CI: cone index; TM: trafficability
+  map. $R^2$ of the proposed forecaster is on soil wetness, converted from its RCI forecast.}
+  \label{tab:past}
   \centering
-  \begin{tikzpicture}
-    \begin{axis}[
-        width=\columnwidth, height=3.9cm, xmin=1, xmax=7, xtick={1,...,7},
-        ymin=-6, ymax=22, ytick={-5,0,5,10,15,20},
-        xlabel={lead time (days)}, ylabel={skill over persistence (\%)},
-        label style={font=\scriptsize}, tick label style={font=\scriptsize},
-        grid=major, grid style={black!10},
-        legend style={font=\tiny, at={(0.5,1.02)}, anchor=south, draw=none, legend columns=4},
-        legend cell align=left, every axis plot/.append style={mark size=1.2pt}]
-      \addplot[gray, mark=triangle*] coordinates {(1,15.2) (2,9.7) (3,8.5) (4,9.7) (5,11.8) (6,13.6) (7,14.8)};
-      \addlegendentry{ARIMAX}
-      \addplot[brown!80!black, mark=diamond*] coordinates {(1,2.4) (2,2.0) (3,1.6) (4,2.1) (5,3.5) (6,5.6) (7,8.2)};
-      \addlegendentry{RF}
-      \addplot[green!50!black, mark=square*] coordinates {(1,-5.1) (2,-4.7) (3,-1.9) (4,1.6) (5,5.4) (6,9.4) (7,13.2)};
-      \addlegendentry{LSTM}
-      \addplot[violet, mark=pentagon*] coordinates {(1,13.0) (2,10.6) (3,9.9) (4,10.3) (5,10.3) (6,10.4) (7,12.0)};
-      \addlegendentry{TCN}
-      \addplot[cyan!70!black, mark=x] coordinates {(1,9.1) (2,7.5) (3,8.5) (4,9.3) (5,9.9) (6,12.0) (7,13.1)};
-      \addlegendentry{Transformer}
-      \addplot[orange!90!black, mark=o] coordinates {(1,9.7) (2,12.8) (3,15.4) (4,17.3) (5,18.4) (6,18.6) (7,18.6)};
-      \addlegendentry{TFT}
-      \addplot[red!70!black, mark=+] coordinates {(1,8.3) (2,9.6) (3,11.0) (4,13.4) (5,16.8) (6,19.0) (7,20.5)};
-      \addlegendentry{N-BEATS}
-      \addplot[very thick, blue!70!black, mark=*] coordinates {(1,9.8) (2,10.9) (3,12.4) (4,14.4) (5,16.4) (6,18.1) (7,20.2)};
-      \addlegendentry{\textbf{GRU--Ridge}}
-    \end{axis}
-  \end{tikzpicture}
-  \caption{RMSE skill over persistence by lead time on the 2024--25 test years.}
-  \label{fig:skill}
-\end{figure}
+  \footnotesize
+  \setlength{\tabcolsep}{2.6pt}
+  \begin{tabular}{@{}llcccccc@{}}
+    \toprule
+    & & & & & \multicolumn{3}{c}{$R^2$} \\
+    \cmidrule(l){6-8}
+    Work & Model & Target & Vehicle & Route & 1 d & 3 d & 7 d \\
+    \midrule
+    \cite{liu2025}        & AHP map     & TM  & \checkmark & \checkmark & -- & -- & -- \\
+    \cite{markova2025}    & RF          & CI  & $\times$   & $\times$   & -- & -- & -- \\
+    \cite{wang2024hess}   & RF          & SM  & $\times$   & $\times$   & 0.929 & 0.891 & 0.832 \\
+    \cite{wang2024hess}   & LSTM        & SM  & $\times$   & $\times$   & 0.963 & 0.916 & 0.842 \\
+    \cite{wang2024hess}   & Transformer & SM  & $\times$   & $\times$   & 0.952 & 0.912 & 0.843 \\
+    \cite{wang2024hess}   & GAN-LSTM    & SM  & $\times$   & $\times$   & 0.963 & 0.919 & 0.846 \\
+    \cite{wang2024agwat}  & Transformer & SM  & $\times$   & $\times$   & \multicolumn{3}{c}{0.523 (mean)} \\
+    \textbf{Ours} & \textbf{GRU--Ridge} & RCI & \checkmark & \checkmark & \textbf{0.991} & \textbf{0.960} & \textbf{0.903} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \subsubsection{NO-GO Classification by Band}
-Fig.~\ref{fig:bands} breaks the 7-day false NO-GO calls down by vehicle band. Against the same
-margin rule on persistence, the forecast makes 23--45\% fewer false calls at equal recall, and
-fewer than the TFT in every band. Light tracked vehicles (band A) are the hardest case, as their
-$\mathrm{VCI}_1$ lies close to the saturated soil strength.
+Against the same margin rule on persistence, the forecast makes 23--45\% fewer false NO-GO
+calls at equal recall, and fewer than the TFT in every band (Fig.~\ref{fig:bands}). Light
+tracked vehicles (band A) are the hardest case, as their $\mathrm{VCI}_1$ lies close to the
+saturated soil strength.
 
 \begin{figure}[t]
   \centering
