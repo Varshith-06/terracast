@@ -77,12 +77,11 @@ wetness index (SWI) and soil strength on day $t$ are:
   \label{eq:rci}
 \end{gather}
 where $k = \ln(300/15)$. As in the strength--moisture model used in~\cite{liu2025},
-$\ln\mathrm{RCI}$ falls linearly with a moisture term; here that term is the SWI, as soil-type
-coefficients are not available for the site. The constants are ours: an assumed air-dry
-strength of 300, and a saturated strength of 15 from field readings at
-immobilisation~\cite{rosca2018}. The layer weights cover both NRMM critical layers, 0--15\,cm
-for one pass and 15--30\,cm for 50 passes~\cite{haley1979}, and the rain factor adds up to a
-15\% loss for surface water after heavy rain, which daily soil moisture does not capture.
+$\ln\mathrm{RCI}$ falls linearly with a moisture term, here the SWI. The constants are ours: an
+assumed air-dry strength of 300, a saturated strength of 15 from field readings at
+immobilisation~\cite{rosca2018}, layer weights spanning the NRMM critical layers of 0--15 and
+15--30\,cm~\cite{haley1979}, and a rain factor of up to 15\% for surface water that daily soil
+moisture misses.
 
 \subsubsection{Vehicle Cone Index}
 Each vehicle is characterised by its Mobility Index (MI)~\cite{rula1971,haley1979}. For a
@@ -109,11 +108,23 @@ SLOW-GO is quantified by the number of vehicles one track can carry:
   n(\mathrm{RCI}) = 50^{(\mathrm{RCI} - \mathrm{VCI}_1)/(\mathrm{VCI}_{50} - \mathrm{VCI}_1)},
   \label{eq:passes}
 \end{equation}
-and by the speed from the fine-grained soil relations of the NATO Reference Mobility
-Model~\cite{haley1979}, where rim pull meets soil and slope resistance. Equation
-(\ref{eq:passes}) is ours: the sources give only the 1-pass and 50-pass
-requirements~\cite{rula1971}, so the required strength is taken to rise with $\ln n$ between
-them, giving 1 pass at $\mathrm{VCI}_1$ and 50 at $\mathrm{VCI}_{50}$.
+and by its speed. Equation (\ref{eq:passes}) is ours: the sources give only the 1-pass and
+50-pass requirements~\cite{rula1971}, so the required strength is taken to rise with $\ln n$
+between them, giving 1 pass at $\mathrm{VCI}_1$ and 50 at $\mathrm{VCI}_{50}$.
+
+The speed follows the fine-grained soil relations of the NATO Reference Mobility Model
+(NRMM)~\cite{haley1979}, in which the motion resistance $R/W$, traction $T/W$ and slip $s$ of
+the running gear are functions of the excess strength $\mathrm{RCI} - \mathrm{VCI}_1$. On a
+slope $\theta$, the vehicle is stuck if $(T/W)\cos\theta < \sin\theta + (R/W)\cos\theta$;
+otherwise its speed is where the rim pull meets the resistance:
+\begin{equation}
+  v = \min\!\left(\frac{\eta P\,(1 - s)}{W\left(\sin\theta + (R/W)\cos\theta\right)},\ v_{\max}\right),
+  \label{eq:speed}
+\end{equation}
+where $P$ is the engine power, $W$ the weight, $v_{\max}$ the top speed and $\eta = 0.8$ an
+assumed driveline efficiency. The constant-power rim pull $\eta P / v$ is ours, as NRMM builds
+it gear by gear from engine data that the vehicle table lacks. On paved roads, the NRMM
+hard-surface resistance replaces the soil terms.
 
 \subsection{GRU--Ridge Forecaster}
 The forecaster uses only the local weather log, without numerical weather prediction. As RCI
@@ -128,8 +139,8 @@ where $\bar g_h$ is the mean of three gated recurrent unit (GRU) networks~\cite{
 (2 layers, 128 hidden units) over a 60-day input window $\mathbf{X}$, and $r_h$ is a ridge
 regression~\cite{hoerl1970} on 128 causal features $\boldsymbol{\phi}_t$ (lags, rolling
 statistics and seasonal terms). Equation (\ref{eq:forecast}) is ours: predicting the change
-makes persistence the zero-change forecast, and the equal-weight mean pairs a model nonlinear
-in the raw sequence with one linear in the engineered features, so their errors partly cancel.
+makes persistence the zero-change forecast, and averaging a nonlinear sequence model with a
+linear feature model lets their errors partly cancel.
 A vehicle of band $b$ is called NO-GO when:
 \begin{equation}
   \widehat{\mathrm{RCI}}_{t+h} - m_{b,h} < \mathrm{VCI}_1 ,
@@ -142,26 +153,52 @@ trained with AdamW optimizer, Batch Size: 128, Epochs: 300 with early stopping (
 Learning Rate: 0.001 with a one-cycle schedule, Weight Decay: 0.0001 and mean squared error
 loss. The forecaster has 531,228 parameters.
 
-\subsection{Trafficability Mapping and Route Planning}
+\subsection{Trafficability Mapping}
 The forecast is spread over a 90\,m terrain grid by the topographic wetness
 index~\cite{beven1979}, which shifts the SWI of each cell by up to $\pm 0.2$ in~(\ref{eq:rci}).
 The soil membership of a cell is 0 below $\mathrm{VCI}_1$ and rises from 0.25 to 1 at
 $\mathrm{VCI}_{50}$. Both steps are ours: wetter hollows soften first, and the floor of 0.25
-keeps SLOW-GO ground slow rather than forbidden. With slope and land-cover memberships from Liu
-et al.~\cite{liu2025}, the memberships combine by fuzzy AND~\cite{zadeh1965}, which vetoes any
+keeps SLOW-GO ground slow rather than forbidden. Slope and land-cover memberships follow the
+tables of Liu et al.~\cite{liu2025} for tracked and wheeled vehicles, with forest split into
+sparse, open and dense canopy by NDVI; water is 0, and roads are 1 for both. The memberships
+combine by fuzzy AND~\cite{zadeh1965}, which vetoes any
 cell with a single impassable factor, as the improved map of~\cite{liu2025} does:
 \begin{equation}
   \mu_c = \min\left(\mu^{\mathrm{slope}}_c,\ \mu^{\mathrm{cover}}_c,\ \mu^{\mathrm{soil}}_c\right).
   \label{eq:fuzzy}
 \end{equation}
-Routes minimise travel time at a speed proportional to $\mu_c$, using Dijkstra's
-algorithm~\cite{dijkstra1959}. In a convoy, each pass weakens the track; inverting
-(\ref{eq:passes}), the $n$-th vehicle needs:
+\subsection{Route Planning}
+The map is converted to a graph in which each cell is linked to its eight neighbours, and NO-GO
+cells ($\mu_c = 0$) are removed. The cost of the edge between cells $u$ and $v$ is the time to
+cross it at a speed proportional to the membership:
+\begin{equation}
+  w(u,v) = d_{uv} \cdot \tfrac{1}{2}\left(1/\mu_u + 1/\mu_v\right),
+  \label{eq:cost}
+\end{equation}
+where $d_{uv}$ is 90\,m, or $90\sqrt{2}$\,m on a diagonal. Equation (\ref{eq:cost}) is ours: each
+half of a step is charged at the speed of the cell it lies in. Paved roads ignore soil
+($\mu^{\mathrm{soil}} = 1$), while unpaved tracks soften like the ground around them. A trip
+planned on day $t$ for day $t+h$ proceeds as follows:
+\begin{enumerate}
+  \item[1)] forecast $\widehat{\mathrm{RCI}}_{t+h}$ with (\ref{eq:forecast}) and subtract $m_{b,h}$;
+  \item[2)] compute $\mu_c$ for every cell with (\ref{eq:fuzzy});
+  \item[3)] build the graph with (\ref{eq:cost}) and find the least-cost route from the start
+  with Dijkstra's algorithm~\cite{dijkstra1959};
+  \item[4)] if no route reaches the destination, hold the trip back rather than send it over
+  NO-GO ground.
+\end{enumerate}
+Dijkstra's algorithm finds routes of the same cost as the A* search of~\cite{liu2025} with an
+admissible heuristic~\cite{hart1968}, and one search from a start serves every destination. For
+travel-time routing, $1/\mu$ in (\ref{eq:cost}) is replaced by the time per km at the speed
+of~(\ref{eq:speed}), scaled by the land-cover membership off road.
+
+In a convoy, each pass weakens the track; inverting (\ref{eq:passes}), the $n$-th vehicle needs:
 \begin{equation}
   \mathrm{VCI}(n) = \mathrm{VCI}_1 + (\mathrm{VCI}_{50} - \mathrm{VCI}_1)\ln n / \ln 50 ,
 \end{equation}
-which is ours and follows directly from~(\ref{eq:passes}). Each vehicle then re-plans on the
-pass counts left by the vehicles ahead of it.
+which is ours and follows directly from~(\ref{eq:passes}). The vehicles plan in turn: after
+each route, the pass count of its cells rises by one, and the next vehicle plans on the
+updated map with $\mathrm{VCI}(n)$ in place of $\mathrm{VCI}_1$.
 
 \begin{figure}[t]
   \centering
@@ -217,7 +254,8 @@ In this study, the following three datasets are utilized:
   (Fig.~\ref{fig:rci}).
   \item \emph{Vehicle Attribute Dataset:} a public list of 2,451 records compiled from a
   simulation game's files, of which mass and engine power are used. After cleaning, 1,145
-  ground vehicles remain (1,004 tracked, 125 wheeled, 16 half-tracks). As masses are
+  ground vehicles remain (1,004 tracked, 125 wheeled, 16 half-tracks); the running gear is
+  read from the vehicle names, and track or tyre dimensions are assumed by weight class. As masses are
   per-template values, results are reported for five $\mathrm{VCI}_1$ bands (A: $<$18,
   B: 18--21, C: 21--24, D: 24--30, E: $\geq$30 psi), each planned with its median vehicle.
   \item \emph{Terrain Data:} a Google Earth Engine export with a 30\,m elevation model,
@@ -232,7 +270,7 @@ one test year and scored on the other, in both directions.
   \centering
   \begin{tikzpicture}
     \begin{axis}[
-        width=\columnwidth, height=3.5cm, ymode=log, ymin=12, ymax=320,
+        width=\columnwidth, height=3.1cm, ymode=log, ymin=12, ymax=320,
         xmin=0, xmax=24, xtick={0,3,...,24},
         xticklabels={Jan,Apr,Jul,Oct,Jan,Apr,Jul,Oct,Jan},
         ytick={15,25,50,100,200}, yticklabels={15,25,50,100,200},
@@ -270,11 +308,8 @@ on the travel day, and \emph{held} if no route is planned although one existed.
 \subsection{Experimental Results}
 
 \subsubsection{Model Selection}
-Ten forecasting models were tested on the same inputs and years (Table~\ref{tab:arch}):
-persistence, the day-of-year climatology, ARIMAX~\cite{hyndman2021}, Random
-Forest~\cite{markova2025}, LightGBM~\cite{ke2017}, LSTM~\cite{wang2024hess},
-TCN~\cite{villia2022}, Transformer~\cite{wang2024agwat}, TFT~\cite{lim2021} and
-N-BEATS~\cite{oreshkin2020}, with the deep models averaged over three seeds. The GRU--Ridge
+Ten forecasting models were tested on the same inputs and years (Table~\ref{tab:arch}), with
+the deep models averaged over three seeds. The GRU--Ridge
 forecaster has the second-lowest RMSE averaged over the seven lead times (14.64\,psi) and the
 fewest false NO-GO calls of the deep models at 7 days, with fewer parameters than the TFT and
 N-BEATS, so it is used in the rest of the evaluation.
@@ -315,7 +350,7 @@ inverting~(\ref{eq:rci}). The proposed forecaster reaches $R^2$ of 0.991, 0.960 
 their best (GAN-LSTM, 0.963, 0.919 and 0.846), and than the mean $R^2$ of 0.523
 of~\cite{wang2024agwat}. It is also the only approach that forecasts soil strength days ahead,
 assesses each vehicle and plans routes on the forecast; against the trafficability map of Liu
-et al.~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days (Section~V-C4).
+et al.~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days (Section~\ref{sec:res-route}).
 
 \begin{table}[t]
   \caption{Comparison with past works. SM: soil moisture; CI: cone index; TM: trafficability
@@ -342,44 +377,49 @@ et al.~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days (Section~V-C
   \end{tabular}
 \end{table}
 
-\subsubsection{NO-GO Classification by Band}
+\subsubsection{Results by Vehicle Band}
+Table~\ref{tab:slowgo} gives, for each band's planning vehicle, the share of 2024--25 test days
+that are NO-GO and SLOW-GO, the passes~(\ref{eq:passes}) and level-ground
+speed~(\ref{eq:speed}) on its SLOW-GO days, and the false NO-GO calls at 7 days. A typical
+SLOW-GO day lets only 2--5 vehicles use one track, at 14--32\,km/h against 57--60\,km/h on dry
+ground; at 5\,psi above $\mathrm{VCI}_1$, one track carries 1.5--2.3 vehicles at 12--16\,km/h.
 Against the same margin rule on persistence, the forecast makes 23--45\% fewer false NO-GO
-calls at equal recall, and fewer than the TFT in every band (Fig.~\ref{fig:bands}). Light
-tracked vehicles (band A) are the hardest case, as their $\mathrm{VCI}_1$ lies close to the
-saturated soil strength.
+calls at equal recall in every band. Light tracked vehicles (band A) are the hardest case, as
+their $\mathrm{VCI}_1$ lies close to the saturated soil strength. Routing on the travel time
+of~(\ref{eq:speed}) instead of on $\mu_c$ shortens trips by about 5\% at the same stuck rate,
+and the travel time predicted at planning is on average within 0.3\% (3 days) and 1.0\%
+(7 days) of the time on the travel day.
 
-\begin{figure}[t]
+\begin{table}[t]
+  \caption{Results by vehicle band on the 2024--25 test days: share of days NO-GO and SLOW-GO,
+  median passes per track and level-ground speed on SLOW-GO days, and false NO-GO calls per
+  vehicle-year at 7 days and 90\% recall for persistence (P) and the proposed forecaster (F).}
+  \label{tab:slowgo}
   \centering
-  \begin{tikzpicture}
-    \begin{axis}[
-        width=\columnwidth, height=3.6cm, ybar, bar width=4.2pt, ymin=0, ymax=80,
-        symbolic x coords={A,B,C,D,E}, xtick=data, enlarge x limits=0.14,
-        xticklabels={A (17.6),B (19.0),C (21.6),D (26.2),E (36.7)},
-        xlabel={band (median $\mathrm{VCI}_1$, psi)}, ylabel={false NO-GO / vehicle-year},
-        label style={font=\scriptsize}, tick label style={font=\scriptsize},
-        ymajorgrids, grid style={black!10},
-        legend style={font=\tiny, at={(0.98,0.97)}, anchor=north east, draw=none, legend columns=1},
-        legend cell align=left]
-      \addplot[fill=orange!60, draw=orange!80!black] coordinates {(A,74.0) (B,54.0) (C,43.9) (D,28.6) (E,13.8)};
-      \addlegendentry{Persistence}
-      \addplot[fill=black!25, draw=black!60] coordinates {(A,57.5) (B,40.1) (C,36.3) (D,23.6) (E,8.7)};
-      \addlegendentry{TFT}
-      \addplot[fill=blue!60, draw=blue!70!black] coordinates {(A,54.3) (B,34.0) (C,27.8) (D,22.0) (E,7.6)};
-      \addlegendentry{GRU--Ridge (ours)}
-    \end{axis}
-  \end{tikzpicture}
-  \caption{False NO-GO calls per vehicle-year at 7 days and 90\% recall, by vehicle band.}
-  \label{fig:bands}
-\end{figure}
+  \footnotesize
+  \setlength{\tabcolsep}{2.2pt}
+  \begin{tabular}{@{}lrrrrrrr@{}}
+    \toprule
+    & & & & \multicolumn{2}{c}{SLOW-GO days} & \multicolumn{2}{c}{FP/yr} \\
+    \cmidrule(lr){5-6} \cmidrule(l){7-8}
+    Band & VCI$_1$ & NO-GO & SLOW-GO & Passes & km/h & P & F \\
+    \midrule
+    A (tracked) & 17.6 & 13.3\% & 21.8\% & 1.8 & 14.2 & 74.0 & \textbf{54.3} \\
+    B (tracked) & 19.0 & 18.9\% & 16.8\% & 2.4 & 13.9 & 54.0 & \textbf{34.0} \\
+    C (tracked) & 21.6 & 24.4\% & 12.9\% & 2.7 & 13.8 & 43.9 & \textbf{27.8} \\
+    D (tracked) & 26.2 & 29.0\% &  9.8\% & 3.4 & 18.6 & 28.6 & \textbf{22.0} \\
+    E (wheeled) & 36.7 & 33.9\% &  8.6\% & 5.2 & 31.7 & 13.8 & \textbf{7.6} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 
 \subsubsection{Route Planning}
-For every test day, band and lead time, 30 trips of 8--25\,km are planned and scored against
-the true ground of the travel day, giving 325,800 trips per planner. Planning on terrain alone
-sends 35.5\% of trips into mud. Planning on the forecast beats planning on today's
+\label{sec:res-route}
+Over 325,800 trips of 8--25\,km per planner (30 per test day, band and lead time), planning on
+terrain alone sends 35.5\% of trips into mud. Planning on the forecast beats planning on today's
 map~\cite{liu2025} on both errors: 1.6\% against 2.1\% of trips stuck at 3 days (24\% fewer)
-and 2.9\% against 4.0\% at 7 days (27\% fewer), while holding back 2.3\% against 3.0\% and
-4.5\% against 5.8\% of possible trips. A margin on today's map is slightly safer at its tuned
-setting but holds back nearly twice as many trips. Sweeping both margins
+and 2.9\% against 4.0\% at 7 days (27\% fewer), with fewer trips held back. A margin on today's
+map is slightly safer at its tuned setting but holds back nearly twice as many trips. Sweeping both margins
 (Fig.~\ref{fig:tradeoff}) shows that at an equal stuck rate the forecast holds back 40\%
 (3 days) and 31\% (7 days) fewer trips. Without the veto of~(\ref{eq:fuzzy}), a weighted mean of
 the same memberships sends 34.8\% of trips into mud.
@@ -389,7 +429,7 @@ the same memberships sends 34.8\% of trips into mud.
   \begin{tikzpicture}
     \begin{groupplot}[
         group style={group size=2 by 1, horizontal sep=9mm},
-        width=0.56\columnwidth, height=3.6cm,
+        width=0.56\columnwidth, height=3.3cm,
         xlabel={held back (\%)}, xlabel style={font=\scriptsize},
         tick label style={font=\scriptsize}, title style={font=\scriptsize},
         ymin=0, xmin=0, grid=major, grid style={black!10}]
@@ -442,6 +482,7 @@ Re-planning on the pass counts gets 9.2 through. Wheeled vehicles (band E) gain 
 \bibitem{beven1979} K. J. Beven and M. J. Kirkby, ``A physically based, variable contributing area model of basin hydrology,'' Hydrological Sciences Bulletin, vol. 24, no. 1, pp. 43--69, 1979.
 \bibitem{zadeh1965} L. A. Zadeh, ``Fuzzy sets,'' Information and Control, vol. 8, no. 3, pp. 338--353, 1965.
 \bibitem{dijkstra1959} E. W. Dijkstra, ``A note on two problems in connexion with graphs,'' Numerische Mathematik, vol. 1, pp. 269--271, 1959.
+\bibitem{hart1968} P. E. Hart, N. J. Nilsson, and B. Raphael, ``A formal basis for the heuristic determination of minimum cost paths,'' IEEE Transactions on Systems Science and Cybernetics, vol. 4, no. 2, pp. 100--107, 1968.
 \bibitem{munoz2021} J. Mu\~{n}oz-Sabater et al., ``ERA5-Land: A state-of-the-art global reanalysis dataset for land applications,'' Earth System Science Data, vol. 13, no. 9, pp. 4349--4383, 2021.
 \bibitem{pai2014} D. S. Pai, L. Sridhar, M. Rajeevan, O. P. Sreejith, N. S. Satbhai, and B. Mukhopadhyay, ``Development of a new high spatial resolution ($0.25^\circ \times 0.25^\circ$) long period (1901--2010) daily gridded rainfall data set over India and its comparison with existing data sets over the region,'' Mausam, vol. 65, no. 1, pp. 1--18, 2014.
 \bibitem{zanaga2022} D. Zanaga et al., ``ESA WorldCover 10 m 2021 v200,'' Zenodo, 2022, doi: 10.5281/zenodo.7254221.
