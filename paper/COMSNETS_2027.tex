@@ -271,7 +271,8 @@ In this study, the following three datasets are utilized:
   \item \emph{Pachmarhi Weather Record:} daily data for the Pachmarhi plateau (Satpura range,
   1,067\,m), 2015--2025 (4,018 days): soil moisture, temperature and humidity from
   ERA5-Land~\cite{munoz2021}, wind, pressure and cloud cover from ERA5~\cite{hersbach2020}, and
-  IMD gridded rainfall~\cite{pai2014}, from ERA5 in 2025 (day 00--24\,h, not 08:30--08:30 IST).
+  IMD gridded rainfall~\cite{pai2014}, replaced in 2025 by ERA5, whose day runs 00--24\,h rather
+  than 08:30--08:30 IST.
   RCI falls through the vehicle thresholds every monsoon (Fig.~\ref{fig:rci}).
   \item \emph{Vehicle Attribute Dataset:} 2,451 records compiled from a simulation game's files,
   of which mass, power and top speed are used. After removing non-vehicles and replacing 111
@@ -440,8 +441,8 @@ Over 325,800 trips per planner, terrain alone sends 35.5\% of trips into mud. At
 forecast beats today's map on both errors: 2.9\% against 4.0\% stuck (27\% fewer, CI 11--54\%)
 and 4.5\% against 5.8\% held (CI 6--37\% fewer). At 3 days it gives 1.6\% against 2.1\% stuck and
 2.3\% against 3.0\% held, but both intervals include zero. A margin on today's map is slightly
-safer at its tuned setting but holds back far more trips; the forecast holds back 25--62\% fewer
-at 3 days and 27--61\% at 7 days (CI). At an equal stuck rate (Fig.~\ref{fig:tradeoff}) it holds
+safer at its tuned setting but holds back far more trips; the forecast holds back 47\% fewer at
+both lead times (CI 25--62\% at 3 days, 27--61\% at 7 days). At an equal stuck rate (Fig.~\ref{fig:tradeoff}) it holds
 back 40\% fewer trips at 3 days (CI 3--67\%) and 31\% at 7 days, where the interval ($-$2--69\%)
 includes zero. Completed routes are within 0.1\% of the best travel time. The product rule
 matches the fuzzy AND, the equal-weight mean with veto sends 1.8\% into mud at 3 days but takes
