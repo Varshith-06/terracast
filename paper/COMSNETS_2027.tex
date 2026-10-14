@@ -1,0 +1,458 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+% The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
+%Template version as of 6/27/2024
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+% added for Sections IV and V
+\usepackage{booktabs}
+\usepackage{tikz}
+\usetikzlibrary{arrows.meta,positioning,calc}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usepgfplotslibrary{groupplots}
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{\sc e}\kern-.125em\lower.7ex\hbox{\sc x}}}
+\begin{document}
+
+\title{Modeling Terrain-Vehicle Interaction for Off-Road Mobility Assessment}
+
+\author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
+\IEEEauthorblockA{\textit{Department of Engineering Sciences} \\
+\textit{ABV-IIITM Gwalior, India}\\
+@iiitm.ac.in}
+\and
+\IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
+\IEEEauthorblockA{\textit{Department of Engineering Sciences} \\
+\textit{ABV-IIITM Gwalior, India}\\
+@iiitm.ac.in}
+\and
+\IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
+\IEEEauthorblockA{\textit{Department of Engineering Sciences} \\
+\textit{ABV-IIITM Gwalior, India}\\
+@iiitm.ac.in}
+}
+
+\maketitle
+
+\begin{abstract}
+Varshith and Shreyas
+\end{abstract}
+
+\begin{IEEEkeywords}
+Terrain-Vehicle, Off-road mobility, ML
+\end{IEEEkeywords}
+
+\section{Introduction}
+
+\section{Related Works}
+
+\section{Problem Statement}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Proposed Approach}
+\label{sec:approach}
+
+The proposed framework models terrain--vehicle interaction as a comparison between the rating
+cone index (RCI) of the soil and the vehicle cone index (VCI) of each vehicle, both in psi.
+Since soil strength changes from day to day, the framework forecasts RCI from a local weather
+log and plans routes for the day of travel rather than the day of planning (shown in
+Fig.~\ref{fig:framework}).
+
+\subsection{Terrain--Vehicle Interaction Model}
+
+\subsubsection{Soil Strength}
+With the surface (0--7\,cm) and root-zone (7--28\,cm) soil moisture scaled to
+$s^{(1)}_t, s^{(2)}_t \in [0,1]$, and $R^{3d}_t$ the rainfall of the last three days, the soil
+wetness index (SWI) and soil strength on day $t$ are:
+\begin{gather}
+  \mathrm{SWI}_t = 0.35\,s^{(1)}_t + 0.65\,s^{(2)}_t , \\
+  \mathrm{RCI}_t = 300\,e^{-k\,\mathrm{SWI}_t}
+  \left(1 - 0.15\min\!\left(R^{3d}_t / 50\,\mathrm{mm},\ 1\right)\right),
+  \label{eq:rci}
+\end{gather}
+where $k = \ln(300/15)$ sets the saturated strength to 15, following field readings at
+immobilisation~\cite{rosca2018}.
+
+\subsubsection{Vehicle Cone Index}
+Each vehicle is characterised by its Mobility Index (MI)~\cite{rula1971,haley1979}. For a
+tracked vehicle:
+\begin{equation}
+  \mathrm{MI} = \left(\frac{\mathrm{CPF}\cdot\mathrm{WF}}{\mathrm{TF}\cdot\mathrm{GF}}
+  + \mathrm{BF} - \mathrm{CF}\right)\mathrm{EF}\cdot\mathrm{TrF},
+\end{equation}
+where CPF, WF, TF, GF, BF, CF, EF and TrF are the contact pressure, weight, track, grouser,
+bogie, clearance, engine and transmission factors. MI gives the soil strength needed for one
+pass and for 50 passes in the same track~\cite{ciobotaru2009}:
+\begin{align}
+  \mathrm{VCI}_1    &= 7.0 + 0.2\,\mathrm{MI} - 39.2/(\mathrm{MI} + 5.6), \\
+  \mathrm{VCI}_{50} &= 19.27 + 0.43\,\mathrm{MI} - 125.79/(\mathrm{MI} + 7.08).
+\end{align}
+Wheeled vehicles use the corresponding wheeled forms~\cite{rosca2018}. Our implementation
+reproduces the published M1 example (MI 98.6, $\mathrm{VCI}_1$ 26.3)~\cite{ciobotaru2009}.
+
+\subsubsection{Interaction}
+A vehicle is NO-GO when $\mathrm{RCI} < \mathrm{VCI}_1$, SLOW-GO when
+$\mathrm{VCI}_1 \le \mathrm{RCI} < \mathrm{VCI}_{50}$, and GO otherwise. SLOW-GO is quantified
+by the number of vehicles one track can carry:
+\begin{equation}
+  n(\mathrm{RCI}) = 50^{(\mathrm{RCI} - \mathrm{VCI}_1)/(\mathrm{VCI}_{50} - \mathrm{VCI}_1)},
+  \label{eq:passes}
+\end{equation}
+and by the speed from the fine-grained soil relations of the NATO Reference Mobility
+Model~\cite{haley1979}, where rim pull meets soil and slope resistance.
+
+\subsection{GRU--Ridge Forecaster}
+The forecaster uses only the local weather log, without numerical weather prediction. As RCI
+has a lag-1 autocorrelation of 0.99, it predicts the change in RCI for lead time
+$h = 1, \dots, 7$ days:
+\begin{equation}
+  \widehat{\mathrm{RCI}}_{t+h} = \mathrm{RCI}_t
+  + \tfrac{1}{2}\left[\bar g_h(\mathbf{X}_{t-59:t}) + r_h(\boldsymbol{\phi}_t)\right],
+  \label{eq:forecast}
+\end{equation}
+where $\bar g_h$ is the mean of three gated recurrent unit (GRU) networks~\cite{cho2014}
+(2 layers, 128 hidden units) over a 60-day input window $\mathbf{X}$, and $r_h$ is a ridge
+regression on 128 causal features $\boldsymbol{\phi}_t$ (lags, rolling statistics and seasonal
+terms). The GRU is nonlinear in the raw sequence and the ridge is linear in the engineered
+features, so their errors partly cancel. A vehicle of band $b$ is called NO-GO when:
+\begin{equation}
+  \widehat{\mathrm{RCI}}_{t+h} - m_{b,h} < \mathrm{VCI}_1 ,
+  \label{eq:decision}
+\end{equation}
+where $m_{b,h}$ is the smallest safety margin that catches 90\% of NO-GO days. The GRUs are
+trained with AdamW optimizer, Batch Size: 128, Epochs: 300 with early stopping (patience 30),
+Learning Rate: 0.001 with a one-cycle schedule, Weight Decay: 0.0001 and mean squared error
+loss. The forecaster has 531,228 parameters.
+
+\subsection{Trafficability Mapping and Route Planning}
+The forecast is spread over a 90\,m terrain grid by the topographic wetness
+index~\cite{beven1979}, which shifts the SWI of each cell by up to $\pm 0.2$. The soil
+membership of a cell is 0 below $\mathrm{VCI}_1$ and rises from 0.25 to 1 at
+$\mathrm{VCI}_{50}$, so SLOW-GO ground is slow rather than forbidden. With slope and land-cover
+memberships from Liu et al.~\cite{liu2025}, the memberships combine by fuzzy
+AND~\cite{zadeh1965}, which vetoes any cell with a single impassable factor:
+\begin{equation}
+  \mu_c = \min\left(\mu^{\mathrm{slope}}_c,\ \mu^{\mathrm{cover}}_c,\ \mu^{\mathrm{soil}}_c\right).
+  \label{eq:fuzzy}
+\end{equation}
+Routes minimise travel time at a speed proportional to $\mu_c$, using Dijkstra's
+algorithm~\cite{dijkstra1959}. In a convoy, each pass weakens the track; inverting
+(\ref{eq:passes}), the $n$-th vehicle needs:
+\begin{equation}
+  \mathrm{VCI}(n) = \mathrm{VCI}_1 + (\mathrm{VCI}_{50} - \mathrm{VCI}_1)\ln n / \ln 50 ,
+\end{equation}
+so each vehicle re-plans on the pass counts left by the vehicles ahead of it.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+      font=\scriptsize, >={Stealth[length=4pt]}, node distance=4mm and 2.5mm,
+      box/.style={draw, rounded corners=1.5pt, align=center, minimum width=25mm,
+                  text width=24mm, minimum height=8.5mm, inner sep=2pt, fill=white},
+      data/.style={box, fill=black!8},
+      key/.style={box, very thick}]
+    \node[data] (wx)  {Weather log\\soil moisture, rain};
+    \node[data, right=of wx] (veh) {Vehicle attributes\\mass, power, gear};
+    \node[data, right=of veh] (ter) {Terrain (90\,m grid)\\DEM, cover, roads};
+    \node[box, below=of wx]  (fc)  {GRU--Ridge\\forecaster\\RCI for $h = 1..7$\,d};
+    \node[box, below=of veh] (mi)  {Mobility Index\\$\to$ VCI$_1$, VCI$_{50}$\\per band A--E};
+    \node[box, below=of ter] (mem) {Slope and land-\\cover memberships\\$\mu^{\mathrm{slope}}_c$, $\mu^{\mathrm{cover}}_c$};
+    \node[box, below=of fc]  (mar) {Safety margin\\$\widehat{\mathrm{RCI}}_{t+h} - m_{b,h}$};
+    \node[key, below=of mi, text width=23mm] (int) {Interaction\\GO, SLOW-GO,\\NO-GO; passes, speed};
+    \node[box, below=of mem] (twi) {Wetness index\\per cell\\$\mathrm{RCI}_c \to \mu^{\mathrm{soil}}_c$};
+    \node[key, below=of int, minimum width=80mm, text width=78mm] (map)
+         {Trafficability map: \ $\mu_c = \min(\mu^{\mathrm{slope}}_c,\ \mu^{\mathrm{cover}}_c,\ \mu^{\mathrm{soil}}_c)$};
+    \node[box, below=of map, xshift=-14mm] (rt) {Route (Dijkstra)\\fastest, avoids NO-GO};
+    \node[box, below=of map, xshift=14mm]  (cv) {Convoy: track wear\\$\mathrm{VCI}(n)$};
+    \draw[->] (wx) -- (fc);
+    \draw[->] (veh) -- (mi);
+    \draw[->] (ter) -- (mem);
+    \draw[->] (fc) -- (mar);
+    \draw[->] (mi) -- (int);
+    \draw[->] (mar) -- (int);
+    \draw[->] (int) -- (twi);
+    \draw[->] (twi) -- (twi |- map.north);
+    \draw[->] (mem.east) -- ++(2mm,0) |- (map.east);
+    \draw[->] (rt |- map.south) -- (rt);
+    \draw[->] (rt) -- (cv);
+    \draw[->, dashed] (cv) -- node[right] {pass counts} (cv |- map.south);
+  \end{tikzpicture}
+  \caption{Block diagram of the proposed framework. The forecaster predicts soil strength from
+  the weather log, the Mobility Index gives each vehicle's cone indices, and the planner
+  combines both with static terrain into a per-vehicle trafficability map and route.}
+  \label{fig:framework}
+\end{figure}
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+\section{Experimental Discussions}
+\label{sec:experiments}
+
+\subsection{Dataset Description}
+In this study, the following three datasets are utilized:
+\begin{enumerate}
+  \item \emph{Pachmarhi Weather Record:} daily data for the Pachmarhi plateau (Satpura range,
+  1,067\,m) from 2015 to 2025 (4,018 days), with two-layer soil moisture from the ERA5-Land
+  reanalysis~\cite{munoz2021} and IMD gridded rainfall~\cite{pai2014} (ERA5 for 2025). RCI is
+  derived with~(\ref{eq:rci}); it falls through the vehicle thresholds every monsoon
+  (Fig.~\ref{fig:rci}).
+  \item \emph{Vehicle Attribute Dataset:} a public list of 2,451 records compiled from a
+  simulation game's files, of which mass and engine power are used. After cleaning, 1,145
+  ground vehicles remain (1,004 tracked, 125 wheeled, 16 half-tracks). As masses are
+  per-template values, results are reported for five $\mathrm{VCI}_1$ bands (A: $<$18,
+  B: 18--21, C: 21--24, D: 24--30, E: $\geq$30 psi), each planned with its median vehicle.
+  \item \emph{Terrain Data:} a Google Earth Engine export with a 30\,m elevation model,
+  ESA WorldCover~\cite{zanaga2022} and Sentinel-2 NDVI, aggregated to a 90\,m grid of 76,218
+  cells, and 403 OpenStreetMap road segments~\cite{osm}.
+\end{enumerate}
+The record is split chronologically into Training (2015--21), Validation (2022--23) and
+Testing (2024--25), with 2,498, 730 and 724 forecast origins. The safety margins are tuned on
+one test year and scored on the other, in both directions.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        width=\columnwidth, height=3.5cm, ymode=log, ymin=12, ymax=320,
+        xmin=0, xmax=24, xtick={0,3,...,24},
+        xticklabels={Jan,Apr,Jul,Oct,Jan,Apr,Jul,Oct,Jan},
+        ytick={15,25,50,100,200}, yticklabels={15,25,50,100,200},
+        ylabel={RCI (psi)}, ylabel style={font=\scriptsize}, tick label style={font=\scriptsize},
+        extra x ticks={12}, extra x tick labels={}, extra x tick style={grid=major}]
+      \addplot[thick, blue!70!black] coordinates {(0.00,84.0) (0.23,75.1) (0.46,96.4) (0.69,113.2) (0.92,135.0) (1.15,152.8) (1.38,162.8) (1.61,176.4) (1.84,144.4) (2.07,163.6) (2.30,186.9) (2.53,181.0) (2.76,192.3) (2.99,192.8) (3.22,135.8) (3.45,130.7) (3.68,158.9) (3.91,186.4) (4.14,195.6) (4.37,183.3) (4.60,199.3) (4.83,212.4) (5.06,205.2) (5.29,178.0) (5.52,122.2) (5.75,20.0) (5.98,18.5) (6.21,18.8) (6.44,16.8) (6.67,16.2) (6.90,16.3) (7.13,17.7) (7.36,18.6) (7.59,18.0) (7.82,19.8) (8.05,18.5) (8.28,19.0) (8.51,26.7) (8.74,20.1) (8.97,30.7) (9.20,30.9) (9.43,21.8) (9.66,33.2) (9.89,55.2) (10.12,78.6) (10.35,101.2) (10.58,120.5) (10.81,135.5) (11.04,146.3) (11.27,156.2) (11.50,165.3) (11.73,146.4) (11.96,101.6) (12.19,128.5) (12.42,141.5) (12.65,160.6) (12.88,174.5) (13.11,184.9) (13.34,191.9) (13.57,197.4) (13.80,202.1) (14.03,205.4) (14.26,208.5) (14.49,207.8) (14.72,211.4) (14.95,212.3) (15.18,213.3) (15.41,216.2) (15.64,217.8) (15.87,214.2) (16.10,197.9) (16.33,192.9) (16.56,158.5) (16.79,105.5) (17.02,139.2) (17.25,166.1) (17.48,83.0) (17.71,22.1) (17.94,16.3) (18.17,15.7) (18.40,19.5) (18.63,18.6) (18.86,17.9) (19.09,29.0) (19.32,17.3) (19.55,16.8) (19.78,16.3) (20.01,17.5) (20.24,18.2) (20.47,18.2) (20.70,24.0) (20.93,21.2) (21.16,28.3) (21.39,47.3) (21.62,41.1) (21.85,20.4) (22.08,31.3) (22.31,49.4) (22.54,68.3) (22.77,86.7) (23.00,104.2) (23.23,120.0) (23.46,133.2) (23.69,143.8) (23.92,150.8)};
+      \addplot[densely dashed, red!80!black, domain=0:24] {17.6};
+      \addplot[dashed, orange!90!black, domain=0:24] {26.2};
+      \addplot[dotted, thick, black, domain=0:24] {36.7};
+      \node[font=\tiny, red!80!black, anchor=south west, inner sep=1pt] at (axis cs:0.2,17.6) {band A};
+      \node[font=\tiny, orange!90!black, anchor=south west, inner sep=1pt] at (axis cs:2.2,26.2) {band D};
+      \node[font=\tiny, anchor=south west, inner sep=1pt] at (axis cs:0.2,36.7) {band E};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Weekly mean soil strength over the 2024--25 test years against the one-pass cone
+  index $\mathrm{VCI}_1$ of bands A (light tracked), D (heavy tracked) and E (wheeled). Below a
+  line, that band is NO-GO.}
+  \label{fig:rci}
+\end{figure}
+
+\subsection{Baseline Architectures}
+The GRU--Ridge forecaster is compared with persistence (today's RCI for every lead time) and
+with architectures used in earlier soil-moisture and trafficability forecasting work: dynamic
+harmonic regression (ARIMAX with Fourier terms)~\cite{hyndman2021}, Random
+Forest~\cite{markova2025}, LightGBM~\cite{ke2017}, LSTM~\cite{wang2024hess}, temporal
+convolutional network (TCN)~\cite{villia2022}, Transformer encoder~\cite{wang2024agwat},
+Temporal Fusion Transformer (TFT)~\cite{lim2021} and N-BEATS~\cite{oreshkin2020}, together with
+the day-of-year climatological mean. All learned models see the same inputs,
+predict the same change in RCI, and are trained and selected on the same years; the deep
+models are averaged over three seeds. All models are implemented in Python with PyTorch,
+scikit-learn and statsmodels.
+
+\subsection{Classification Performance Metrics}
+Each trafficability call is a binary classification of a vehicle-day, with NO-GO as the
+positive class, giving True Positives (TP), False Negatives (FN), False Positives (FP) and
+True Negatives (TN). The following metrics are employed:
+\begin{enumerate}
+  \item[a)] \emph{Recall:} $\mathrm{TP}/(\mathrm{TP} + \mathrm{FN})$
+  \item[b)] \emph{Precision:} $\mathrm{TP}/(\mathrm{TP} + \mathrm{FP})$
+  \item[c)] \emph{False NO-GO calls:} FP per vehicle-year, the passable days lost to caution
+  \item[d)] \emph{Skill:} $1 - \mathrm{RMSE}/\mathrm{RMSE}_{\mathrm{pers}}$, the RMSE reduction over persistence
+\end{enumerate}
+Since the margin~(\ref{eq:decision}) is tuned to 90\% recall, models are compared on
+precision and false NO-GO calls at equal recall. Routes are scored on the true ground of the
+travel day: a trip is \emph{stuck} if its route crosses a NO-GO cell, and \emph{held} if no
+route is planned although one existed.
+
+\subsection{Experimental Results}
+
+\subsubsection{Comparison with Existing Architectures}
+Table~\ref{tab:arch} compares the GRU--Ridge forecaster with the baseline architectures on the
+2024--25 test years. Every architecture beats persistence at 7 days, but not at every lead
+time: the LSTM is worse than persistence up to 3 days (Fig.~\ref{fig:skill}). The GRU--Ridge forecaster has the second-lowest RMSE averaged over the
+seven lead times (14.64\,psi, after 14.45 for the TFT) with about one-sixth of the TFT's
+parameters, and its 7-day RMSE is within 0.1\,psi of the best (N-BEATS). At 7 days it makes the
+fewest false NO-GO calls among the deep architectures: 31.4 per vehicle-year, against
+34.6--35.7 for LSTM, TCN, Transformer and TFT, and 32.7 for the Random Forest
+of~\cite{markova2025}. Two simpler baselines make fewer: ARIMAX (29.5) and the climatological
+mean with a margin (23.4), which shows that one week ahead the NO-GO days are largely set by
+the season. At 3 days, the Transformer makes the fewest false calls (19.7 against 24.0).
+
+\begin{table}[t]
+  \caption{Comparison with existing architectures on the 2024--25 test years: RMSE (psi) by
+  lead time, and false NO-GO calls per vehicle-year (FP/yr) at 90\% recall with cross-year tuned
+  margins. Parameters count all three seeds.}
+  \label{tab:arch}
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{3pt}
+  \begin{tabular}{@{}lrrrrrr@{}}
+    \toprule
+    & & \multicolumn{3}{c}{RMSE} & \multicolumn{2}{c}{FP/yr} \\
+    \cmidrule(lr){3-5} \cmidrule(l){6-7}
+    Model & Params & 1 d & 3 d & 7 d & 3 d & 7 d \\
+    \midrule
+    Persistence                          & --     & 6.71 & 15.16 & 26.02 & 30.4 & 45.8 \\
+    Climatology                          & --     & 35.60 & 35.47 & 34.73 & 23.4 & \textbf{23.4} \\
+    ARIMAX~\cite{hyndman2021}            & 14     & \textbf{5.69} & 13.88 & 22.16 & 22.9 & 29.5 \\
+    Random Forest~\cite{markova2025}     & --     & 6.55 & 14.93 & 23.89 & 25.4 & 32.7 \\
+    LightGBM~\cite{ke2017}               & --     & 6.33 & 14.51 & 24.84 & 25.6 & 32.5 \\
+    LSTM~\cite{wang2024hess}             & 690k   & 7.05 & 15.46 & 22.58 & 22.8 & 35.7 \\
+    TCN~\cite{villia2022}                & 370k   & 5.84 & 13.66 & 22.89 & 23.1 & 35.7 \\
+    Transformer~\cite{wang2024agwat}     & 1.85M  & 6.09 & 13.88 & 22.61 & \textbf{19.7} & 34.6 \\
+    TFT~\cite{lim2021}                   & 3.47M  & 6.05 & \textbf{12.83} & 21.18 & 23.2 & 35.7 \\
+    N-BEATS~\cite{oreshkin2020}          & 2.29M  & 6.15 & 13.50 & \textbf{20.68} & 24.1 & 32.4 \\
+    \textbf{GRU--Ridge (ours)}           & 531k   & 6.05 & 13.29 & 20.76 & 24.0 & 31.4 \\
+    \bottomrule
+  \end{tabular}
+\end{table}
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        width=\columnwidth, height=3.9cm, xmin=1, xmax=7, xtick={1,...,7},
+        ymin=-6, ymax=22, ytick={-5,0,5,10,15,20},
+        xlabel={lead time (days)}, ylabel={skill over persistence (\%)},
+        label style={font=\scriptsize}, tick label style={font=\scriptsize},
+        grid=major, grid style={black!10},
+        legend style={font=\tiny, at={(0.5,1.02)}, anchor=south, draw=none, legend columns=4},
+        legend cell align=left, every axis plot/.append style={mark size=1.2pt}]
+      \addplot[gray, mark=triangle*] coordinates {(1,15.2) (2,9.7) (3,8.5) (4,9.7) (5,11.8) (6,13.6) (7,14.8)};
+      \addlegendentry{ARIMAX}
+      \addplot[brown!80!black, mark=diamond*] coordinates {(1,2.4) (2,2.0) (3,1.6) (4,2.1) (5,3.5) (6,5.6) (7,8.2)};
+      \addlegendentry{RF}
+      \addplot[green!50!black, mark=square*] coordinates {(1,-5.1) (2,-4.7) (3,-1.9) (4,1.6) (5,5.4) (6,9.4) (7,13.2)};
+      \addlegendentry{LSTM}
+      \addplot[violet, mark=pentagon*] coordinates {(1,13.0) (2,10.6) (3,9.9) (4,10.3) (5,10.3) (6,10.4) (7,12.0)};
+      \addlegendentry{TCN}
+      \addplot[cyan!70!black, mark=x] coordinates {(1,9.1) (2,7.5) (3,8.5) (4,9.3) (5,9.9) (6,12.0) (7,13.1)};
+      \addlegendentry{Transformer}
+      \addplot[orange!90!black, mark=o] coordinates {(1,9.7) (2,12.8) (3,15.4) (4,17.3) (5,18.4) (6,18.6) (7,18.6)};
+      \addlegendentry{TFT}
+      \addplot[red!70!black, mark=+] coordinates {(1,8.3) (2,9.6) (3,11.0) (4,13.4) (5,16.8) (6,19.0) (7,20.5)};
+      \addlegendentry{N-BEATS}
+      \addplot[very thick, blue!70!black, mark=*] coordinates {(1,9.8) (2,10.9) (3,12.4) (4,14.4) (5,16.4) (6,18.1) (7,20.2)};
+      \addlegendentry{\textbf{GRU--Ridge}}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{RMSE skill over persistence by lead time on the 2024--25 test years.}
+  \label{fig:skill}
+\end{figure}
+
+\subsubsection{NO-GO Classification by Band}
+Fig.~\ref{fig:bands} breaks the 7-day false NO-GO calls down by vehicle band. Against the same
+margin rule on persistence, the forecast makes 23--45\% fewer false calls at equal recall, and
+fewer than the TFT in every band. Light tracked vehicles (band A) are the hardest case, as their
+$\mathrm{VCI}_1$ lies close to the saturated soil strength.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        width=\columnwidth, height=3.6cm, ybar, bar width=4.2pt, ymin=0, ymax=80,
+        symbolic x coords={A,B,C,D,E}, xtick=data, enlarge x limits=0.14,
+        xticklabels={A (17.6),B (19.0),C (21.6),D (26.2),E (36.7)},
+        xlabel={band (median $\mathrm{VCI}_1$, psi)}, ylabel={false NO-GO / vehicle-year},
+        label style={font=\scriptsize}, tick label style={font=\scriptsize},
+        ymajorgrids, grid style={black!10},
+        legend style={font=\tiny, at={(0.98,0.97)}, anchor=north east, draw=none, legend columns=1},
+        legend cell align=left]
+      \addplot[fill=orange!60, draw=orange!80!black] coordinates {(A,74.0) (B,54.0) (C,43.9) (D,28.6) (E,13.8)};
+      \addlegendentry{Persistence}
+      \addplot[fill=black!25, draw=black!60] coordinates {(A,57.5) (B,40.1) (C,36.3) (D,23.6) (E,8.7)};
+      \addlegendentry{TFT}
+      \addplot[fill=blue!60, draw=blue!70!black] coordinates {(A,54.3) (B,34.0) (C,27.8) (D,22.0) (E,7.6)};
+      \addlegendentry{GRU--Ridge (ours)}
+    \end{axis}
+  \end{tikzpicture}
+  \caption{False NO-GO calls per vehicle-year at 7 days and 90\% recall, by vehicle band.}
+  \label{fig:bands}
+\end{figure}
+
+\subsubsection{Route Planning}
+For every test day, band and lead time, 30 trips of 8--25\,km are planned and scored against
+the true ground of the travel day, giving 325,800 trips per planner. Planning on terrain alone
+sends 35.5\% of trips into mud. Planning on the forecast beats planning on today's
+map~\cite{liu2025} on both errors: 1.6\% against 2.1\% of trips stuck at 3 days (24\% fewer)
+and 2.9\% against 4.0\% at 7 days (27\% fewer), while holding back 2.3\% against 3.0\% and
+4.5\% against 5.8\% of possible trips. A margin on today's map is slightly safer at its tuned
+setting but holds back nearly twice as many trips. Sweeping both margins
+(Fig.~\ref{fig:tradeoff}) shows that at an equal stuck rate the forecast holds back 40\%
+(3 days) and 31\% (7 days) fewer trips. Without the veto of~(\ref{eq:fuzzy}), a weighted mean of
+the same memberships sends 34.8\% of trips into mud.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{groupplot}[
+        group style={group size=2 by 1, horizontal sep=9mm},
+        width=0.56\columnwidth, height=3.6cm,
+        xlabel={held back (\%)}, xlabel style={font=\scriptsize},
+        tick label style={font=\scriptsize}, title style={font=\scriptsize},
+        ymin=0, xmin=0, grid=major, grid style={black!10}]
+      \nextgroupplot[title={3 days ahead}, ylabel={stuck (\%)}, ylabel style={font=\scriptsize},
+                     legend to name=tradeleg, legend columns=2, legend style={font=\scriptsize, draw=none}]
+        \addplot[thick, blue!70!black, mark=*, mark size=1.2pt] coordinates
+          {(1.04,2.33) (1.65,1.92) (2.34,1.61) (2.91,1.43) (3.40,1.28) (4.57,1.08)};
+        \addlegendentry{Forecast + margin (ours)}
+        \addplot[thick, orange!90!black, mark=square*, mark size=1.2pt] coordinates
+          {(3.01,2.11) (3.80,1.73) (4.43,1.51) (4.98,1.38) (5.41,1.20) (6.36,1.02)};
+        \addlegendentry{Today's map + margin}
+        \addplot[only marks, mark=o, mark size=3pt, black] coordinates {(2.34,1.61) (4.43,1.51)};
+        \node[font=\tiny, anchor=south west, inner sep=1pt] at (axis cs:3.01,2.11) {today's map~\cite{liu2025}};
+      \nextgroupplot[title={7 days ahead}]
+        \addplot[thick, blue!70!black, mark=*, mark size=1.2pt] coordinates
+          {(1.71,4.81) (2.97,3.59) (4.49,2.90) (5.89,2.42) (7.25,2.01) (10.48,1.25)};
+        \addplot[thick, orange!90!black, mark=square*, mark size=1.2pt] coordinates
+          {(5.79,3.96) (7.17,2.97) (8.40,2.46) (9.63,2.10) (10.83,1.97) (13.20,1.74)};
+        \addplot[only marks, mark=o, mark size=3pt, black] coordinates {(4.49,2.90) (8.40,2.46)};
+        \node[font=\tiny, anchor=south west, inner sep=1pt] at (axis cs:5.79,3.96) {today's map~\cite{liu2025}};
+    \end{groupplot}
+    \node[below=7mm] at ($(group c1r1.south)!0.5!(group c2r1.south)$) {\pgfplotslegendfromname{tradeleg}};
+  \end{tikzpicture}
+  \caption{Routing backtest, 2024--25: trips sent into NO-GO ground (stuck) against possible
+  trips held back, as each planner's safety margin is scaled from zero (today's map, no margin)
+  to three times its tuned value (ringed). Lower left is better.}
+  \label{fig:tradeoff}
+\end{figure}
+
+\subsubsection{Convoy Coordination}
+On soft test days, a convoy of ten heavy tracked vehicles (band D) that follows the leader's
+route gets 5.5 vehicles through on average, as the lead track fails under the vehicles behind.
+Re-planning on the pass counts gets 9.2 through. Wheeled vehicles (band E) gain less (6.8 to
+7.3), as the forest leaves them few parallel lanes.
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Conclusion}
+
+\section*{Acknowledgment}
+
+\begin{thebibliography}{00}
+\bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
+\bibitem{rosca2018} P. Ro\c{s}ca, T. Ciobotaru, G. Olaru, and C. Puic\u{a}, ``Considerations regarding vehicle cone index for fine-grained soil,'' Journal of Military Technology, vol. 1, no. 2, pp. 39--44, 2018.
+\bibitem{rula1971} A. A. Rula and C. J. Nuttall, Jr., ``An analysis of ground mobility models (ANAMOB),'' U.S. Army Engineer Waterways Experiment Station, Vicksburg, MS, Tech. Rep. M-71-4, 1971.
+\bibitem{haley1979} P. W. Haley, M. P. Jurkat, and P. M. Brady, Jr., ``NATO reference mobility model, Edition I, users guide, volume I,'' U.S. Army Tank-Automotive Research and Development Command, Warren, MI, Tech. Rep. 12503, 1979.
+\bibitem{ciobotaru2009} T. Ciobotaru, ``Semi-empiric algorithm for assessment of the vehicle mobility,'' Leonardo Electronic Journal of Practices and Technologies, vol. 8, no. 15, pp. 19--30, 2009.
+\bibitem{cho2014} K. Cho, B. van Merri\"{e}nboer, C. Gulcehre, D. Bahdanau, F. Bougares, H. Schwenk, and Y. Bengio, ``Learning phrase representations using RNN encoder--decoder for statistical machine translation,'' in Proc. EMNLP, 2014, pp. 1724--1734.
+\bibitem{beven1979} K. J. Beven and M. J. Kirkby, ``A physically based, variable contributing area model of basin hydrology,'' Hydrological Sciences Bulletin, vol. 24, no. 1, pp. 43--69, 1979.
+\bibitem{liu2025} Q. Liu, X. You, X. Zhang, and J. Zuo, ``Construction of dynamic trafficability map for unmanned vehicles considering multiple environmental factors and path planning,'' Scientific Reports, vol. 15, p. 9957, 2025.
+\bibitem{zadeh1965} L. A. Zadeh, ``Fuzzy sets,'' Information and Control, vol. 8, no. 3, pp. 338--353, 1965.
+\bibitem{dijkstra1959} E. W. Dijkstra, ``A note on two problems in connexion with graphs,'' Numerische Mathematik, vol. 1, pp. 269--271, 1959.
+\bibitem{munoz2021} J. Mu\~{n}oz-Sabater et al., ``ERA5-Land: A state-of-the-art global reanalysis dataset for land applications,'' Earth System Science Data, vol. 13, no. 9, pp. 4349--4383, 2021.
+\bibitem{pai2014} D. S. Pai, L. Sridhar, M. Rajeevan, O. P. Sreejith, N. S. Satbhai, and B. Mukhopadhyay, ``Development of a new high spatial resolution ($0.25^\circ \times 0.25^\circ$) long period (1901--2010) daily gridded rainfall data set over India and its comparison with existing data sets over the region,'' Mausam, vol. 65, no. 1, pp. 1--18, 2014.
+\bibitem{zanaga2022} D. Zanaga et al., ``ESA WorldCover 10 m 2021 v200,'' Zenodo, 2022, doi: 10.5281/zenodo.7254221.
+\bibitem{osm} OpenStreetMap contributors, ``OpenStreetMap,'' 2026. [Online]. Available: https://www.openstreetmap.org
+\bibitem{hyndman2021} R. J. Hyndman and G. Athanasopoulos, Forecasting: Principles and Practice, 3rd ed. Melbourne, Australia: OTexts, 2021.
+\bibitem{markova2025} L. Markov\'{a}, D. Sl\'{a}dek, M. Hub\'{a}\v{c}ek, V. Talhofer, and P. Kol\'{a}\v{r}, ``Meteorological data-driven approach for soil passability modeling in GIS using machine learning,'' Geofizika, vol. 42, no. 1, 2025, doi: 10.15233/gfz.2025.42.4.
+\bibitem{ke2017} G. Ke, Q. Meng, T. Finley, T. Wang, W. Chen, W. Ma, Q. Ye, and T.-Y. Liu, ``LightGBM: A highly efficient gradient boosting decision tree,'' in Proc. NeurIPS, 2017, pp. 3146--3154.
+\bibitem{wang2024hess} Y. Wang, L. Shi, Y. Hu, X. Hu, W. Song, and L. Wang, ``A comprehensive study of deep learning for soil moisture prediction,'' Hydrology and Earth System Sciences, vol. 28, pp. 917--943, 2024.
+\bibitem{villia2022} M. M. Villia, G. Tsagkatakis, M. Moghaddam, and P. Tsakalides, ``Embedded temporal convolutional networks for essential climate variables forecasting,'' Sensors, vol. 22, no. 5, p. 1851, 2022.
+\bibitem{wang2024agwat} Y. Wang and Y. Zha, ``Comparison of transformer, LSTM and coupled algorithms for soil moisture prediction in shallow-groundwater-level areas with interpretability analysis,'' Agricultural Water Management, vol. 305, p. 109120, 2024.
+\bibitem{lim2021} B. Lim, S. \"{O}. Ar\i{}k, N. Loeff, and T. Pfister, ``Temporal fusion transformers for interpretable multi-horizon time series forecasting,'' International Journal of Forecasting, vol. 37, no. 4, pp. 1748--1764, 2021.
+\bibitem{oreshkin2020} B. N. Oreshkin, D. Carpov, N. Chapados, and Y. Bengio, ``N-BEATS: Neural basis expansion analysis for interpretable time series forecasting,'' in Proc. ICLR, 2020.
+\end{thebibliography}
+
+\end{document}
