@@ -59,18 +59,15 @@ Terrain-Vehicle, Off-road mobility, ML
 \label{sec:approach}
 
 The proposed framework models terrain--vehicle interaction as a comparison between the rating
-cone index (RCI) of the soil and the vehicle cone index (VCI) of each vehicle, both in psi.
-Since soil strength changes from day to day, the framework forecasts RCI from a local weather
-log, turns it into per-vehicle trafficability maps, and plans routes for the day of travel
-rather than the day of planning (shown in Fig.~\ref{fig:framework}).
+cone index (RCI) of the soil and the vehicle cone index (VCI) of each vehicle, both in psi. It
+forecasts RCI from a local weather log, turns it into per-vehicle trafficability maps, and plans
+routes for the day of travel rather than the day of planning (Fig.~\ref{fig:framework}).
 
 \subsection{Terrain--Vehicle Interaction Model}
 
 \subsubsection{Soil Strength}
-With the surface (0--7\,cm) and root-zone (7--28\,cm) soil moisture scaled to
-$s^{(1)}_t, s^{(2)}_t \in [0,1]$ between 20 and 49\,vol\% (just outside the 20.7--48.9\,vol\%
-range of the 11-year record), and $R^{3d}_t$ the rainfall of the last three days, the soil
-wetness index (SWI) and soil strength on day $t$ are:
+With the 0--7\,cm and 7--28\,cm soil moisture scaled to $s^{(1)}_t, s^{(2)}_t \in [0,1]$ between
+20 and 49\,vol\% (the 11-year range, rounded) and $R^{3d}_t$ the rainfall of the last three days:
 \begin{gather}
   \mathrm{SWI}_t = 0.35\,s^{(1)}_t + 0.65\,s^{(2)}_t , \\
   \mathrm{RCI}_t = 300\,e^{-k\,\mathrm{SWI}_t}
@@ -78,139 +75,104 @@ wetness index (SWI) and soil strength on day $t$ are:
   \label{eq:rci}
 \end{gather}
 where $k = \ln(300/15)$. As in the strength--moisture model used in~\cite{liu2025},
-$\ln\mathrm{RCI}$ falls linearly with a moisture term, here the SWI. The constants are ours. The
-air-dry strength of 300 lies in the 100--500\,psi range of excess strength beyond which NRMM
-treats fine-grained soil as a hard surface~\cite{haley1979}, and the saturated strength of 15
-follows field readings at immobilisation~\cite{rosca2018}. The deeper layer weighs more because
-it covers both NRMM critical layers, 0--15\,cm for one pass and 15--30\,cm for 50
-passes~\cite{haley1979}; weights of 0.25/0.75 or 0.5/0.5 change the daily class of at most 2\%
-of vehicle-days. The rain factor covers free surface water, which daily soil moisture misses:
-50\,mm is the top of the 25--50\,mm rainfall class of~\cite{liu2025}, and the 15\% cap is below
-their 20--50\% rainfall reductions because soil moisture already carries most of the rain's
-effect.
+$\ln\mathrm{RCI}$ falls linearly with moisture. The constants are ours: the air-dry 300 lies in
+the 100--500\,psi excess strength beyond which NRMM treats fine-grained soil as a hard
+surface~\cite{haley1979}, and the saturated 15 follows field readings at
+immobilisation~\cite{rosca2018}. The deeper layer weighs more as it covers both NRMM critical
+layers, 0--15\,cm for one pass and 15--30\,cm for 50~\cite{haley1979}; weights of 0.25/0.75 or
+0.5/0.5 change the daily class on at most 2\% of vehicle-days. The rain factor adds free surface
+water, which daily soil moisture misses; its 50\,mm is the top of the 25--50\,mm rainfall class
+of~\cite{liu2025}, and its 15\% cap is below their 20--50\% reductions because soil moisture
+already carries most of the rain's effect.
 
 \subsubsection{Vehicle Cone Index}
-Each vehicle is characterised by its Mobility Index (MI)~\cite{rula1971,haley1979}. For a
-tracked vehicle:
+The Mobility Index (MI)~\cite{rula1971,haley1979} of a tracked vehicle is:
 \begin{equation}
   \mathrm{MI} = \left(\frac{\mathrm{CPF}\cdot\mathrm{WF}}{\mathrm{TF}\cdot\mathrm{GF}}
   + \mathrm{BF} - \mathrm{CF}\right)\mathrm{EF}\cdot\mathrm{TrF},
 \end{equation}
-where CPF, WF, TF, GF, BF, CF, EF and TrF are the contact pressure, weight, track, grouser,
-bogie, clearance, engine and transmission factors. MI gives the soil strength needed for one
-pass and for 50 passes in the same track~\cite{ciobotaru2009}:
+from the contact pressure, weight, track, grouser, bogie, clearance, engine and transmission
+factors, and gives the strength needed for one and for 50 passes in one track~\cite{ciobotaru2009}:
 \begin{align}
   \mathrm{VCI}_1    &= 7.0 + 0.2\,\mathrm{MI} - 39.2/(\mathrm{MI} + 5.6), \\
   \mathrm{VCI}_{50} &= 19.27 + 0.43\,\mathrm{MI} - 125.79/(\mathrm{MI} + 7.08).
 \end{align}
-Wheeled vehicles use the wheeled forms, with tyre and wheel-load factors~\cite{rosca2017,rosca2018},
-taking 15\% tyre deflection (deflection factor 1) and automatic transmissions. Half-tracks have no
-published form: the track unit is rated as tracked and the front axle as wheeled with 25\% of the
-weight, and the worse of the two governs.
-As the vehicle data give only mass, engine power and top speed, the running gear is assumed:
-track width, length, road wheels and clearance are interpolated by mass through the published
-dimensions of six reference vehicles from the M22 to the Tiger~II, and tyre size follows the
-load per axle through standard sizes from the HMMWV to heavy 8$\times$8 classes. These
-assumptions are tested by the published cases: our implementation reproduces the published M1 example (MI 98.6, $\mathrm{VCI}_1$ 26.3,
-$\mathrm{VCI}_{50}$ 60.5)~\cite{ciobotaru2009} and the 24 published values of six 8$\times$8
-vehicles~\cite{rosca2017} to within 1.7\,psi. Vehicles are grouped into five bands of
-$\mathrm{VCI}_1$, with edges set by the vehicle mix (A: light tracked, B--D: medium to heavy
-tracked, E: wheeled), each planned with a representative vehicle: the median $\mathrm{VCI}_1$ and
-$\mathrm{VCI}_{50}$ of the band and, for speed, the median power-to-weight ratio, contact
-pressure and top speed of its majority running gear.
+Wheeled vehicles use the wheeled forms~\cite{rosca2017,rosca2018} with 15\% tyre deflection and
+automatic transmissions; half-tracks take the worse of the track unit (tracked) and the front
+axle (wheeled, 25\% of the weight). As the data give only mass, power and top speed, track
+dimensions are interpolated by mass through six published reference vehicles (M22 to Tiger~II)
+and tyres follow standard sizes per axle load (HMMWV to heavy 8$\times$8). The code reproduces
+the published M1 example (MI 98.6, $\mathrm{VCI}_1$ 26.3, $\mathrm{VCI}_{50}$
+60.5)~\cite{ciobotaru2009} and 24 published 8$\times$8 values to within
+1.7\,psi~\cite{rosca2017}. Vehicles fall into five $\mathrm{VCI}_1$ bands set by the fleet mix
+(A: light tracked, B--D: medium to heavy tracked, E: wheeled), each represented by its median
+$\mathrm{VCI}_1$, $\mathrm{VCI}_{50}$, power-to-weight ratio, contact pressure and top speed.
 
-\subsubsection{Passes}
-A vehicle is NO-GO when $\mathrm{RCI} < \mathrm{VCI}_1$, SLOW-GO when
-$\mathrm{VCI}_1 \le \mathrm{RCI} < \mathrm{VCI}_{50}$, and GO otherwise. The three labels are
-those of military terrain analysis~\cite{fm533}; NO-GO below $\mathrm{VCI}_1$ follows from its
-definition~\cite{rula1971}, and placing GO at $\mathrm{VCI}_{50}$, where fifty vehicles can use one
-track, is our mapping.
-SLOW-GO is quantified by the number of vehicles one track can carry:
+\subsubsection{Passes and Speed}
+A vehicle is NO-GO when $\mathrm{RCI} < \mathrm{VCI}_1$, SLOW-GO up to $\mathrm{VCI}_{50}$ and GO
+above. The labels are those of military terrain analysis~\cite{fm533}, NO-GO below
+$\mathrm{VCI}_1$ follows from its definition~\cite{rula1971}, and GO at $\mathrm{VCI}_{50}$ is our
+mapping. SLOW-GO is quantified by the vehicles one track carries:
 \begin{equation}
-  n(\mathrm{RCI}) = 50^{(\mathrm{RCI} - \mathrm{VCI}_1)/(\mathrm{VCI}_{50} - \mathrm{VCI}_1)}.
+  n(\mathrm{RCI}) = 50^{(\mathrm{RCI} - \mathrm{VCI}_1)/(\mathrm{VCI}_{50} - \mathrm{VCI}_1)},
   \label{eq:passes}
 \end{equation}
-Equation (\ref{eq:passes}) is ours: the sources give only the 1-pass and 50-pass
-requirements~\cite{rula1971}, so the required strength is taken to rise with $\ln n$ between
-them, giving 1 pass at $\mathrm{VCI}_1$ and 50 at $\mathrm{VCI}_{50}$.
-
-\subsubsection{Speed}
-The speed follows the fine-grained soil relations of the NATO Reference Mobility Model
-(NRMM)~\cite{haley1979}, in which the motion resistance $R/W$, traction $T/W$ and slip $s$ of
-the running gear are functions of the excess strength $\mathrm{RCI} - \mathrm{VCI}_1$. On a
-slope $\theta$, the vehicle is stuck if $(T/W)\cos\theta < \sin\theta + (R/W)\cos\theta$;
-otherwise its speed is where the rim pull meets the resistance:
+which is ours: only the 1-pass and 50-pass points are published~\cite{rula1971}, so the
+requirement rises with $\ln n$ between them. The speed follows the NRMM fine-grained soil
+relations~\cite{haley1979}, in which the resistance $R/W$, traction $T/W$ and slip $s$ depend on
+$\mathrm{RCI} - \mathrm{VCI}_1$. On a slope $\theta$ the vehicle is stuck if
+$(T/W)\cos\theta < \sin\theta + (R/W)\cos\theta$; otherwise:
 \begin{equation}
   v = \min\!\left(\frac{\eta P\,(1 - s)}{W\left(\sin\theta + (R/W)\cos\theta\right)},\ v_{\max}\right),
   \label{eq:speed}
 \end{equation}
-where $P$ is the engine power, $W$ the weight and $v_{\max}$ the top speed from the vehicle
-table, and $\eta = 0.8$ is an assumed driveline efficiency, as the table has no powertrain data;
-speed scales linearly with $\eta$, which does not affect NO-GO calls or passes. The constant-power rim pull $\eta P / v$ is ours, as NRMM builds
-it gear by gear from engine data that the vehicle table lacks. On paved roads, the NRMM
-hard-surface resistance replaces the soil terms; half-tracks use the tracked relations. The
-NO-GO line is kept at $\mathrm{VCI}_1$, 0.7--2.1\,psi above NRMM's own level-ground
-immobilisation point, which errs on the safe side. Two checks support the model: at
-$\mathrm{VCI}_1$ the relations give 20\% slip, the slip at which NRMM defines $\mathrm{VCI}_1$,
-and for the M1 they give 12\,km/h at $\mathrm{VCI}_1$ and 45\,km/h 20\,psi above it, comparable
-to the published NRMM run for that vehicle, about 20\,km/h just before NO-GO and 56\,km/h at
-most~\cite{ciobotaru2009}. As
-NRMM's vegetation, ride and obstacle limits are not modelled, the speeds are upper bounds.
+with $P$ the engine power, $W$ the weight and $v_{\max}$ the table's top speed; paved roads use
+NRMM's hard-surface resistance. The constant power is ours, as the table has no gearbox data, and
+$\eta = 0.8$ is an assumed driveline efficiency, to which speed is proportional and NO-GO calls
+and passes are blind. The NO-GO line stays at $\mathrm{VCI}_1$, 0.7--2.1\,psi above NRMM's own
+level-ground limit. At $\mathrm{VCI}_1$ the relations give the 20\% slip at which NRMM defines it,
+and for the M1 they give 12\,km/h at $\mathrm{VCI}_1$ and 45\,km/h 20\,psi above, comparable to the
+published NRMM run of about 20--56\,km/h~\cite{ciobotaru2009}. Speeds are upper bounds, as NRMM's
+vegetation, ride and obstacle limits are not modelled.
 
 \subsection{GRU--Ridge Forecaster}
-The forecaster uses only the local weather log, without numerical weather prediction. Its
-inputs are 27 daily channels: RCI, SWI and the two soil-moisture layers, rainfall, Hargreaves
-reference evapotranspiration~\cite{hargreaves1985} and the water balance, temperature, humidity,
-wind, pressure and cloud cover, antecedent precipitation indices with decay 0.85 and 0.95 per
-day~\cite{kohler1951}, days since rain, seasonal
-harmonics and a monsoon flag. The calendar terms of the target days, known in advance, are
-also given. As RCI has a lag-1 autocorrelation of 0.99, the forecaster predicts the change in
-RCI for all lead times $h = 1, \dots, 7$ days at once:
+Without numerical weather prediction, the forecaster reads 27 daily channels of the local log
+(soil moisture, RCI, rainfall, Hargreaves evapotranspiration~\cite{hargreaves1985}, meteorology,
+antecedent precipitation indices with decay 0.85 and 0.95~\cite{kohler1951} and seasonal terms)
+and the calendar terms of the target days. As RCI has a lag-1 autocorrelation of 0.99, it predicts the change for
+all lead times $h = 1, \dots, 7$ days at once:
 \begin{equation}
   \widehat{\mathrm{RCI}}_{t+h} = \mathrm{RCI}_t
   + \tfrac{1}{2}\left[\bar g_h(\mathbf{X}_{t-59:t}) + r_h(\boldsymbol{\phi}_t)\right],
   \label{eq:forecast}
 \end{equation}
-where $\bar g_h$ is the mean of three gated recurrent unit (GRU) networks~\cite{cho2014}
-(2 layers, 128 hidden units, the size used for all recurrent models in Table~\ref{tab:arch})
-over a 60-day input window $\mathbf{X}$, over which the slowest antecedent-rain index (decay
-0.95 per day) falls to 5\% of its weight, and $r_h$ is a ridge
-regression~\cite{hoerl1970} on 128 causal features $\boldsymbol{\phi}_t$ (lags, rolling
-statistics and seasonal terms), with its penalty chosen per lead time on the validation years.
-Equation (\ref{eq:forecast}) is ours: predicting the change makes persistence the zero-change
-forecast, and averaging a nonlinear sequence model with a linear feature model lets their
-errors partly cancel. A vehicle of band $b$ is called NO-GO when:
+where $\bar g_h$ averages three GRU networks~\cite{cho2014} (2 layers of 128 units, as for all
+recurrent models in Table~\ref{tab:arch}) over a 60-day window, by which the slowest antecedent
+index has decayed to 5\%, and $r_h$ is a ridge regression~\cite{hoerl1970} on 128 causal features
+with its penalty chosen per lead time on the validation years. Equation (\ref{eq:forecast}) is
+ours: predicting the change makes persistence the zero-change forecast, and averaging a
+nonlinear sequence model with a linear feature model lets their errors partly cancel. Band $b$ is
+called NO-GO when:
 \begin{equation}
   \widehat{\mathrm{RCI}}_{t+h} - m_{b,h} < \mathrm{VCI}_1 ,
   \label{eq:decision}
 \end{equation}
-where $m_{b,h}$ is the smallest safety margin, searched from 0 to 40\,psi in 0.25\,psi steps,
-that catches 90\% of NO-GO days. This rule is ours: subtracting a margin biases the call
-towards safety, and tuning it per band and lead time fixes the miss rate for each vehicle class.
-The 90\% target is an operating point; Fig.~\ref{fig:tradeoff} shows the results at other
-margins.
-The GRUs are trained with AdamW optimizer, Batch Size: 128, Epochs: 300 with early stopping
-(patience 30), Learning Rate: 0.001 with a one-cycle schedule, Weight Decay: 0.0001 and mean
-squared error loss on targets standardised per lead time, each with a different random seed.
-The forecaster has 531,228 parameters.
+where $m_{b,h}$, searched in 0.25\,psi steps up to 40\,psi, is the smallest margin that catches
+90\% of NO-GO days. This rule is ours and fixes the miss rate per vehicle class; other margins
+are shown in Fig.~\ref{fig:tradeoff}. The GRUs are trained with AdamW optimizer, Batch Size: 128,
+Epochs: 300 with early stopping (patience 30), Learning Rate: 0.001 (one-cycle), Weight Decay:
+0.0001 and MSE loss on targets standardised per lead time. The forecaster has 531,228 parameters.
 
 \subsection{Trafficability Mapping}
-The terrain is a 90\,m grid built from 3$\times$3 blocks of a 30\,m Google Earth Engine export,
-which keeps the routing graph at 76,218 cells:
-the mean elevation and slope, the most common land-cover class, and the peak NDVI over three
-seasons as canopy density; cells that are mostly water are impassable. The topographic wetness
-index of each cell is:
-\begin{equation}
-  \mathrm{TWI}_c = \ln\left(a_c / \tan\beta_c\right),
-  \label{eq:twi}
-\end{equation}
-where $a_c$ is the upslope area from D8 flow accumulation~\cite{ocallaghan1984} and $\beta_c$
-the local slope~\cite{beven1979}. It shifts the SWI of each cell by $\delta_c = 0.1\,\mathrm{clip}(z_c,
--2, 2)$, where $z_c$ is the z-score of its TWI, so that
-$\mathrm{RCI}_c = \widehat{\mathrm{RCI}}\,e^{-k\delta_c}$ from~(\ref{eq:rci}). The scale is
-ours: 0.1 SWI per standard deviation is 2.9\,vol\%, capped at 5.8\,vol\%, within the 3.6--7.1\,vol\%
-spread of soil moisture measured from 2.5\,m to 50\,km~\cite{famiglietti2008}. The soil
-membership of a cell is:
+A 90\,m grid of 76,218 cells (3$\times$3 blocks of a 30\,m Google Earth Engine export) holds the
+mean elevation and slope, the dominant land cover and the peak NDVI over three seasons; cells that
+are mostly water are impassable. The SWI of each cell is shifted by $\delta_c = 0.1\,
+\mathrm{clip}(z_c, -2, 2)$, where $z_c$ is the z-score of its topographic wetness index
+$\mathrm{TWI}_c = \ln(a_c/\tan\beta_c)$~\cite{beven1979}, with $a_c$ from D8 flow
+accumulation~\cite{ocallaghan1984} and $\beta_c$ the slope, so that
+$\mathrm{RCI}_c = \widehat{\mathrm{RCI}}\,e^{-k\delta_c}$. The scale is ours: 2.9\,vol\% per
+standard deviation, capped at 5.8\,vol\%, within the 3.6--7.1\,vol\% field spread of soil
+moisture from 2.5\,m to 50\,km~\cite{famiglietti2008}. The soil membership is:
 \begin{equation}
   \mu^{\mathrm{soil}}_c =
   \begin{cases}
@@ -219,72 +181,54 @@ membership of a cell is:
   \end{cases}
   \label{eq:soil}
 \end{equation}
-where $\rho_c = (\mathrm{RCI}_c - \mathrm{VCI}_1)/(\mathrm{VCI}_{50} - \mathrm{VCI}_1)$.
-Equation (\ref{eq:soil}) is ours and follows the speed model: the NRMM speed~(\ref{eq:speed}) at
-$\mathrm{VCI}_1$ is 17--25\% of that at $\mathrm{VCI}_{50}$ for the band vehicles, hence the
-floor of 0.25, which keeps SLOW-GO ground slow rather than forbidden, and the linear rise is
-within 0.1 of the NRMM curve at the midpoint. Slope and land-cover memberships follow the tables
-of Liu et al.~\cite{liu2025} for tracked and wheeled vehicles. The slope steps are smoothed into
-a monotone curve through the middle of each class, so that a small change in slope cannot flip
-a decision. As 79\% of the plateau is tree cover, which~\cite{liu2025} scores as impassable,
-forest is split by peak NDVI into their forest (dense, $\geq$0.75; 0 for all vehicles), bush-wood
-(open, 0.60--0.75; 0 wheeled, 0.2 tracked) and grassland rows (sparse, $<$0.60; 0.4 wheeled,
-0.6 tracked), where 0.75 is about the upper tercile of peak NDVI in forest cells; water is set
-to 0. Before soil is considered, 26\% of the plateau is passable for wheeled and 72\% for tracked
-vehicles. Roads come from
-OpenStreetMap~\cite{osm}: classes from motorway to track are kept, and slope and land cover are
-1 on them. Graded and asphalt roads are paved and ignore soil ($\mu^{\mathrm{soil}} = 1$), while
-unpaved tracks soften like the ground around them. The memberships combine by fuzzy
-AND~\cite{zadeh1965}, which vetoes any cell with a single impassable factor, as the improved map
-of~\cite{liu2025} does:
+where $\rho_c = (\mathrm{RCI}_c - \mathrm{VCI}_1)/(\mathrm{VCI}_{50} - \mathrm{VCI}_1)$. Equation
+(\ref{eq:soil}) is ours: the NRMM speed at $\mathrm{VCI}_1$ is 17--25\% of that at
+$\mathrm{VCI}_{50}$ for the band vehicles, hence the floor of 0.25, and the linear rise is within
+0.1 of the NRMM curve at the midpoint. Slope and land-cover memberships follow the tables
+of~\cite{liu2025}, with the slope steps smoothed into a monotone curve. As 79\% of the plateau is
+tree cover, which~\cite{liu2025} scores as impassable, forest is mapped by peak NDVI to their
+forest ($\geq$0.75, about the upper tercile; 0), bush-wood (0.60--0.75; 0 wheeled, 0.2 tracked) and
+grassland rows ($<$0.60; 0.4 wheeled, 0.6 tracked). Water scores 0, and OpenStreetMap~\cite{osm}
+roads from motorway to track score 1 for slope and cover, and paved ones also for soil. Before
+soil, 26\% of the plateau is passable for wheeled and 72\% for tracked vehicles. The memberships
+combine by fuzzy AND~\cite{zadeh1965}, which vetoes any single impassable factor, as the improved
+map of~\cite{liu2025} does:
 \begin{equation}
   \mu_c = \min\left(\mu^{\mathrm{slope}}_c,\ \mu^{\mathrm{cover}}_c,\ \mu^{\mathrm{soil}}_c\right).
   \label{eq:fuzzy}
 \end{equation}
 
-\subsection{Route Planning}
-The map is converted to a graph in which each cell is linked to its eight neighbours, and NO-GO
-cells ($\mu_c = 0$) are removed. The cost of the edge between cells $u$ and $v$ is the time to
-cross it at a speed proportional to the membership:
+\subsection{Route Planning and Convoys}
+Each cell is linked to its eight neighbours, NO-GO cells are removed, and an edge costs the time
+to cross it at a speed proportional to $\mu$:
 \begin{equation}
   w(u,v) = d_{uv} \cdot \tfrac{1}{2}\left(1/\mu_u + 1/\mu_v\right),
   \label{eq:cost}
 \end{equation}
-where $d_{uv}$ is 90\,m, or $90\sqrt{2}$\,m on a diagonal. Equation (\ref{eq:cost}) is ours:
-each half of a step is charged at the speed of the cell it lies in. A trip planned on day $t$
-for day $t+h$ proceeds as follows:
-\begin{enumerate}
-  \item[1)] forecast $\widehat{\mathrm{RCI}}_{t+h}$ with (\ref{eq:forecast}) and subtract $m_{b,h}$;
-  \item[2)] compute $\mu_c$ for every cell with (\ref{eq:soil}) and (\ref{eq:fuzzy});
-  \item[3)] build the graph with (\ref{eq:cost}) and find the least-cost route from the start
-  with Dijkstra's algorithm~\cite{dijkstra1959};
-  \item[4)] if no route reaches the destination, hold the trip back rather than send it over
-  NO-GO ground.
-\end{enumerate}
-Dijkstra's algorithm finds routes of the same cost as the A* search of~\cite{liu2025} with an
-admissible heuristic~\cite{hart1968}, and one search from a start serves every destination. For
-travel-time routing, $1/\mu$ in (\ref{eq:cost}) is replaced by the time per km at the speed
-of~(\ref{eq:speed}), scaled by the land-cover membership off road.
-
-\subsection{Convoy Coordination}
-In a convoy, each pass weakens the track; inverting (\ref{eq:passes}), the $n$-th vehicle
-needs:
+where $d_{uv}$ is 90\,m, or $90\sqrt{2}$\,m on a diagonal; (\ref{eq:cost}) is ours and charges each
+half step at the speed of its cell. A trip planned on day $t$ for day $t+h$ forecasts
+$\widehat{\mathrm{RCI}}_{t+h}$ with (\ref{eq:forecast}), subtracts $m_{b,h}$, maps $\mu_c$ with
+(\ref{eq:soil}) and (\ref{eq:fuzzy}), and finds the least-cost route with Dijkstra's
+algorithm~\cite{dijkstra1959}; if none reaches the destination, the trip is held back. Dijkstra's
+algorithm gives routes of the same cost as the A* search of~\cite{liu2025} with an admissible
+heuristic~\cite{hart1968}, and one search serves every destination. For travel-time
+routing, $1/\mu$ in (\ref{eq:cost}) becomes the time per km at the speed~(\ref{eq:speed}), scaled
+off road by the cover membership. In a convoy each pass weakens the track; inverting
+(\ref{eq:passes}), the $n$-th vehicle needs:
 \begin{equation}
-  \mathrm{VCI}(n) = \mathrm{VCI}_1 + (\mathrm{VCI}_{50} - \mathrm{VCI}_1)\ln n / \ln 50 ,
+  \mathrm{VCI}(n) = \mathrm{VCI}_1 + (\mathrm{VCI}_{50} - \mathrm{VCI}_1)\ln n / \ln 50 .
   \label{eq:wear}
 \end{equation}
-which is ours and follows directly from~(\ref{eq:passes}). Two modes are compared. In
-follow-the-leader, every vehicle takes the leader's route. In the wear-aware mode, the vehicles
-plan in turn: after each route, the pass count of its cells rises by one, and the next vehicle
-plans on the updated map with $\mathrm{VCI}(n)$ in place of $\mathrm{VCI}_1$. The 3$\times$3-cell
-staging areas at both ends, where vehicles assemble, are not worn.
+In the wear-aware mode the vehicles plan in turn on the updated pass counts with
+$\mathrm{VCI}(n)$ in place of $\mathrm{VCI}_1$; in follow-the-leader all take the leader's route.
+The 3$\times$3-cell staging areas at both ends, where vehicles assemble, are not worn.
 
 \begin{figure}[t]
   \centering
   \begin{tikzpicture}[
-      font=\scriptsize, >={Stealth[length=4pt]}, node distance=4mm and 2.5mm,
+      font=\scriptsize, >={Stealth[length=4pt]}, node distance=2.6mm and 2.5mm,
       box/.style={draw, rounded corners=1.5pt, align=center, minimum width=25mm,
-                  text width=24mm, minimum height=8.5mm, inner sep=2pt, fill=white},
+                  text width=24mm, minimum height=7mm, inner sep=1.5pt, fill=white},
       data/.style={box, fill=black!8},
       key/.style={box, very thick}]
     \node[data] (wx)  {Weather log\\soil moisture, rain};
@@ -313,9 +257,7 @@ staging areas at both ends, where vehicles assemble, are not worn.
     \draw[->] (rt) -- (cv);
     \draw[->, dashed] (cv) -- node[right] {pass counts} (cv |- map.south);
   \end{tikzpicture}
-  \caption{Block diagram of the proposed framework. The forecaster predicts soil strength from
-  the weather log, the Mobility Index gives each vehicle's cone indices, and the planner
-  combines both with static terrain into a per-vehicle trafficability map and route.}
+  \caption{Proposed framework: the forecaster predicts soil strength from the weather log, the Mobility Index gives each vehicle's cone indices, and the planner combines both with terrain into a per-vehicle map and route.}
   \label{fig:framework}
 \end{figure}
 
@@ -327,33 +269,28 @@ staging areas at both ends, where vehicles assemble, are not worn.
 In this study, the following three datasets are utilized:
 \begin{enumerate}
   \item \emph{Pachmarhi Weather Record:} daily data for the Pachmarhi plateau (Satpura range,
-  1,067\,m) from 2015 to 2025 (4,018 days), with two-layer soil moisture, temperature and
-  humidity from the ERA5-Land reanalysis~\cite{munoz2021}, wind, pressure and cloud cover from
-  ERA5~\cite{hersbach2020}, and IMD gridded rainfall~\cite{pai2014}. As the IMD archive lags by
-about a year, 2025 rainfall is from ERA5, whose day runs 00:00--24:00 rather than IMD's
-08:30--08:30 IST. RCI is derived with~(\ref{eq:rci}); it falls through
-  the vehicle thresholds every monsoon (Fig.~\ref{fig:rci}).
-  \item \emph{Vehicle Attribute Dataset:} a public list of 2,451 records compiled from a
-  simulation game's files, of which mass, engine power and top speed are used. Non-vehicle
-  entries are removed by name, the running gear is read from the name, and 111 masses left at
-  the file's default are replaced with approximate public figures. 1,145 ground vehicles remain
-  (1,004 tracked, 125 wheeled, 16 half-tracks). As masses are per-template values, results are
-  reported for five $\mathrm{VCI}_1$ bands (A: $<$18, B: 18--21, C: 21--24, D: 24--30, E: $\geq$30
-  psi).
-  \item \emph{Terrain Data:} a Google Earth Engine export with a 30\,m elevation model,
-  ESA WorldCover~\cite{zanaga2022} and seasonal Sentinel-2 NDVI, aggregated to a 90\,m grid of
-  76,218 cells, and 403 OpenStreetMap road segments~\cite{osm}. The export also holds
-  Sentinel-1 radar and land surface temperature, which are not used: under this much canopy the
-  radar signal mostly measures vegetation rather than soil wetness.
+  1,067\,m), 2015--2025 (4,018 days): soil moisture, temperature and humidity from
+  ERA5-Land~\cite{munoz2021}, wind, pressure and cloud cover from ERA5~\cite{hersbach2020}, and
+  IMD gridded rainfall~\cite{pai2014}, from ERA5 in 2025 (day 00--24\,h, not 08:30--08:30 IST).
+  RCI falls through the vehicle thresholds every monsoon (Fig.~\ref{fig:rci}).
+  \item \emph{Vehicle Attribute Dataset:} 2,451 records compiled from a simulation game's files,
+  of which mass, power and top speed are used. After removing non-vehicles and replacing 111
+  default masses with public figures, 1,145 ground vehicles remain (1,004 tracked, 125 wheeled,
+  16 half-tracks); as masses are per-template values, results are reported by band (A: $<$18,
+  B: 18--21, C: 21--24, D: 24--30, E: $\geq$30 psi).
+  \item \emph{Terrain Data:} a Google Earth Engine export with a 30\,m elevation model, ESA
+  WorldCover~\cite{zanaga2022} and seasonal Sentinel-2 NDVI, and 403 OpenStreetMap road
+  segments~\cite{osm}. Its Sentinel-1 radar layers are not used: under this canopy they mostly
+  measure vegetation.
 \end{enumerate}
-The record is split chronologically into Training (2015--21), Validation (2022--23) and
-Testing (2024--25), with 2,498, 730 and 724 forecast origins.
+The record is split into Training (2015--21), Validation (2022--23) and Testing (2024--25), with
+2,498, 730 and 724 forecast origins.
 
 \begin{figure}[t]
   \centering
   \begin{tikzpicture}
     \begin{axis}[
-        width=\columnwidth, height=3.1cm, ymode=log, ymin=12, ymax=320,
+        width=\columnwidth, height=2.8cm, ymode=log, ymin=12, ymax=320,
         xmin=0, xmax=24, xtick={0,3,...,24},
         xticklabels={Jan,Apr,Jul,Oct,Jan,Apr,Jul,Oct,Jan},
         ytick={15,25,50,100,200}, yticklabels={15,25,50,100,200},
@@ -374,63 +311,42 @@ Testing (2024--25), with 2,498, 730 and 724 forecast origins.
   \label{fig:rci}
 \end{figure}
 
-\subsection{Evaluation Setup}
-Forecasts are made from every test day, and every input at a forecast origin is observed on or
-before that day. The safety margins are tuned on one test year and scored on the other, in
-both directions, so no reported margin is tuned on the days it is scored on.
-
-For route planning, 6 start points are spread over one end of the largest connected road network
-and 5 destinations over the far end, giving 30 trips of at least 8\,km. For every test day, band
-and lead time $h \in \{1, 3, 7\}$, each planner plans the 30 trips on its own estimate of the
-ground, and each route is scored on the true ground of the travel day against the best route
-planned on that ground. Four planners are compared: terrain only (soil ignored), today's map
-(planning on the current day's conditions, as the dynamic map of~\cite{liu2025} does, with our
-memberships), today's map with a cross-year tuned margin, and the forecast with its margin. Variants of the proposed planner replace the fuzzy AND
-by a product, by the equal-weight mean with a veto of~\cite{liu2025}, and by the same mean without
-one. A trade-off sweep scales both margins by 0, 0.5, 1, 1.5, 2 and 3. Convoys of ten vehicles
-of bands D and E, the heavy tracked and wheeled bands, are run on soft test days, when the
-leader can pass but wear matters, with RCI between $1.05\,\mathrm{VCI}_1$ and
-$1.5\,\mathrm{VCI}_{50}$ (up to 30 days per band, 3 trips each). Uncertainty is given as 95\%
-confidence intervals (CI) from a moving-block bootstrap over test days, with 14-day blocks for
-the day-to-day correlation and 2,000 resamples.
-
-\subsection{Performance Metrics}
-Each trafficability call is a binary classification of a vehicle-day, with NO-GO as the
-positive class, giving True Positives (TP), False Negatives (FN), False Positives (FP) and
-True Negatives (TN). The following metrics are employed:
-\begin{enumerate}
-  \item[a)] \emph{Recall:} $\mathrm{TP}/(\mathrm{TP} + \mathrm{FN})$
-  \item[b)] \emph{Precision:} $\mathrm{TP}/(\mathrm{TP} + \mathrm{FP})$
-  \item[c)] \emph{False NO-GO calls:} FP per vehicle-year
-  \item[d)] \emph{RMSE} and $R^2 = 1 - \sum(y - \hat y)^2 / \sum(y - \bar y)^2$ of the forecast
-\end{enumerate}
-As the margin~(\ref{eq:decision}) is tuned to 90\% recall, decisions are compared on false
-NO-GO calls at equal recall. A planned trip is \emph{stuck} if its route crosses a NO-GO cell
-on the travel day, and \emph{held} if no route is planned although one existed; completed trips
-are also scored on their extra travel time over the best route.
+\subsection{Evaluation Setup and Metrics}
+Forecasts use only inputs observed up to each test day, and margins are tuned on one test year
+and scored on the other. With NO-GO as the positive class of each vehicle-day, recall
+TP/(TP+FN) is fixed at 90\% by the margin, so decisions are compared on false NO-GO calls (FP per
+vehicle-year); forecasts are scored by RMSE and $R^2$. For routing, 6 starts and 5 destinations at opposite ends of the largest road
+network give 30 trips of at least 8\,km, planned for every test day, band and lead time
+$h \in \{1,3,7\}$ and scored on the true ground of the travel day: \emph{stuck} if the route
+crosses a NO-GO cell, \emph{held} if no route is planned although one existed, and the extra
+time over the best route. The planners are terrain only, today's map (planning on current conditions
+as~\cite{liu2025} does, with our memberships), today's map with a margin, and the forecast with
+its margin; variants replace the fuzzy AND by a product or by the equal-weight mean
+of~\cite{liu2025} with and without its veto, and a sweep scales both margins from 0 to 3 times. Convoys of ten band D and band E vehicles run on soft days with RCI between
+$1.05\,\mathrm{VCI}_1$ and $1.5\,\mathrm{VCI}_{50}$ (up to 30 per band, 3 trips each). 95\%
+confidence intervals (CI) come from a moving-block bootstrap over test days (14-day blocks,
+2,000 resamples).
 
 \subsection{Experimental Results}
 
 \subsubsection{Model Selection}
-Twenty-one forecasting models and rules were tested on the same inputs and years
-(Table~\ref{tab:arch}), with the deep models averaged over three seeds. The GRU--Ridge
-forecaster has the second-lowest RMSE averaged over the seven lead times (14.64\,psi) and the
-fewest false NO-GO calls of the deep models at 7 days, with fewer parameters than the TFT and
-N-BEATS. The GRU and the ridge regression alone are each less accurate than their average at
-every lead time, a bidirectional GRU with attention is less accurate than the plain GRU, and
-using a quantile model's 10th percentile (P10) instead of its median makes more false NO-GO
-calls at equal recall. The ensemble averages the three models best on the validation years
-(TCN, Transformer and GRU). The GRU--Ridge forecaster is
-therefore used in the rest of the evaluation.
+Twenty-two forecasting models and rules, ours included, were tested on the same inputs and years
+(Table~\ref{tab:arch}). The GRU--Ridge forecaster has the second-lowest RMSE averaged over the
+seven lead times (14.64\,psi, after 14.45 for the TFT) and the fewest false NO-GO calls of the
+deep models at 7 days, with a sixth of the TFT's parameters; each member alone is worse at every
+lead time. Climatology with a margin makes the fewest false calls at 7 days, as NO-GO days a week
+ahead are largely seasonal.
 
 \begin{table}[t]
-  \caption{Forecasting models tested on the 2024--25 test years: RMSE (psi) by lead time, and
-  false NO-GO calls per vehicle-year (FP/yr) at 90\% recall. Parameters count all three seeds;
-  P10: the 10th percentile of a quantile model instead of its median.}
+  \caption{Forecasting models tested, 2024--25: RMSE (psi) by lead time and false NO-GO calls
+  per vehicle-year (FP/yr) at 90\% recall; parameters count all three seeds. Also tested, all with
+  a higher 7-day RMSE than GRU--Ridge: seasonal naive, ARIMA, ExtraTrees, LightGBM with linear
+  leaves, a bidirectional GRU with attention (point and quantile versions), and the 10th-percentile (P10) rules of the TFT and of
+  that GRU.}
   \label{tab:arch}
   \centering
   \footnotesize
-  \setlength{\tabcolsep}{2.6pt}
+  \setlength{\tabcolsep}{2.8pt}
   \begin{tabular}{@{}lrrrrrr@{}}
     \toprule
     & & \multicolumn{3}{c}{RMSE} & \multicolumn{2}{c}{FP/yr} \\
@@ -439,28 +355,17 @@ therefore used in the rest of the evaluation.
     \midrule
     Persistence                          & --     & 6.71 & 15.16 & 26.02 & 30.4 & 45.8 \\
     Climatology                          & --     & 35.60 & 35.47 & 34.73 & 23.4 & \textbf{23.4} \\
-    Seasonal naive                       & --     & 54.22 & 54.08 & 53.62 & 36.4 & 35.8 \\
-    \midrule
-    ARIMA                                & 8      & 5.78 & 14.53 & 24.89 & 27.5 & 44.6 \\
     ARIMAX~\cite{hyndman2021}            & 14     & \textbf{5.69} & 13.88 & 22.16 & 22.9 & 29.5 \\
     Ridge~\cite{hoerl1970}               & 0.9k   & 6.31 & 13.86 & 21.92 & 23.2 & 31.2 \\
     Random Forest~\cite{markova2025}     & --     & 6.55 & 14.93 & 23.89 & 25.4 & 32.7 \\
-    ExtraTrees                           & --     & 6.84 & 15.54 & 24.03 & 25.4 & 30.7 \\
     LightGBM~\cite{ke2017}               & --     & 6.33 & 14.51 & 24.84 & 25.6 & 32.5 \\
-    LightGBM, linear leaves              & --     & 6.23 & 14.48 & 23.87 & 26.6 & 33.9 \\
-    \midrule
     LSTM~\cite{wang2024hess}             & 690k   & 7.05 & 15.46 & 22.58 & 22.8 & 35.7 \\
     GRU~\cite{cho2014}                   & 530k   & 6.14 & 13.98 & 21.85 & 24.8 & 35.5 \\
-    BiGRU+attn.                          & 1.39M  & 7.28 & 15.64 & 22.39 & 24.1 & 35.7 \\
     TCN~\cite{villia2022}                & 370k   & 5.84 & 13.66 & 22.89 & 23.1 & 35.7 \\
     Transformer~\cite{wang2024agwat}     & 1.85M  & 6.09 & 13.88 & 22.61 & \textbf{19.7} & 34.6 \\
     TFT~\cite{lim2021}                   & 3.47M  & 6.05 & \textbf{12.83} & 21.18 & 23.2 & 35.7 \\
     N-BEATS~\cite{oreshkin2020}          & 2.29M  & 6.15 & 13.50 & \textbf{20.68} & 24.1 & 32.4 \\
     Ensemble (top 3)                     & 2.75M  & 5.82 & 13.34 & 21.41 & 21.6 & 34.4 \\
-    \midrule
-    TFT, P10                             & 3.47M  & 7.78 & 17.06 & 26.98 & 27.6 & 35.9 \\
-    BiGRU+attn., median                  & 1.40M  & 7.40 & 17.16 & 28.63 & 23.4 & 33.8 \\
-    BiGRU+attn., P10                     & 1.40M  & 13.25 & 30.28 & 46.59 & 24.4 & 35.6 \\
     \midrule
     \textbf{GRU--Ridge (ours)}           & 531k   & 6.05 & 13.29 & 20.76 & 24.0 & 31.4 \\
     \bottomrule
@@ -468,14 +373,13 @@ therefore used in the rest of the evaluation.
 \end{table}
 
 \subsubsection{Comparison with Past Works}
-Table~\ref{tab:past} compares the proposed framework with published results; as those works
-use data from other sites, our forecasts are converted to their target, soil wetness, by
-inverting~(\ref{eq:rci}). The proposed forecaster reaches $R^2$ of 0.991, 0.960 and 0.903 at
-1, 3 and 7 days, higher at every lead time than all models of~\cite{wang2024hess}, including
-their best (GAN-LSTM, 0.963, 0.919 and 0.846), and than the mean $R^2$ of 0.523
-of~\cite{wang2024agwat}. It is also the only approach that combines a multi-day forecast with
-per-vehicle assessment and route planning; against planning on current conditions as
-in~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days (Section~\ref{sec:res-route}).
+Table~\ref{tab:past} compares the framework with published results; as those works use data from
+other sites, our forecasts are converted to their target, soil wetness, by inverting~(\ref{eq:rci}).
+The forecaster reaches $R^2$ of 0.991, 0.960 and 0.903 at 1, 3 and 7 days, higher at every lead
+time than all models of~\cite{wang2024hess}, including their best (GAN-LSTM: 0.963, 0.919,
+0.846), and than the mean 0.523 of~\cite{wang2024agwat}. It is the only approach that combines a
+multi-day forecast with per-vehicle assessment and routing; against planning on current
+conditions as in~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days.
 
 \begin{table}[t]
   \caption{Comparison with past works. SM: soil moisture; CI: cone index; TM: trafficability
@@ -503,20 +407,15 @@ in~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days (Section~\ref{se
 \end{table}
 
 \subsubsection{Results by Vehicle Band}
-Table~\ref{tab:slowgo} gives, for each band's planning vehicle, the share of 2024--25 test days
-that are NO-GO and SLOW-GO, the passes~(\ref{eq:passes}) and level-ground
-speed~(\ref{eq:speed}) on its SLOW-GO days, and the false NO-GO calls at 7 days. A typical
-SLOW-GO day lets only 2--5 vehicles use one track, at 14--32\,km/h against 57--60\,km/h on dry
-ground; at 5\,psi above $\mathrm{VCI}_1$, one track carries 1.5--2.3 vehicles at 12--16\,km/h.
-Against the same margin rule on persistence, the forecast makes 23--45\% fewer false NO-GO
-calls at equal recall in every band; pooled over all vehicles, 21\% fewer at 3 days (95\% CI
-4--37\%) and 31\% fewer at 7 days (14--46\%). Light tracked vehicles (band A) are the hardest case, as
-their $\mathrm{VCI}_1$ lies close to the saturated soil strength.
+On a typical SLOW-GO day only 2--5 vehicles can use one track, at 14--32\,km/h against
+57--60\,km/h on dry ground (Table~\ref{tab:slowgo}); at 5\,psi above $\mathrm{VCI}_1$, a track
+carries 1.5--2.3 vehicles at 12--16\,km/h. At equal recall, the forecast makes 23--45\% fewer
+false NO-GO calls than the margin rule on persistence in every band, and pooled over all vehicles
+21\% fewer at 3 days (CI 4--37\%) and 31\% at 7 days (CI 14--46\%). Light tracked vehicles
+(band A) are the hardest case, as their $\mathrm{VCI}_1$ is close to the saturated strength.
 
 \begin{table}[t]
-  \caption{Results by vehicle band on the 2024--25 test days: share of days NO-GO and SLOW-GO,
-  median passes per track and level-ground speed on SLOW-GO days, and false NO-GO calls per
-  vehicle-year at 7 days and 90\% recall for persistence (P) and the proposed forecaster (F).}
+  \caption{Results by vehicle band, 2024--25: share of days NO-GO and SLOW-GO, median passes and level-ground speed on SLOW-GO days, and false NO-GO calls per vehicle-year at 7 days for persistence (P) and the forecaster (F).}
   \label{tab:slowgo}
   \centering
   \footnotesize
@@ -537,32 +436,27 @@ their $\mathrm{VCI}_1$ lies close to the saturated soil strength.
 \end{table}
 
 \subsubsection{Route Planning}
-\label{sec:res-route}
-Over 325,800 trips per planner, planning on terrain alone sends 35.5\% of trips into mud.
-At 7 days, planning on the forecast beats planning on today's map on both errors: 2.9\% against
-4.0\% of trips stuck (27\% fewer, 95\% CI 11--54\%) and 4.5\% against 5.8\% held back (CI 6--37\%
-fewer). At 3 days it sends 1.6\% against 2.1\% into mud (24\% fewer) and holds back 2.3\% against
-3.0\%, but both intervals include zero. A margin on today's map is slightly safer at its tuned
-setting but holds back nearly twice as many trips: the forecast holds back 25--62\% fewer at 3
-days and 27--61\% fewer at 7 days (95\% CI).
-Sweeping both margins (Fig.~\ref{fig:tradeoff}), at an equal stuck rate the forecast holds back
-40\% fewer trips at 3 days (CI 3--67\%) and 31\% fewer at 7 days, where the interval
-($-$2--69\%) includes zero. As the forecaster sees no weather forecast, no planner foresees the
-day the monsoon breaks; the gain comes in the days around the transitions. Completed routes are on average within
-0.1\% of the best travel time. Among the variants, the product rule performs the same as the
-fuzzy AND (1.6\% stuck at 3 days), the weighted mean with a veto of~\cite{liu2025} sends 1.8\%
-into mud but takes 10.4\% longer, and the weighted mean without a veto sends 34.8\%. Routing on
-the travel time of~(\ref{eq:speed}) instead of on $\mu_c$ shortens trips by about 5\% at the
-same stuck rate (30.8 against 32.4 minutes per trip at 3 days), and the travel time predicted at
-planning is on average within 0.3\% (3 days) and 1.0\% (7 days) of the time on the travel day,
-with 9 trips in 10 within $-$2.1\% to $+$3.4\%.
+Over 325,800 trips per planner, terrain alone sends 35.5\% of trips into mud. At 7 days, the
+forecast beats today's map on both errors: 2.9\% against 4.0\% stuck (27\% fewer, CI 11--54\%)
+and 4.5\% against 5.8\% held (CI 6--37\% fewer). At 3 days it gives 1.6\% against 2.1\% stuck and
+2.3\% against 3.0\% held, but both intervals include zero. A margin on today's map is slightly
+safer at its tuned setting but holds back far more trips; the forecast holds back 25--62\% fewer
+at 3 days and 27--61\% at 7 days (CI). At an equal stuck rate (Fig.~\ref{fig:tradeoff}) it holds
+back 40\% fewer trips at 3 days (CI 3--67\%) and 31\% at 7 days, where the interval ($-$2--69\%)
+includes zero. Completed routes are within 0.1\% of the best travel time. The product rule
+matches the fuzzy AND, the equal-weight mean with veto sends 1.8\% into mud at 3 days but takes
+10.4\% longer, and without the veto 34.8\%. Routing on travel time shortens trips by about 5\% at
+the same stuck rate (30.8 against 32.4 minutes at 3 days), with predicted times on average within
+0.3\% (3 days) and 1.0\% (7 days) of the travel day's, and 9 in 10 within $-$2.1\% to $+$3.4\%.
+With no weather forecast as input, no planner foresees the day the monsoon breaks; the gain comes
+around the transitions.
 
 \begin{figure}[t]
   \centering
   \begin{tikzpicture}
     \begin{groupplot}[
         group style={group size=2 by 1, horizontal sep=9mm},
-        width=0.56\columnwidth, height=3.3cm,
+        width=0.56\columnwidth, height=3.0cm,
         xlabel={held back (\%)}, xlabel style={font=\scriptsize},
         tick label style={font=\scriptsize}, title style={font=\scriptsize},
         ymin=0, xmin=0, grid=major, grid style={black!10}]
@@ -593,20 +487,17 @@ with 9 trips in 10 within $-$2.1\% to $+$3.4\%.
 \end{figure}
 
 \subsubsection{Convoy Coordination}
-For heavy tracked vehicles (band D), a convoy of ten that follows the leader's route gets 5.5
-vehicles through on average, as the lead track fails under the vehicles behind; the wear-aware
-mode gets 9.2 through. Wheeled vehicles (band E) gain less (6.8 to 7.3), as the forest leaves
-them few parallel lanes.
+A convoy of ten heavy tracked vehicles (band D) following its leader gets 5.5 through on average,
+as the lead track fails under those behind; the wear-aware mode gets 9.2 through. Wheeled
+vehicles (band E) gain less (6.8 to 7.3), as the forest leaves them few parallel lanes.
 
 \subsection{Limitations}
-Soil strength is computed from modelled ERA5-Land soil moisture for one 9\,km cell, not measured
-with a cone penetrometer, and its spread by wetness index has no field check. Vehicle masses come
-from a simulation game's files and the running gear is assumed, so results are reported by band.
-The pass and wear curves between the published 1-pass and 50-pass points are ours, and speeds are
-upper bounds. Margins tuned on the two test years differ by up to 7.25\,psi; the cross-year
-scores include this cost, but a deployed system would need them re-checked as years are added.
-With two test years, several 3-day and 7-day differences have wide intervals. Field cone-index
-readings at the site are the first next step.
+Soil strength is computed from modelled soil moisture for one 9\,km cell, not measured, and its
+spread by wetness index is unchecked in the field. Vehicle masses come from game files and the
+running gear is assumed, so results are reported by band. The pass and wear curves and the speed
+assumptions are ours, so speeds are upper bounds. Margins tuned on the two test years differ by
+up to 7.25\,psi, and two test years leave some intervals wide. Field cone-index readings at the
+site are the first next step.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -627,8 +518,8 @@ readings at the site are the first next step.
 \bibitem{kohler1951} M. A. Kohler and R. K. Linsley, ``Predicting the runoff from storm rainfall,'' U.S. Weather Bureau, Washington, DC, Research Paper 34, 1951.
 \bibitem{cho2014} K. Cho, B. van Merri\"{e}nboer, C. Gulcehre, D. Bahdanau, F. Bougares, H. Schwenk, and Y. Bengio, ``Learning phrase representations using RNN encoder--decoder for statistical machine translation,'' in Proc. EMNLP, 2014, pp. 1724--1734.
 \bibitem{hoerl1970} A. E. Hoerl and R. W. Kennard, ``Ridge regression: Biased estimation for nonorthogonal problems,'' Technometrics, vol. 12, no. 1, pp. 55--67, 1970.
-\bibitem{ocallaghan1984} J. F. O'Callaghan and D. M. Mark, ``The extraction of drainage networks from digital elevation data,'' Computer Vision, Graphics, and Image Processing, vol. 28, no. 3, pp. 323--344, 1984.
 \bibitem{beven1979} K. J. Beven and M. J. Kirkby, ``A physically based, variable contributing area model of basin hydrology,'' Hydrological Sciences Bulletin, vol. 24, no. 1, pp. 43--69, 1979.
+\bibitem{ocallaghan1984} J. F. O'Callaghan and D. M. Mark, ``The extraction of drainage networks from digital elevation data,'' Computer Vision, Graphics, and Image Processing, vol. 28, no. 3, pp. 323--344, 1984.
 \bibitem{famiglietti2008} J. S. Famiglietti, D. Ryu, A. A. Berg, M. Rodell, and T. J. Jackson, ``Field observations of soil moisture variability across scales,'' Water Resources Research, vol. 44, no. 1, W01423, 2008.
 \bibitem{osm} OpenStreetMap contributors, ``OpenStreetMap,'' 2026. [Online]. Available: https://www.openstreetmap.org
 \bibitem{zadeh1965} L. A. Zadeh, ``Fuzzy sets,'' Information and Control, vol. 8, no. 3, pp. 338--353, 1965.
