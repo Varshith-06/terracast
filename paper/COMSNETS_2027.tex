@@ -2,7 +2,43 @@
 \IEEEoverridecommandlockouts
 % The preceding line is only needed to identify funding in the first footnote. If that is unneeded, please comment it out.
 %Template version as of 6/27/2024
-
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{float}
+\usepackage{times}
+\usepackage{hyperref}
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{multirow}
+\usepackage{adjustbox}
+\usepackage{subfigure}
+\usepackage[compatible]{algpseudocode}
+\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
+\usepackage{algcompatible}
+\usepackage{tabularx}
+\usepackage{lipsum}
+\DeclareMathOperator*{\maxi}{maximize}
+\usepackage[utf8]{inputenc}
+\usepackage{mathtools}
+\usepackage{float}
+\usepackage{amsthm}
+\newtheorem{theorem}{Theorem}
+\usepackage{bbding}
+\usepackage{wrapfig}
+% \usepackage{subfigure}
+% % \usepackage{caption}
+% \usepackage{subcaption}
+\usepackage{multirow}
 \usepackage{cite}
 \usepackage{amsmath,amssymb,amsfonts}
 \usepackage{algorithmic}
@@ -12,6 +48,7 @@
 % added for Sections IV and V
 \usepackage{booktabs}
 \usepackage{tikz}
+\usepackage{tabularx}
 \usetikzlibrary{arrows.meta,positioning,calc}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
@@ -22,37 +59,70 @@
 
 \title{Modeling Terrain-Vehicle Interaction for Off-Road Mobility Assessment}
 
-\author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
-\IEEEauthorblockA{\textit{Department of Engineering Sciences} \\
-\textit{ABV-IIITM Gwalior, India}\\
-@iiitm.ac.in}
-\and
-\IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
-\IEEEauthorblockA{\textit{Department of Engineering Sciences} \\
-\textit{ABV-IIITM Gwalior, India}\\
-@iiitm.ac.in}
-\and
-\IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
-\IEEEauthorblockA{\textit{Department of Engineering Sciences} \\
-\textit{ABV-IIITM Gwalior, India}\\
-@iiitm.ac.in}
-}
+% \author{\IEEEauthorblockN{1\textsuperscript{st} Given Name Surname}
+% \IEEEauthorblockA{\textit{Department of Engineering Sciences} \\
+% \textit{ABV-IIITM Gwalior, India}\\
+% @iiitm.ac.in}
+% \and
+% \IEEEauthorblockN{2\textsuperscript{nd} Given Name Surname}
+% \IEEEauthorblockA{\textit{Department of Engineering Sciences} \\
+% \textit{ABV-IIITM Gwalior, India}\\
+% @iiitm.ac.in}
+% \and
+% \IEEEauthorblockN{3\textsuperscript{rd} Given Name Surname}
+% \IEEEauthorblockA{\textit{Department of Engineering Sciences} \\
+% \textit{ABV-IIITM Gwalior, India}\\
+% @iiitm.ac.in}
+% }
 
 \maketitle
 
 \begin{abstract}
-Varshith and Shreyas
+This work presents an integrated framework for forecasting terrain trafficability and planning safe routes for military ground vehicles. A hybrid GRU–Ridge model predicts soil strength using historical weather and soil-moisture data over a 1–7-day horizon. The predictions are combined with vehicle-specific mobility requirements and terrain characteristics to classify routes and optimize vehicle movement, accounting for convoy-induced soil degradation. Experiments on the Pachmarhi plateau achieve an \(R^2\) of 0.903 at seven days and reduce trips encountering impassable terrain by 27\% compared with current-condition planning. The framework supports predictive, risk-aware military mobility planning under changing environmental conditions.
 \end{abstract}
 
 \begin{IEEEkeywords}
-Terrain-Vehicle, Off-road mobility, ML
+Terrain trafficability, Soil strength forecasting, GRU–Ridge model, Vehicle Cone Index
 \end{IEEEkeywords}
 
 \section{Introduction}
+Military ground mobility depends on vehicle characteristics and changing terrain conditions. Rainfall and soil-moisture variations can reduce soil strength, rendering planned routes impassable. However, existing trafficability methods largely assess current conditions rather than predict future terrain accessibility [1, 2].
+
+The Rating Cone Index (RCI) measures soil bearing strength, while the Vehicle Cone Index (VCI) represents vehicle-specific soil strength requirements. Although these indices underpin established mobility models [2, 3], integrating soil-strength forecasting with vehicle-specific trafficability assessment and route optimization remains a challenge. Machine-learning methods offer promising tools for forecasting soil conditions [4, 5].
+
+This study proposes an integrated framework combining a hybrid Gated Recurrent Unit–Ridge model for 1–7-day RCI forecasting with vehicle-specific VCI, terrain characteristics, and Dijkstra-based route planning. It classifies terrain into GO, SLOW-GO, and NO-GO categories and accounts for track degradation during convoy movement. The framework is evaluated using meteorological [], vehicle [], and geospatial data [] from the Pachmarhi plateau [].
 
 \section{Related Works}
 
+Military terrain trafficability assessment commonly relies on the Rating Cone Index (RCI) and Vehicle Cone Index (VCI) to evaluate soil bearing strength and vehicle mobility, supported by established models such as the NATO Reference Mobility Model \cite{haley1979,rula1971,ciobotaru2009}. Recent studies have developed terrain trafficability maps using environmental factors and route-planning algorithms \cite{liu2025}. Meanwhile, machine-learning methods, including recurrent neural networks and Transformers, have been applied to soil-moisture forecasting \cite{cho2014,wang2024hess,wang2024agwat}.
+
+Despite these advances, forecasting soil strength and directly integrating it with vehicle-specific mobility requirements and future route planning remains challenging. Existing approaches often assess current terrain conditions without adequately accounting for changes before deployment. To address this gap, the present study combines a GRU--Ridge forecasting model with vehicle-specific cone indices, terrain characteristics, and Dijkstra-based route optimization. The framework also accounts for repeated vehicle passage to model terrain degradation during convoy movement.
+
+\begin{table}[H]
+\centering
+\caption{Comparison of existing approaches}
+\label{tab:related-work}
+\begin{adjustbox}{width=0.49\textwidth}
+\begin{tabular}{|c|c|c|c|c|}
+\hline
+\multirow{2}{*}{\textbf{Reference}} & \multicolumn{4}{c|}{\textbf{Comparative Factors}} \\ 
+\cline{2-5}
+ & \textbf{Dataset} & \textbf{Terrain-Features} & \textbf{Light-weight} & \textbf{Vehicle-specific mobility} \\ 
+\hline
+% \cite{Angelelli2023}  & \times  & \times  & \times   & \times  & \times \\
+% \hline
+ \textbf{\cite{r1}} & iBean  & \XSolid &  \Checkmark & \XSolid   \\
+\hline
+\hline
+\end{tabular}
+\end{adjustbox}
+\end{table}
+
 \section{Problem Statement}
+\label{sec:problem-statement}
+The problem addressed in this study is to predict future terrain trafficability and determine safe, efficient routes for heterogeneous ground vehicles under changing environmental conditions. This requires estimating soil bearing strength several days in advance, relating it to each vehicle's mobility requirements, and accounting for terrain slope, land cover, road accessibility, and degradation from repeated vehicle use.
+
+A central challenge is balancing operational safety with mobility: overly optimistic assessments risk sending vehicles into impassable terrain, while overly conservative assessments unnecessarily restrict movement. The objective is therefore to develop a unified framework that forecasts soil strength over a 1-7-day horizon, identifies vehicle-specific GL, Slow-Go, and No-Go conditions, and plans routes that minimize travel cost while reducing immobilization risk and unnecessary mission delays.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Proposed Approach}
@@ -60,14 +130,52 @@ Terrain-Vehicle, Off-road mobility, ML
 
 The proposed framework models terrain--vehicle interaction as a comparison between the rating
 cone index (RCI) of the soil and the vehicle cone index (VCI) of each vehicle, both in psi. It
-forecasts RCI from a local weather log, turns it into per-vehicle trafficability maps, and plans
+forecasts RCI from a local weather log and baseline soil properties, turns it into per-vehicle trafficability maps, and plans
 routes for the day of travel rather than the day of planning (Fig.~\ref{fig:framework}).
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}[
+      font=\scriptsize, >={Stealth[length=4pt]}, node distance=2.6mm and 2.5mm,
+      box/.style={draw, rounded corners=1.5pt, align=center, minimum width=25mm,
+                  text width=24mm, minimum height=7mm, inner sep=1.5pt, fill=white},
+      data/.style={box, fill=black!8},
+      key/.style={box, very thick}]
+    \node[data] (wx)  {Weather log\\soil moisture, rain};
+    \node[data, right=of wx] (veh) {Vehicle attributes\\mass, power, gear};
+    \node[data, right=of veh] (ter) {Terrain (90\,m grid)\\DEM, cover, roads};
+    \node[box, below=of wx]  (fc)  {GRU--Ridge\\forecaster\\RCI for $h = 1..7$\,d};
+    \node[box, below=of veh] (mi)  {Mobility Index\\$\to$ VCI$_1$, VCI$_{50}$\\per band A--E};
+    \node[box, below=of ter] (mem) {Slope and land-\\cover memberships\\$\mu^{\mathrm{slope}}_c$, $\mu^{\mathrm{cover}}_c$};
+    \node[box, below=of fc]  (mar) {Safety margin\\$\widehat{\mathrm{RCI}}_{t+h} - m_{b,h}$};
+    \node[key, below=of mi, text width=23mm] (int) {Interaction\\GO, SLOW-GO,\\NO-GO; passes, speed};
+    \node[box, below=of mem] (twi) {Wetness index\\per cell\\$\mathrm{RCI}_c \to \mu^{\mathrm{soil}}_c$};
+    \node[key, below=of int, minimum width=80mm, text width=78mm] (map)
+         {Trafficability map: \ $\mu_c = \min(\mu^{\mathrm{slope}}_c,\ \mu^{\mathrm{cover}}_c,\ \mu^{\mathrm{soil}}_c)$};
+    \node[box, below=of map, xshift=-14mm] (rt) {Route (Dijkstra)\\fastest, avoids NO-GO};
+    \node[box, below=of map, xshift=14mm]  (cv) {Convoy: track wear\\$\mathrm{VCI}(n)$};
+    \draw[->] (wx) -- (fc);
+    \draw[->] (veh) -- (mi);
+    \draw[->] (ter) -- (mem);
+    \draw[->] (fc) -- (mar);
+    \draw[->] (mi) -- (int);
+    \draw[->] (mar) -- (int);
+    \draw[->] (int) -- (twi);
+    \draw[->] (twi) -- (twi |- map.north);
+    \draw[->] (mem.east) -- ++(2mm,0) |- (map.east);
+    \draw[->] (rt |- map.south) -- (rt);
+    \draw[->] (rt) -- (cv);
+    \draw[->, dashed] (cv) -- node[right] {pass counts} (cv |- map.south);
+  \end{tikzpicture}
+  \caption{Proposed framework: the forecaster predicts soil strength from the weather log, the Mobility Index gives each vehicle's cone indices, and the planner combines both with terrain into a per-vehicle map and route.}
+  \label{fig:framework}
+\end{figure}
 
 \subsection{Terrain--Vehicle Interaction Model}
 
 \subsubsection{Soil Strength}
 With the 0--7\,cm and 7--28\,cm soil moisture scaled to $s^{(1)}_t, s^{(2)}_t \in [0,1]$ between
-20 and 49\,vol\% (the 11-year range, rounded) and $R^{3d}_t$ the rainfall of the last three days:
+20 and 49\,vol\% (the 11-year range, rounded) and $R^{3d}_t$, the rainfall of the last three days:
 \begin{gather}
   \mathrm{SWI}_t = 0.35\,s^{(1)}_t + 0.65\,s^{(2)}_t , \\
   \mathrm{RCI}_t = 300\,e^{-k\,\mathrm{SWI}_t}
@@ -75,8 +183,8 @@ With the 0--7\,cm and 7--28\,cm soil moisture scaled to $s^{(1)}_t, s^{(2)}_t \i
   \label{eq:rci}
 \end{gather}
 where $k = \ln(300/15)$. As in the strength--moisture model used in~\cite{liu2025},
-$\ln\mathrm{RCI}$ falls linearly with moisture. The constants are ours: the air-dry 300 lies in
-the 100--500\,psi excess strength beyond which NRMM treats fine-grained soil as a hard
+$\log(\mathrm{RCI})$ falls linearly with moisture. The constants are ours: the air-dry 300 lies in
+the 100--500\, psi excess strength beyond which NRMM treats fine-grained soil as a hard
 surface~\cite{haley1979}, and the saturated 15 follows field readings at
 immobilisation~\cite{rosca2018}. The deeper layer weighs more as it covers both NRMM critical
 layers, 0--15\,cm for one pass and 15--30\,cm for 50~\cite{haley1979}; weights of 0.25/0.75 or
@@ -159,9 +267,9 @@ called NO-GO when:
 \end{equation}
 where $m_{b,h}$, searched in 0.25\,psi steps up to 40\,psi, is the smallest margin that catches
 90\% of NO-GO days. This rule is ours and fixes the miss rate per vehicle class; other margins
-are shown in Fig.~\ref{fig:tradeoff}. The GRUs are trained with AdamW optimizer, Batch Size: 128,
+are shown in Fig.~\ref{fig:tradeoff}. The GRUs are trained with the AdamW optimizer, Batch Size: 128,
 Epochs: 300 with early stopping (patience 30), Learning Rate: 0.001 (one-cycle), Weight Decay:
-0.0001 and MSE loss on targets standardised per lead time. The forecaster has 531,228 parameters.
+0.0001 and MSE loss on targets standardized per lead time. The forecaster has 531,228 parameters.
 
 \subsection{Trafficability Mapping}
 A 90\,m grid of 76,218 cells (3$\times$3 blocks of a 30\,m Google Earth Engine export) holds the
@@ -223,43 +331,7 @@ In the wear-aware mode the vehicles plan in turn on the updated pass counts with
 $\mathrm{VCI}(n)$ in place of $\mathrm{VCI}_1$; in follow-the-leader all take the leader's route.
 The 3$\times$3-cell staging areas at both ends, where vehicles assemble, are not worn.
 
-\begin{figure}[t]
-  \centering
-  \begin{tikzpicture}[
-      font=\scriptsize, >={Stealth[length=4pt]}, node distance=2.6mm and 2.5mm,
-      box/.style={draw, rounded corners=1.5pt, align=center, minimum width=25mm,
-                  text width=24mm, minimum height=7mm, inner sep=1.5pt, fill=white},
-      data/.style={box, fill=black!8},
-      key/.style={box, very thick}]
-    \node[data] (wx)  {Weather log\\soil moisture, rain};
-    \node[data, right=of wx] (veh) {Vehicle attributes\\mass, power, gear};
-    \node[data, right=of veh] (ter) {Terrain (90\,m grid)\\DEM, cover, roads};
-    \node[box, below=of wx]  (fc)  {GRU--Ridge\\forecaster\\RCI for $h = 1..7$\,d};
-    \node[box, below=of veh] (mi)  {Mobility Index\\$\to$ VCI$_1$, VCI$_{50}$\\per band A--E};
-    \node[box, below=of ter] (mem) {Slope and land-\\cover memberships\\$\mu^{\mathrm{slope}}_c$, $\mu^{\mathrm{cover}}_c$};
-    \node[box, below=of fc]  (mar) {Safety margin\\$\widehat{\mathrm{RCI}}_{t+h} - m_{b,h}$};
-    \node[key, below=of mi, text width=23mm] (int) {Interaction\\GO, SLOW-GO,\\NO-GO; passes, speed};
-    \node[box, below=of mem] (twi) {Wetness index\\per cell\\$\mathrm{RCI}_c \to \mu^{\mathrm{soil}}_c$};
-    \node[key, below=of int, minimum width=80mm, text width=78mm] (map)
-         {Trafficability map: \ $\mu_c = \min(\mu^{\mathrm{slope}}_c,\ \mu^{\mathrm{cover}}_c,\ \mu^{\mathrm{soil}}_c)$};
-    \node[box, below=of map, xshift=-14mm] (rt) {Route (Dijkstra)\\fastest, avoids NO-GO};
-    \node[box, below=of map, xshift=14mm]  (cv) {Convoy: track wear\\$\mathrm{VCI}(n)$};
-    \draw[->] (wx) -- (fc);
-    \draw[->] (veh) -- (mi);
-    \draw[->] (ter) -- (mem);
-    \draw[->] (fc) -- (mar);
-    \draw[->] (mi) -- (int);
-    \draw[->] (mar) -- (int);
-    \draw[->] (int) -- (twi);
-    \draw[->] (twi) -- (twi |- map.north);
-    \draw[->] (mem.east) -- ++(2mm,0) |- (map.east);
-    \draw[->] (rt |- map.south) -- (rt);
-    \draw[->] (rt) -- (cv);
-    \draw[->, dashed] (cv) -- node[right] {pass counts} (cv |- map.south);
-  \end{tikzpicture}
-  \caption{Proposed framework: the forecaster predicts soil strength from the weather log, the Mobility Index gives each vehicle's cone indices, and the planner combines both with terrain into a per-vehicle map and route.}
-  \label{fig:framework}
-\end{figure}
+
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Experimental Discussions}
@@ -329,7 +401,7 @@ confidence intervals (CI) come from a moving-block bootstrap over test days (14-
 2,000 resamples).
 
 \subsection{Experimental Results}
-
+%Please include hyper-parameter details
 \subsubsection{Model Selection}
 Twenty-two forecasting models and rules, ours included, were tested on the same inputs and years
 (Table~\ref{tab:arch}). The GRU--Ridge forecaster has the second-lowest RMSE averaged over the
@@ -340,8 +412,7 @@ ahead are largely seasonal.
 
 \begin{table}[t]
   \caption{Forecasting models tested, 2024--25: RMSE (psi) by lead time and false NO-GO calls
-  per vehicle-year (FP/yr) at 90\% recall; parameters count all three seeds. Also tested, all with
-  a higher 7-day RMSE than GRU--Ridge: seasonal naive, ARIMA, ExtraTrees, LightGBM with linear
+  per vehicle-year (FP/yr) at 90\% recall; parameters count all three seeds. Also tested, all with a higher 7-day RMSE than GRU--Ridge: seasonal naive, ARIMA, ExtraTrees, LightGBM with linear
   leaves, a bidirectional GRU with attention (point and quantile versions), and the 10th-percentile (P10) rules of the TFT and of
   that GRU.}
   \label{tab:arch}
@@ -491,20 +562,29 @@ around the transitions.
 A convoy of ten heavy tracked vehicles (band D) following its leader gets 5.5 through on average,
 as the lead track fails under those behind; the wear-aware mode gets 9.2 through. Wheeled
 vehicles (band E) gain less (6.8 to 7.3), as the forest leaves them few parallel lanes.
-
+%--------------------
 \subsection{Limitations}
-Soil strength is computed from modelled soil moisture for one 9\,km cell, not measured, and its
+Soil strength is computed from modeled soil moisture for one 9\, km cell, not measured, and its
 spread by wetness index is unchecked in the field. Vehicle masses come from game files and the
 running gear is assumed, so results are reported by band. The pass and wear curves and the speed
 assumptions are ours, so speeds are upper bounds. Margins tuned on the two test years differ by
-up to 7.25\,psi, and two test years leave some intervals wide. Field cone-index readings at the
-site are the first next step.
+up to 7.25\, psi, and two test years leave some intervals wide. Field cone-index readings at the
+site are the next step.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Conclusion}
+This study presents an integrated framework for forecasting terrain trafficability and planning safe, efficient routes for heterogeneous military ground vehicles under changing environmental conditions. The proposed framework combines a hybrid Gated Recurrent Unit–Ridge (GRU–Ridge) model for 1–7-day soil strength forecasting with vehicle-specific cone index requirements, terrain characteristics, fuzzy trafficability mapping, and Dijkstra-based route optimization. Convoy coordination is further incorporated to account for the progressive degradation of soil bearing capacity caused by repeated vehicle passage.
+
+Experiments using meteorological and geospatial data for the Pachmarhi plateau demonstrate the potential of the proposed approach. The GRU–Ridge model achieves an average RMSE of 14.64 psi across the seven forecast horizons and an \(R^2\) of 0.903 at a seven-day horizon. Compared with route planning based on current terrain conditions, the forecast-based approach reduces the proportion of trips encountering impassable terrain by 27\% at seven days, while also reducing unnecessary trip cancellations. Furthermore, incorporating track degradation into convoy planning increases the average number of heavy tracked vehicles that complete a route from 5.5 to 9.2 out of 10. These findings highlight the benefits of integrating predictive soil strength assessment with vehicle-specific mobility constraints and route optimization.
+
+Despite these encouraging results, the framework relies on modeled rather than field-measured soil strength, and some vehicle characteristics and track-degradation relationships are estimated from assumptions. Future work will focus on validating the predictions using field cone-index measurements, improving vehicle parameter estimation, incorporating numerical weather forecasts, and evaluating the framework across additional terrains and seasonal conditions. Overall, the proposed approach provides a promising basis for anticipatory, risk-aware military mobility planning under dynamic environmental conditions.
 
 \section*{Acknowledgment}
+The authors gratefully acknowledge Mr. Chandrasekhar Lekala Reddy for his valuable assistance with vehicle data collection.
+
+\section*{Data Availability}
+Data will be available on request
 
 \begin{thebibliography}{00}
 \bibitem{b1} G. Eason, B. Noble, and I. N. Sneddon, ``On certain integrals of Lipschitz-Hankel type involving products of Bessel functions,'' Phil. Trans. Roy. Soc. London, vol. A247, pp. 529--551, April 1955.
