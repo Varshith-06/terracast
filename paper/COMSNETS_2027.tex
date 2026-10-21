@@ -59,7 +59,7 @@
 \maketitle
 
 \begin{abstract}
-This work presents an integrated framework for forecasting terrain trafficability and planning safe routes for military ground vehicles. A hybrid GRU–Ridge model predicts soil strength using historical weather and soil-moisture data over a 1–7-day horizon. The predictions are combined with vehicle-specific mobility requirements and terrain characteristics to classify routes and optimize vehicle movement, accounting for convoy-induced soil degradation. Experiments on the Pachmarhi plateau achieve, at seven days, an \(R^2\) of 0.922 for soil strength and 27\% fewer trips encountering impassable terrain than current-condition planning. The framework supports predictive, risk-aware military mobility planning under changing environmental conditions.
+This work presents an integrated framework for forecasting terrain trafficability and planning safe routes for military ground vehicles. A hybrid GRU–Ridge model predicts soil strength using historical weather and soil-moisture data over a 1–7-day horizon. The predictions are combined with vehicle-specific mobility requirements and terrain characteristics to classify routes and optimize vehicle movement, accounting for convoy-induced soil degradation. Experiments on the Pachmarhi plateau achieve an \(R^2\) of 0.922 for soil strength and reduce trips encountering impassable terrain by 27\% compared with current-condition planning, both at seven days. The framework supports predictive, risk-aware military mobility planning under changing environmental conditions.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -112,7 +112,7 @@ Despite these advances, forecasting soil strength and directly integrating it wi
 \label{sec:problem-statement}
 The problem addressed in this study is to predict future terrain trafficability and determine safe, efficient routes for heterogeneous ground vehicles under changing environmental conditions. This requires estimating soil bearing strength several days in advance, relating it to each vehicle's mobility requirements, and accounting for terrain slope, land cover, road accessibility, and degradation from repeated vehicle use.
 
-A central challenge is balancing operational safety with mobility: overly optimistic assessments risk sending vehicles into impassable terrain, while overly conservative assessments unnecessarily restrict movement. The objective is therefore to develop a unified framework that forecasts soil strength over a 1-7-day horizon, identifies vehicle-specific GO, SLOW-GO, and NO-GO conditions, and plans routes that minimize travel cost while reducing immobilization risk and unnecessary mission delays.
+A central challenge is balancing operational safety with mobility: overly optimistic assessments risk sending vehicles into impassable terrain, while overly conservative assessments unnecessarily restrict movement. The objective is therefore to develop a unified framework that forecasts soil strength over a 1-7-day horizon, identifies vehicle-specific GO, Slow-Go, and No-Go conditions, and plans routes that minimize travel cost while reducing immobilization risk and unnecessary mission delays.
 
 Each vehicle band $b$ is classified for day $t+h$ from the forecast soil strength $\widehat{\mathrm{RCI}}_{t+h}$, less a safety margin $m_{b,h}$:
 \begin{equation}
