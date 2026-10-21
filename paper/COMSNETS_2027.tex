@@ -13,24 +13,13 @@
 \usepackage{float}
 \usepackage{times}
 \usepackage{hyperref}
-\usepackage{cite}
-\usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
-\usepackage{graphicx}
-\usepackage{textcomp}
-\usepackage{xcolor}
 \usepackage{multirow}
 \usepackage{adjustbox}
 \usepackage{subfigure}
-\usepackage[compatible]{algpseudocode}
-\usepackage[ruled,vlined,linesnumbered]{algorithm2e}
-\usepackage{algcompatible}
 \usepackage{tabularx}
 \usepackage{lipsum}
 \DeclareMathOperator*{\maxi}{maximize}
-\usepackage[utf8]{inputenc}
 \usepackage{mathtools}
-\usepackage{float}
 \usepackage{amsthm}
 \newtheorem{theorem}{Theorem}
 \usepackage{bbding}
@@ -38,17 +27,9 @@
 % \usepackage{subfigure}
 % % \usepackage{caption}
 % \usepackage{subcaption}
-\usepackage{multirow}
-\usepackage{cite}
-\usepackage{amsmath,amssymb,amsfonts}
-\usepackage{algorithmic}
-\usepackage{graphicx}
-\usepackage{textcomp}
-\usepackage{xcolor}
 % added for Sections IV and V
 \usepackage{booktabs}
 \usepackage{tikz}
-\usepackage{tabularx}
 \usetikzlibrary{arrows.meta,positioning,calc}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
@@ -78,7 +59,7 @@
 \maketitle
 
 \begin{abstract}
-This work presents an integrated framework for forecasting terrain trafficability and planning safe routes for military ground vehicles. A hybrid GRU–Ridge model predicts soil strength using historical weather and soil-moisture data over a 1–7-day horizon. The predictions are combined with vehicle-specific mobility requirements and terrain characteristics to classify routes and optimize vehicle movement, accounting for convoy-induced soil degradation. Experiments on the Pachmarhi plateau achieve an \(R^2\) of 0.903 at seven days and reduce trips encountering impassable terrain by 27\% compared with current-condition planning. The framework supports predictive, risk-aware military mobility planning under changing environmental conditions.
+This work presents an integrated framework for forecasting terrain trafficability and planning safe routes for military ground vehicles. A hybrid GRU–Ridge model predicts soil strength using historical weather and soil-moisture data over a 1–7-day horizon. The predictions are combined with vehicle-specific mobility requirements and terrain characteristics to classify routes and optimize vehicle movement, accounting for convoy-induced soil degradation. Experiments on the Pachmarhi plateau achieve, at seven days, an \(R^2\) of 0.922 for soil strength and 27\% fewer trips encountering impassable terrain than current-condition planning. The framework supports predictive, risk-aware military mobility planning under changing environmental conditions.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -482,17 +463,17 @@ ahead are largely seasonal.
 \end{table}
 
 \subsubsection{Comparison with Past Works}
-Table~\ref{tab:past} compares the framework with published results; as those works use data from
-other sites, our forecasts are converted to their target, soil wetness, by inverting~(\ref{eq:rci}).
-The forecaster reaches $R^2$ of 0.991, 0.960 and 0.903 at 1, 3 and 7 days, higher at every lead
-time than all models of~\cite{wang2024hess}, including their best (GAN-LSTM: 0.963, 0.919,
-0.846), and than the mean 0.523 of~\cite{wang2024agwat}. It is the only approach that combines a
+Table~\ref{tab:past} compares the framework with published results; each $R^2$ is on the work's
+own target and data. The forecaster reaches $R^2$ of 0.993, 0.968 and 0.922 on soil strength at 1,
+3 and 7 days, higher at every lead time than all soil-moisture models of~\cite{wang2024hess},
+including their best (GAN-LSTM: 0.963, 0.919, 0.846), and than the mean 0.523
+of~\cite{wang2024agwat}. It is the only approach that combines a
 multi-day forecast with per-vehicle assessment and routing; against planning on current
 conditions as in~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days.
 
 \begin{table}[t]
   \caption{Comparison with past works. SM: soil moisture; CI: cone index; TM: trafficability
-  map. $R^2$ of the proposed forecaster is on soil wetness, converted from its RCI forecast.}
+  map. Each $R^2$ is on the work's own target.}
   \label{tab:past}
   \centering
   \footnotesize
@@ -509,7 +490,7 @@ conditions as in~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days.
     \cite{wang2024hess}   & Transformer & SM  & $\times$   & $\times$   & 0.952 & 0.912 & 0.843 \\
     \cite{wang2024hess}   & GAN-LSTM    & SM  & $\times$   & $\times$   & 0.963 & 0.919 & 0.846 \\
     \cite{wang2024agwat}  & Transformer & SM  & $\times$   & $\times$   & \multicolumn{3}{c}{0.523 (mean)} \\
-    \textbf{Ours} & \textbf{GRU--Ridge} & RCI & \checkmark & \checkmark & \textbf{0.991} & \textbf{0.960} & \textbf{0.903} \\
+    \textbf{Ours} & \textbf{GRU--Ridge} & RCI & \checkmark & \checkmark & \textbf{0.993} & \textbf{0.968} & \textbf{0.922} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -612,12 +593,13 @@ site are the next step.
 \section{Conclusion}
 This study presents an integrated framework for forecasting terrain trafficability and planning safe, efficient routes for heterogeneous military ground vehicles under changing environmental conditions. The proposed framework combines a hybrid Gated Recurrent Unit–Ridge (GRU–Ridge) model for 1–7-day soil strength forecasting with vehicle-specific cone index requirements, terrain characteristics, fuzzy trafficability mapping, and Dijkstra-based route optimization. Convoy coordination is further incorporated to account for the progressive degradation of soil bearing capacity caused by repeated vehicle passage.
 
-Experiments using meteorological and geospatial data for the Pachmarhi plateau demonstrate the potential of the proposed approach. The GRU–Ridge model achieves an average RMSE of 14.64 psi across the seven forecast horizons and an \(R^2\) of 0.903 at a seven-day horizon. Compared with route planning based on current terrain conditions, the forecast-based approach reduces the proportion of trips encountering impassable terrain by 27\% at seven days, while also reducing unnecessary trip cancellations. Furthermore, incorporating track degradation into convoy planning increases the average number of heavy tracked vehicles that complete a route from 5.5 to 9.2 out of 10. These findings highlight the benefits of integrating predictive soil strength assessment with vehicle-specific mobility constraints and route optimization.
+Experiments using meteorological and geospatial data for the Pachmarhi plateau demonstrate the potential of the proposed approach. The GRU–Ridge model achieves an average RMSE of 14.64 psi across the seven forecast horizons and an \(R^2\) of 0.922 for soil strength at a seven-day horizon. Compared with route planning based on current terrain conditions, the forecast-based approach reduces the proportion of trips encountering impassable terrain by 27\% at seven days, while also reducing unnecessary trip cancellations. Furthermore, incorporating track degradation into convoy planning increases the average number of heavy tracked vehicles that complete a route from 5.5 to 9.2 out of 10. These findings highlight the benefits of integrating predictive soil strength assessment with vehicle-specific mobility constraints and route optimization.
 
 Despite these encouraging results, the framework relies on modeled rather than field-measured soil strength, and some vehicle characteristics and track-degradation relationships are estimated from assumptions. Future work will focus on validating the predictions using field cone-index measurements, improving vehicle parameter estimation, incorporating numerical weather forecasts, and evaluating the framework across additional terrains and seasonal conditions. Overall, the proposed approach provides a promising basis for anticipatory, risk-aware military mobility planning under dynamic environmental conditions.
 
-\section*{Acknowledgment}
-The authors gratefully acknowledge Mr. Chandrasekhar Lekala Reddy for his valuable assistance with vehicle data collection.
+% Hidden for double-blind review; restore for the camera-ready version.
+% \section*{Acknowledgment}
+% The authors gratefully acknowledge Mr. Chandrasekhar Lekala Reddy for his valuable assistance with vehicle data collection.
 
 \section*{Data Availability}
 Data will be available on request
