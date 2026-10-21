@@ -114,7 +114,7 @@ The problem addressed in this study is to predict future terrain trafficability 
 
 A central challenge is balancing operational safety with mobility: overly optimistic assessments risk sending vehicles into impassable terrain, while overly conservative assessments unnecessarily restrict movement. The objective is therefore to develop a unified framework that forecasts soil strength over a 1-7-day horizon, identifies vehicle-specific GO, SLOW-GO, and NO-GO conditions, and plans routes that minimize travel cost while reducing immobilization risk and unnecessary mission delays.
 
-In brief, the proposed approach (Section~\ref{sec:approach}) forecasts the soil strength $\widehat{\mathrm{RCI}}_{t+h}$ for lead times $h = 1, \dots, 7$ days from the weather log up to day $t$ and compares it, less a safety margin $m_{b,h}$, with the cone indices for one and 50 passes, $\mathrm{VCI}_1$ and $\mathrm{VCI}_{50}$, of each vehicle band $b$:
+Each vehicle band $b$ is classified for day $t+h$ from the forecast soil strength $\widehat{\mathrm{RCI}}_{t+h}$, less a safety margin $m_{b,h}$:
 \begin{equation}
   c_{b,t+h} =
   \begin{cases}
@@ -124,7 +124,6 @@ In brief, the proposed approach (Section~\ref{sec:approach}) forecasts the soil 
   \end{cases}
   \label{eq:decision}
 \end{equation}
-Slope and land cover then score each map cell, and Dijkstra's algorithm finds the fastest route that avoids NO-GO cells, with track wear raising the requirement for each later vehicle of a convoy.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 \section{Proposed Approach}
@@ -133,7 +132,7 @@ Slope and land cover then score each map cell, and Dijkstra's algorithm finds th
 Fig.~\ref{fig:framework} shows the framework; RCI and VCI are both in psi, and routes are planned
 for the day of travel rather than the day of planning.
 
-\begin{figure}[t]
+\begin{figure}[!b]
   \centering
   \begin{tikzpicture}[
       font=\scriptsize, >={Stealth[length=4pt]}, node distance=2.6mm and 2.5mm,
@@ -253,7 +252,7 @@ all lead times $h = 1, \dots, 7$ days at once:
   + \tfrac{1}{2}\left[\bar g_h(\mathbf{X}_{t-59:t}) + r_h(\boldsymbol{\phi}_t)\right],
   \label{eq:forecast}
 \end{equation}
-where $\bar g_h$ averages three GRU networks~\cite{cho2014} over a 60-day window, by which the slowest
+where $\bar g_h$ averages three GRU networks over a 60-day window, by which the slowest
 antecedent index has decayed to 5\%, and $r_h$ is a ridge regression on 128 causal features
 (settings in Table~\ref{tab:hyper}; all recurrent models in Table~\ref{tab:arch} share the GRU
 size). Equation (\ref{eq:forecast}) is
@@ -267,9 +266,7 @@ vehicle class; other margins are shown in Fig.~\ref{fig:tradeoff}.
 A 90\,m grid of 76,218 cells (3$\times$3 blocks of a 30\,m Google Earth Engine export) holds the
 mean elevation and slope, the dominant land cover and the peak NDVI over three seasons; cells that
 are mostly water are impassable. The SWI of each cell is shifted by $\delta_c = 0.1\,
-\mathrm{clip}(z_c, -2, 2)$, where $z_c$ is the z-score of its topographic wetness index
-$\mathrm{TWI}_c = \ln(a_c/\tan\beta_c)$~\cite{beven1979}, with $a_c$ from D8 flow
-accumulation and $\beta_c$ the slope, so that
+\mathrm{clip}(z_c, -2, 2)$, where $z_c$ is the z-score of its topographic wetness index, so that
 $\mathrm{RCI}_c = \widehat{\mathrm{RCI}}\,e^{-k\delta_c}$. The scale is ours: 2.9\,vol\% per
 standard deviation, capped at 5.8\,vol\%. The soil membership is:
 \begin{equation}
@@ -308,9 +305,7 @@ where $d_{uv}$ is 90\,m, or $90\sqrt{2}$\,m on a diagonal; (\ref{eq:cost}) is ou
 half step at the speed of its cell. A trip planned on day $t$ for day $t+h$ forecasts
 $\widehat{\mathrm{RCI}}_{t+h}$ with (\ref{eq:forecast}), subtracts $m_{b,h}$, maps $\mu_c$ with
 (\ref{eq:soil}) and (\ref{eq:fuzzy}), and finds the least-cost route with Dijkstra's
-algorithm~\cite{dijkstra1959}; if none reaches the destination, the trip is held back. Dijkstra's
-algorithm gives routes of the same cost as the A* search of~\cite{liu2025} with an admissible
-heuristic, and one search serves every destination. For travel-time
+algorithm; if none reaches the destination, the trip is held back. For travel-time
 routing, $1/\mu$ in (\ref{eq:cost}) becomes the time per km at the speed~(\ref{eq:speed}), scaled
 off road by the cover membership. In a convoy each pass weakens the track; inverting
 (\ref{eq:passes}), the $n$-th vehicle needs:
@@ -378,7 +373,7 @@ The record is split into Training (2015--21), Validation (2022--23) and Testing 
 \subsection{Evaluation Setup and Metrics}
 Forecasts use only inputs observed up to each test day, and margins are tuned on one test year
 and scored on the other. With NO-GO as the positive class of each vehicle-day, recall
-TP/(TP+FN) is fixed at 90\% by the margin, so decisions are compared on false NO-GO calls (FP per
+is fixed at 90\% by the margin, so decisions are compared on false NO-GO calls (FP per
 vehicle-year); forecasts are scored by RMSE and $R^2$. For routing, 6 starts and 5 destinations at opposite ends of the largest road
 network give 30 trips of at least 8\,km, planned for every test day, band and lead time
 $h \in \{1,3,7\}$ and scored on the true ground of the travel day: \emph{stuck} if the route
@@ -450,7 +445,7 @@ ahead are largely seasonal.
     Random Forest                        & --     & 6.55 & 14.93 & 23.89 & 25.4 & 32.7 \\
     LightGBM                             & --     & 6.33 & 14.51 & 24.84 & 25.6 & 32.5 \\
     LSTM~\cite{wang2024hess}             & 690k   & 7.05 & 15.46 & 22.58 & 22.8 & 35.7 \\
-    GRU~\cite{cho2014}                   & 530k   & 6.14 & 13.98 & 21.85 & 24.8 & 35.5 \\
+    GRU                                  & 530k   & 6.14 & 13.98 & 21.85 & 24.8 & 35.5 \\
     TCN                                  & 370k   & 5.84 & 13.66 & 22.89 & 23.1 & 35.7 \\
     Transformer~\cite{wang2024agwat}     & 1.85M  & 6.09 & 13.88 & 22.61 & \textbf{19.7} & 34.6 \\
     TFT                                  & 3.47M  & 6.05 & \textbf{12.83} & 21.18 & 23.2 & 35.7 \\
@@ -597,9 +592,8 @@ Experiments using meteorological and geospatial data for the Pachmarhi plateau d
 
 Despite these encouraging results, the framework relies on modeled rather than field-measured soil strength, and some vehicle characteristics and track-degradation relationships are estimated from assumptions. Future work will focus on validating the predictions using field cone-index measurements, improving vehicle parameter estimation, incorporating numerical weather forecasts, and evaluating the framework across additional terrains and seasonal conditions. Overall, the proposed approach provides a promising basis for anticipatory, risk-aware military mobility planning under dynamic environmental conditions.
 
-% Hidden for double-blind review; restore for the camera-ready version.
-% \section*{Acknowledgment}
-% The authors gratefully acknowledge Mr. Chandrasekhar Lekala Reddy for his valuable assistance with vehicle data collection.
+\section*{Acknowledgment}
+The authors gratefully acknowledge Mr. Chandrasekhar Lekala Reddy for his valuable assistance with vehicle data collection.
 
 \section*{Data Availability}
 Data will be available on request
@@ -619,9 +613,6 @@ Data will be available on request
 \bibitem{gupta2022} P. Gupta, B. Pareek, G. Singal, and D. V. Rao, ``Edge device based military vehicle detection and classification from UAV,'' Multimedia Tools and Applications, vol. 81, no. 14, pp. 19813--19834, 2022.
 \bibitem{rosca2018} P. Ro\c{s}ca, T. Ciobotaru, G. Olaru, and C. Puic\u{a}, ``Considerations regarding vehicle cone index for fine-grained soil,'' Journal of Military Technology, vol. 1, no. 2, pp. 39--44, 2018.
 \bibitem{rosca2017} P. Ro\c{s}ca and T. Ciobotaru, ``8$\times$8 armoured personnel carrier mobility evaluations using vehicle cone index,'' MTA Review, vol. 27, no. 2, pp. 77--82, 2017.
-\bibitem{cho2014} K. Cho, B. van Merri\"{e}nboer, C. Gulcehre, D. Bahdanau, F. Bougares, H. Schwenk, and Y. Bengio, ``Learning phrase representations using RNN encoder--decoder for statistical machine translation,'' in Proc. EMNLP, 2014, pp. 1724--1734.
-\bibitem{beven1979} K. J. Beven and M. J. Kirkby, ``A physically based, variable contributing area model of basin hydrology,'' Hydrological Sciences Bulletin, vol. 24, no. 1, pp. 43--69, 1979.
-\bibitem{dijkstra1959} E. W. Dijkstra, ``A note on two problems in connexion with graphs,'' Numerische Mathematik, vol. 1, pp. 269--271, 1959.
 \end{thebibliography}
 
 \end{document}
