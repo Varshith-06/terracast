@@ -459,12 +459,15 @@ Table~\ref{tab:hyper} lists the hyperparameters of the two forecaster members.
       & \multicolumn{2}{l}{Train 2015--21, validation 2022--23, test 2024--25 (2,498, 730 and 724 origins)} \\
     \midrule
     L$^2$ error, RCI (psi)
-      & \multicolumn{2}{l}{$\mathrm{RMSE}_h = \sqrt{\tfrac{1}{N}\sum_{t}\big(\widehat{\mathrm{RCI}}_{t+h} - \mathrm{RCI}_{t+h}\big)^2}$ over the $N = 724$ test origins, at $h = 1/3/7$ days:} \\
-    \addlinespace
-    \quad each member & 6.14 / 13.98 / 21.85 & 6.31 / 13.86 / 21.92 \\
-    \addlinespace
-    \quad GRU--Ridge
-      & \multicolumn{2}{c}{6.05 / 13.29 / 20.76, with $\widehat{\mathrm{RCI}}_{t+h}$ from (\ref{eq:forecast})} \\
+      & \multicolumn{2}{p{15.1cm}@{}}{%
+        $\mathrm{RMSE}_h = \sqrt{\tfrac{1}{N}\sum_{t}\big(\widehat{\mathrm{RCI}}_{t+h} - \mathrm{RCI}_{t+h}\big)^2}$ over the $N = 724$ test origins \newline
+        \begin{tabular}[t]{@{}lccc@{}}
+          & $h = 1$ day & $h = 3$ days & $h = 7$ days \\
+          \cmidrule(l){2-4}
+          GRU (member alone) & 6.14 & 13.98 & 21.85 \\
+          Ridge (member alone) & 6.31 & 13.86 & 21.92 \\
+          GRU--Ridge, $\widehat{\mathrm{RCI}}_{t+h}$ from (\ref{eq:forecast}) & \textbf{6.05} & \textbf{13.29} & \textbf{20.76} \\
+        \end{tabular}} \\
     \bottomrule
   \end{tabular}
 \end{table*}
