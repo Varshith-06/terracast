@@ -13,6 +13,7 @@
 \usepackage{float}
 \usepackage{times}
 \usepackage{hyperref}
+\hypersetup{hidelinks}
 \usepackage{multirow}
 \usepackage{adjustbox}
 \usepackage{subfigure}
@@ -83,12 +84,14 @@ Despite these advances, forecasting soil strength and directly integrating it wi
 \centering
 \caption{Comparison of existing approaches. Light-weight: designed or shown to run on edge hardware.}
 \label{tab:related-work}
-\begin{adjustbox}{width=0.49\textwidth}
-\begin{tabular}{|c|p{4.2cm}|c|c|c|}
+\footnotesize
+\setlength{\tabcolsep}{2.5pt}
+\begin{adjustbox}{max width=\columnwidth}
+\begin{tabular}{|c|>{\raggedright\arraybackslash}p{2.9cm}|c|c|c|}
 \hline
 \multirow{2}{*}{\textbf{Reference}} & \multicolumn{4}{c|}{\textbf{Comparative Factors}} \\
 \cline{2-5}
- & \textbf{Dataset} & \textbf{Terrain-Features} & \textbf{Light-weight} & \textbf{Vehicle-specific mobility} \\
+ & \textbf{Dataset} & \textbf{\begin{tabular}[c]{@{}c@{}}Terrain-\\Features\end{tabular}} & \textbf{\begin{tabular}[c]{@{}c@{}}Light-\\weight\end{tabular}} & \textbf{\begin{tabular}[c]{@{}c@{}}Vehicle-specific\\mobility\end{tabular}} \\
 \hline
  \textbf{\cite{khan2021}} & Sentinel-2, ALOS PALSAR, soil maps & \Checkmark & \XSolid & \XSolid \\
 \hline
@@ -112,7 +115,7 @@ Despite these advances, forecasting soil strength and directly integrating it wi
 \label{sec:problem-statement}
 The problem addressed in this study is to predict future terrain trafficability and determine safe, efficient routes for heterogeneous ground vehicles under changing environmental conditions. This requires estimating soil bearing strength several days in advance, relating it to each vehicle's mobility requirements, and accounting for terrain slope, land cover, road accessibility, and degradation from repeated vehicle use.
 
-A central challenge is balancing operational safety with mobility: overly optimistic assessments risk sending vehicles into impassable terrain, while overly conservative assessments unnecessarily restrict movement. The objective is therefore to develop a unified framework that forecasts soil strength over a 1-7-day horizon, identifies vehicle-specific GO, Slow-Go, and No-Go conditions, and plans routes that minimize travel cost while reducing immobilization risk and unnecessary mission delays.
+A central challenge is balancing operational safety with mobility: overly optimistic assessments risk sending vehicles into impassable terrain, while overly conservative assessments unnecessarily restrict movement. The objective is therefore to develop a unified framework that forecasts soil strength over a 1--7-day horizon, identifies vehicle-specific GO, Slow-Go, and No-Go conditions, and plans routes that minimize travel cost while reducing immobilization risk and unnecessary mission delays.
 
 Each vehicle band $b$ is classified for day $t+h$ from the forecast soil strength $\widehat{\mathrm{RCI}}_{t+h}$, less a safety margin $m_{b,h}$:
 \begin{equation}
@@ -349,7 +352,7 @@ The record is split into Training (2015--21), Validation (2022--23) and Testing 
   \centering
   \begin{tikzpicture}
     \begin{axis}[
-        width=\columnwidth, height=2.8cm, ymode=log, ymin=12, ymax=320,
+        width=\columnwidth, height=3.2cm, ymode=log, ymin=12, ymax=320,
         xmin=0, xmax=24, xtick={0,3,...,24},
         xticklabels={Jan,Apr,Jul,Oct,Jan,Apr,Jul,Oct,Jan},
         ytick={15,25,50,100,200}, yticklabels={15,25,50,100,200},
@@ -389,88 +392,40 @@ confidence intervals (CI) come from a moving-block bootstrap over test days (14-
 \subsection{Experimental Results}
 Table~\ref{tab:hyper} lists the hyperparameters of the two forecaster members.
 
-\begin{table*}[t]
+\begin{table}[t]
   \caption{Hyperparameters of the GRU--Ridge forecaster (531,228 parameters in all) and its test
-  error, as the training loss $\mathcal{L}$ at 1/3/7 days and over all seven lead times. The ridge models are refit on 2015--23 once $\alpha_h$ is
-  chosen. $\mathbf{x}_\tau$: the 27 standardized channels of day $\tau$ in the window
-  $t-59, \dots, t$; $\tilde{\boldsymbol{\phi}}$: the 128 standardized ridge features; $i$: forecast
-  origin.}
+  error, as the training loss at 1/3/7 days. The ridge models are refit on 2015--23 once $\alpha$
+  is chosen.}
   \label{tab:hyper}
   \centering
   \footnotesize
-  \setlength{\tabcolsep}{5pt}
-  \renewcommand{\arraystretch}{1.35}
-  \begin{tabular}{@{}p{2.4cm}p{8.2cm}p{6.6cm}@{}}
+  \setlength{\tabcolsep}{3pt}
+  \renewcommand{\arraystretch}{1.15}
+  \begin{tabular}{@{}>{\raggedright\arraybackslash}p{2.2cm}>{\raggedright\arraybackslash}p{3.1cm}>{\raggedright\arraybackslash}p{2.9cm}@{}}
     \toprule
     \textbf{Hyperparameter} & \textbf{GRU (3 seeds)} & \textbf{Ridge} \\
     \midrule
-    No.\ of neurons
-      & 128 per layer; head 128, 7 outputs: \newline
-        $\hat{\mathbf{y}} = W_2\,\mathrm{ReLU}(W_1\mathbf{a}_t + \mathbf{b}_1) + \mathbf{b}_2 \in \mathbb{R}^7$ \newline
-        $\bar g_h = \bar\Delta_h + s_h \cdot \tfrac{1}{3}\sum_{\mathrm{seeds}} \hat y_h$
-      & None (linear on 128 features), 7 outputs: \newline
-        $r_h = w_{0,h} + \mathbf{w}_h^{\top}\tilde{\boldsymbol{\phi}}$ \\
-    \addlinespace
-    No.\ of layers
-      & 2 GRU (dropout 0.2) + 2 dense; each GRU layer, with $\mathbf{a}_\tau \in \mathbb{R}^{128}$: \newline
-        $\mathbf{z}_\tau = \sigma(W_z\mathbf{x}_\tau + U_z\mathbf{a}_{\tau-1} + \mathbf{b}_z)$ \newline
-        $\mathbf{r}_\tau = \sigma(W_r\mathbf{x}_\tau + U_r\mathbf{a}_{\tau-1} + \mathbf{b}_r)$ \newline
-        $\tilde{\mathbf{a}}_\tau = \tanh(W_a\mathbf{x}_\tau + \mathbf{b}_a + \mathbf{r}_\tau \odot (U_a\mathbf{a}_{\tau-1} + \mathbf{b}'_a))$ \newline
-        $\mathbf{a}_\tau = (1 - \mathbf{z}_\tau) \odot \tilde{\mathbf{a}}_\tau + \mathbf{z}_\tau \odot \mathbf{a}_{\tau-1}$
-      & 1 linear per lead time \\
-    \addlinespace
-    Loss function
-      & MSE on $\Delta$RCI, standardized per lead time: \newline
-        $\mathcal{L} = \tfrac{1}{7B}\sum_{i=1}^{B}\sum_{h=1}^{7}(\hat y_{i,h} - y_{i,h})^2$ \newline
-        $y_{i,h} = (\Delta\mathrm{RCI}_{i,h} - \bar\Delta_h)/s_h$, with $\bar\Delta_h$, $s_h$ the
-        training mean and standard deviation
-      & Squared error on $\Delta$RCI $+\,\alpha_h\lVert\mathbf{w}_h\rVert^2$: \newline
-        $\min_{w_{0,h},\,\mathbf{w}_h} \sum_i (\Delta\mathrm{RCI}_{i,h} - w_{0,h} - \mathbf{w}_h^{\top}\tilde{\boldsymbol{\phi}}_i)^2$ \newline
-        $\quad + \alpha_h\lVert\mathbf{w}_h\rVert^2$ \\
-    \addlinespace
-    Optimizer
-      & AdamW, LR 0.001 (one-cycle), weight decay 0.0001, gradient clip 1.0: \newline
-        $\mathbf{g} \leftarrow \mathbf{g}\min(1, 1/\lVert\mathbf{g}\rVert_2)$ \newline
-        $\mathbf{m} \leftarrow \beta_1\mathbf{m} + (1-\beta_1)\mathbf{g}$, \
-        $\mathbf{v} \leftarrow \beta_2\mathbf{v} + (1-\beta_2)\mathbf{g}^2$ \newline
-        $\boldsymbol{\theta} \leftarrow (1 - \eta_k\lambda)\boldsymbol{\theta} - \eta_k\,\hat{\mathbf{m}}/(\sqrt{\hat{\mathbf{v}}} + \epsilon)$ \newline
-        with bias-corrected $\hat{\mathbf{m}}$, $\hat{\mathbf{v}}$,
-        $(\beta_1, \beta_2, \epsilon) = (0.9, 0.999, 10^{-8})$, $\lambda = 10^{-4}$; \newline
-        $\eta_k$ rises from $\eta_{\max}/25$ to $\eta_{\max} = 10^{-3}$ over the first 20\% of steps,
-        then falls to $\eta_{\max}/(25 \cdot 10^{4})$, both on a cosine
-      & Closed form on centred data: \newline
-        $\mathbf{w}_h = (\tilde{\Phi}^{\top}\tilde{\Phi} + \alpha_h I)^{-1}\tilde{\Phi}^{\top}\Delta\mathbf{RCI}_h$ \newline
-        $\alpha_h = \arg\min_{\alpha \in \{10^{-1}, \dots, 10^{4}\}} \mathrm{MSE}_{\mathrm{val}}(\alpha)$ \\
-    \addlinespace
+    No.\ of neurons & 128 per layer; head 128, 7 outputs & None (linear on 128 features), 7 outputs \\
+    No.\ of layers & 2 GRU (dropout 0.2) + 2 dense & 1 linear per lead time \\
+    Loss function & MSE on $\Delta$RCI, standardized per lead time & Squared error on $\Delta$RCI with an L$^2$ penalty $\alpha$ \\
+    Optimizer & AdamW, LR 0.001 (one-cycle), weight decay 0.0001, gradient clip 1.0 & Closed form; $\alpha$ from $10^{-1}$ to $10^{4}$ per lead time, chosen on validation \\
     Batch size & 128 & Full data \\
-    \addlinespace
-    Activation function
-      & Sigmoid and tanh (gates), ReLU (head): \newline
-        $\sigma(x) = 1/(1 + e^{-x})$, \ $\tanh(x) = (e^{x} - e^{-x})/(e^{x} + e^{-x})$ \newline
-        $\mathrm{ReLU}(x) = \max(0, x)$
-      & None (linear) \\
-    \addlinespace
-    Epochs
-      & 300, early stopping (patience 30): stop once the validation $\mathcal{L}$ has not fallen by
-        $10^{-6}$ for 30 epochs, and keep the best weights
-      & -- \\
-    \addlinespace
-    Train--test splitting
-      & \multicolumn{2}{l}{Train 2015--21, validation 2022--23, test 2024--25 (2,498, 730 and 724 origins)} \\
+    Activation function & Sigmoid and tanh (gates), ReLU (head) & None (linear) \\
+    Epochs & 300, early stopping (patience 30) & -- \\
+    Train--test splitting & \multicolumn{2}{l}{Train 2015--21, validation 2022--23, test 2024--25} \\
     \midrule
-    L$^2$ error
-      & \multicolumn{2}{p{15.1cm}@{}}{%
-        $\mathcal{L}_h = \tfrac{1}{N}\sum_{i=1}^{N}(\hat y_{i,h} - y_{i,h})^2$: the training loss on standardized $\Delta$RCI at one lead time, on the $N = 724$ test origins \newline
-        \begin{tabular}[t]{@{}lcccc@{}}
-          & $h = 1$ day & $h = 3$ days & $h = 7$ days & all $h$ ($\mathcal{L}$) \\
-          \cmidrule(l){2-5}
-          GRU (member alone) & 0.688 & 0.657 & 0.580 & 0.636 \\
-          Ridge (member alone) & 0.727 & 0.645 & 0.584 & 0.634 \\
-          GRU--Ridge, $\widehat{\mathrm{RCI}}_{t+h}$ from (\ref{eq:forecast}) & \textbf{0.668} & \textbf{0.593} & \textbf{0.523} & \textbf{0.579} \\
+    L$^2$ error \newline (training loss, test)
+      & \multicolumn{2}{l}{%
+        \begin{tabular}[t]{@{}lccc@{}}
+          & 1 day & 3 days & 7 days \\
+          \cmidrule(l){2-4}
+          GRU & 0.688 & 0.657 & 0.580 \\
+          Ridge & 0.727 & 0.645 & 0.584 \\
+          GRU--Ridge (\ref{eq:forecast}) & \textbf{0.668} & \textbf{0.593} & \textbf{0.523} \\
         \end{tabular}} \\
     \bottomrule
   \end{tabular}
-\end{table*}
+\end{table}
 
 \subsubsection{Model Selection}
 Twenty-two forecasting models and rules, ours included, were tested on the same inputs and years
@@ -673,7 +628,7 @@ planning under dynamic environmental conditions.
 The authors gratefully acknowledge Mr. Chandrasekhar Lekala Reddy for his valuable assistance with vehicle data collection.
 
 \section*{Data Availability}
-Data will be available on request
+Data will be available on request.
 
 \begin{thebibliography}{00}
 \bibitem{khan2021} M. N. Khan, M. Kashif, and A. Shah, ``Off-road trafficability for military operations using multi-criteria decision analysis,'' International Journal of Advanced Remote Sensing and GIS, vol. 10, no. 1, pp. 3425--3437, 2021.
