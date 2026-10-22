@@ -13,7 +13,6 @@
 \usepackage{float}
 \usepackage{times}
 \usepackage{hyperref}
-\hypersetup{hidelinks}
 \usepackage{multirow}
 \usepackage{adjustbox}
 \usepackage{subfigure}
@@ -115,7 +114,7 @@ Despite these advances, forecasting soil strength and directly integrating it wi
 \label{sec:problem-statement}
 The problem addressed in this study is to predict future terrain trafficability and determine safe, efficient routes for heterogeneous ground vehicles under changing environmental conditions. This requires estimating soil bearing strength several days in advance, relating it to each vehicle's mobility requirements, and accounting for terrain slope, land cover, road accessibility, and degradation from repeated vehicle use.
 
-A central challenge is balancing operational safety with mobility: overly optimistic assessments risk sending vehicles into impassable terrain, while overly conservative assessments unnecessarily restrict movement. The objective is therefore to develop a unified framework that forecasts soil strength over a 1--7-day horizon, identifies vehicle-specific GO, Slow-Go, and No-Go conditions, and plans routes that minimize travel cost while reducing immobilization risk and unnecessary mission delays.
+A central challenge is balancing operational safety with mobility: overly optimistic assessments risk sending vehicles into impassable terrain, while overly conservative assessments unnecessarily restrict movement. The objective is therefore to develop a unified framework that forecasts soil strength over a 1-7-day horizon, identifies vehicle-specific GO, Slow-Go, and No-Go conditions, and plans routes that minimize travel cost while reducing immobilization risk and unnecessary mission delays.
 
 Each vehicle band $b$ is classified for day $t+h$ from the forecast soil strength $\widehat{\mathrm{RCI}}_{t+h}$, less a safety margin $m_{b,h}$:
 \begin{equation}
@@ -186,7 +185,7 @@ With the 0--7\,cm and 7--28\,cm soil moisture scaled to $s^{(1)}_t, s^{(2)}_t \i
 \end{gather}
 where $k = \ln(300/15)$. As in the strength--moisture model used in~\cite{liu2025},
 $\log(\mathrm{RCI})$ falls linearly with moisture. The constants are ours: the air-dry 300 lies in
-the 100--500\,psi excess strength beyond which NRMM treats fine-grained soil as a hard
+the 100--500\, psi excess strength beyond which NRMM treats fine-grained soil as a hard
 surface~\cite{haley1979}, and the saturated 15 follows field readings at
 immobilisation~\cite{rosca2018}. The deeper layer weighs more as it covers both NRMM critical
 layers, 0--15\,cm for one pass and 15--30\,cm for 50~\cite{haley1979}; weights of 0.25/0.75 or
@@ -352,7 +351,7 @@ The record is split into Training (2015--21), Validation (2022--23) and Testing 
   \centering
   \begin{tikzpicture}
     \begin{axis}[
-        width=\columnwidth, height=3.2cm, ymode=log, ymin=12, ymax=320,
+        width=\columnwidth, height=2.8cm, ymode=log, ymin=12, ymax=320,
         xmin=0, xmax=24, xtick={0,3,...,24},
         xticklabels={Jan,Apr,Jul,Oct,Jan,Apr,Jul,Oct,Jan},
         ytick={15,25,50,100,200}, yticklabels={15,25,50,100,200},
@@ -588,47 +587,27 @@ as the lead track fails under those behind; the wear-aware mode gets 9.2 through
 vehicles (band E) gain less (6.8 to 7.3), as the forest leaves them few parallel lanes.
 %--------------------
 \subsection{Limitations}
-Soil strength is computed from modeled soil moisture for one 9\,km cell, not measured, and its
+Soil strength is computed from modeled soil moisture for one 9\, km cell, not measured, and its
 spread by wetness index is unchecked in the field. Vehicle masses come from game files and the
 running gear is assumed, so results are reported by band. The pass and wear curves and the speed
 assumptions are ours, so speeds are upper bounds. Margins tuned on the two test years differ by
-up to 7.25\,psi, and two test years leave some intervals wide. Field cone-index readings at the
+up to 7.25\, psi, and two test years leave some intervals wide. Field cone-index readings at the
 site are the next step.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 \section{Conclusion}
-This study presents an integrated framework for forecasting terrain trafficability and planning
-safe, efficient routes for heterogeneous military ground vehicles under changing environmental
-conditions. The proposed framework combines a hybrid Gated Recurrent Unit--Ridge (GRU--Ridge)
-model for 1--7-day soil strength forecasting with vehicle-specific cone index requirements, terrain
-characteristics, fuzzy trafficability mapping, and Dijkstra-based route optimization. Convoy
-coordination is further incorporated to account for the progressive degradation of soil bearing
-capacity caused by repeated vehicle passage.
+This study presents an integrated framework for forecasting terrain trafficability and planning safe, efficient routes for heterogeneous military ground vehicles under changing environmental conditions. The proposed framework combines a hybrid Gated Recurrent Unit–Ridge (GRU–Ridge) model for 1–7-day soil strength forecasting with vehicle-specific cone index requirements, terrain characteristics, fuzzy trafficability mapping, and Dijkstra-based route optimization. Convoy coordination is further incorporated to account for the progressive degradation of soil bearing capacity caused by repeated vehicle passage.
 
-Experiments using meteorological and geospatial data for the Pachmarhi plateau demonstrate the
-potential of the proposed approach. The GRU--Ridge model achieves an average RMSE of 14.64\,psi
-across the seven forecast horizons and an $R^2$ of 0.922 for soil strength at a seven-day horizon.
-Compared with route planning based on current terrain conditions, the forecast-based approach
-reduces the proportion of trips encountering impassable terrain by 27\% at seven days, while also
-reducing unnecessary trip cancellations. Furthermore, incorporating track degradation into convoy
-planning increases the average number of heavy tracked vehicles that complete a route from 5.5 to
-9.2 out of 10. These findings highlight the benefits of integrating predictive soil strength
-assessment with vehicle-specific mobility constraints and route optimization.
+Experiments using meteorological and geospatial data for the Pachmarhi plateau demonstrate the potential of the proposed approach. The GRU–Ridge model achieves an average RMSE of 14.64 psi across the seven forecast horizons and an \(R^2\) of 0.922 for soil strength at a seven-day horizon. Compared with route planning based on current terrain conditions, the forecast-based approach reduces the proportion of trips encountering impassable terrain by 27\% at seven days, while also reducing unnecessary trip cancellations. Furthermore, incorporating track degradation into convoy planning increases the average number of heavy tracked vehicles that complete a route from 5.5 to 9.2 out of 10. These findings highlight the benefits of integrating predictive soil strength assessment with vehicle-specific mobility constraints and route optimization.
 
-Despite these encouraging results, the framework relies on modeled rather than field-measured soil
-strength, and some vehicle characteristics and track-degradation relationships are estimated from
-assumptions. Future work will focus on validating the predictions using field cone-index
-measurements, improving vehicle parameter estimation, incorporating numerical weather forecasts,
-and evaluating the framework across additional terrains and seasonal conditions. Overall, the
-proposed approach provides a promising basis for anticipatory, risk-aware military mobility
-planning under dynamic environmental conditions.
+Despite these encouraging results, the framework relies on modeled rather than field-measured soil strength, and some vehicle characteristics and track-degradation relationships are estimated from assumptions. Future work will focus on validating the predictions using field cone-index measurements, improving vehicle parameter estimation, incorporating numerical weather forecasts, and evaluating the framework across additional terrains and seasonal conditions. Overall, the proposed approach provides a promising basis for anticipatory, risk-aware military mobility planning under dynamic environmental conditions.
 
 \section*{Acknowledgment}
 The authors gratefully acknowledge Mr. Chandrasekhar Lekala Reddy for his valuable assistance with vehicle data collection.
 
 \section*{Data Availability}
-Data will be available on request.
+Data will be available on request
 
 \begin{thebibliography}{00}
 \bibitem{khan2021} M. N. Khan, M. Kashif, and A. Shah, ``Off-road trafficability for military operations using multi-criteria decision analysis,'' International Journal of Advanced Remote Sensing and GIS, vol. 10, no. 1, pp. 3425--3437, 2021.
