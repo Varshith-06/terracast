@@ -36,6 +36,13 @@
 \usepgfplotslibrary{groupplots}
 \def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
     T\kern-.1667em\lower.7ex\hbox{\sc e}\kern-.125em\lower.7ex\hbox{\sc x}}}
+% a little more space above section headings than the conference default (1.5ex), and a
+% heading with room for under about four lines below it starts at the top of the next column
+\usepackage{needspace}
+\makeatletter
+\def\section{\needspace{7\baselineskip}\@startsection{section}{1}{\z@}{2.5ex plus 1ex minus 0.5ex}%
+{0.7ex plus 1ex minus 0ex}{\normalfont\normalsize\centering\scshape}}
+\makeatother
 \begin{document}
 
 \title{Modeling Terrain-Vehicle Interaction for Off-Road Mobility Assessment}
