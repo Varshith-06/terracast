@@ -262,7 +262,7 @@ ours: predicting the change makes persistence the zero-change forecast, and aver
 nonlinear sequence model with a linear feature model lets their errors partly cancel. In the
 NO-GO rule of (\ref{eq:decision}), $m_{b,h}$, searched in 0.25\,psi steps up to 40\,psi, is the
 smallest margin that catches 90\% of NO-GO days. This rule is ours and fixes the miss rate per
-vehicle class; other margins are shown in Fig.~\ref{fig:tradeoff}.
+vehicle class.
 
 \subsection{Trafficability Mapping}
 A 90\,m grid of 76,218 cells (3$\times$3 blocks of a 30\,m Google Earth Engine export) holds the
@@ -350,7 +350,8 @@ The record is split into Training (2015--21), Validation (2022--23) and Testing 
 Forecasts use only inputs observed up to each test day, and margins are tuned on one test year
 and scored on the other. With NO-GO as the positive class of each vehicle-day, recall
 is fixed at 90\% by the margin, so decisions are compared on false NO-GO calls (FP per
-vehicle-year); forecasts are scored by RMSE and $R^2$. For routing, 6 starts and 5 destinations at opposite ends of the largest road
+vehicle-year); forecasts are scored by RMSE and $R^2$. Table~\ref{tab:hyper} gives the forecaster's settings
+and its test error as the training loss. For routing, 6 starts and 5 destinations at opposite ends of the largest road
 network give 30 trips of at least 8\,km, planned for every test day, band and lead time
 $h \in \{1,3,7\}$ and scored on the true ground of the travel day: \emph{stuck} if the route
 crosses a NO-GO cell, \emph{held} if no route is planned although one existed, and the extra
@@ -361,9 +362,6 @@ of~\cite{liu2025} with and without its veto, and a sweep scales both margins fro
 $1.05\,\mathrm{VCI}_1$ and $1.5\,\mathrm{VCI}_{50}$ (up to 30 per band, 3 trips each). 95\%
 confidence intervals (CI) come from a moving-block bootstrap over test days (14-day blocks,
 2,000 resamples).
-
-\subsection{Experimental Results}
-Table~\ref{tab:hyper} lists the hyperparameters of the two forecaster members.
 
 \begin{table}[t]
   \caption{Hyperparameters of the GRU--Ridge forecaster (531,228 parameters in all) and its test
@@ -400,6 +398,7 @@ Table~\ref{tab:hyper} lists the hyperparameters of the two forecaster members.
   \end{tabular}
 \end{table}
 
+\subsection{Experimental Results}
 \subsubsection{Model Selection}
 Twenty-two forecasting models and rules, ours included, were tested on the same inputs and years.
 Table~\ref{tab:arch} lists fourteen, with parameters counted over all three seeds; the other
@@ -477,14 +476,17 @@ conditions as in~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days.
 \end{table}
 
 \subsubsection{Results by Vehicle Band}
-On a typical SLOW-GO day only 2--5 vehicles can use one track, at 14--32\,km/h against
+Fig.~\ref{fig:rci} shows why decisions are made per band: the same soil strength crosses each
+band's $\mathrm{VCI}_1$ at a different time. Each monsoon it drops by over 100\,psi within two
+weeks to near the saturated strength and recovers over about two months, so that bands with a
+higher $\mathrm{VCI}_1$ return to GO later; wheeled vehicles (band E) are NO-GO on 34\% of days
+and light tracked ones (band A) on 13\% (Table~\ref{tab:slowgo}). On a typical SLOW-GO day only 2--5 vehicles can use one track, at 14--32\,km/h against
 57--60\,km/h on dry ground (Table~\ref{tab:slowgo}); at 5\,psi above $\mathrm{VCI}_1$, a track
 carries 1.5--2.3 vehicles at 12--16\,km/h. At equal recall, the forecast makes 23--45\% fewer
 false NO-GO calls than the margin rule on persistence in every band, and pooled over all vehicles
 21\% fewer at 3 days (CI 4--37\%) and 31\% at 7 days (CI 14--46\%). Light tracked vehicles
-(band A) are the hardest case, as their $\mathrm{VCI}_1$ is close to the saturated strength. Fig.~\ref{fig:rci}
-shows both ends: through each monsoon the soil strength stays below the line of band E for
-months but hovers around that of band A, so band A moves in and out of NO-GO week to week.
+(band A) are the hardest case, as their $\mathrm{VCI}_1$ is close to the saturated strength: through each monsoon the soil hovers around their line
+(Fig.~\ref{fig:rci}), moving them in and out of NO-GO week to week.
 
 \begin{figure}[t]
   \centering
@@ -538,7 +540,8 @@ forecast beats today's map on both errors: 2.9\% against 4.0\% stuck (27\% fewer
 and 4.5\% against 5.8\% held (CI 6--37\% fewer). At 3 days it gives 1.6\% against 2.1\% stuck and
 2.3\% against 3.0\% held, but both intervals include zero. A margin on today's map is slightly
 safer at its tuned setting but holds back far more trips; the forecast holds back 47\% fewer at
-both lead times (CI 25--62\% at 3 days, 27--61\% at 7 days). At an equal stuck rate (Fig.~\ref{fig:tradeoff}) it holds
+both lead times (CI 25--62\% at 3 days, 27--61\% at 7 days). Fig.~\ref{fig:tradeoff} traces this trade-off as each margin is scaled: at both lead times the
+forecast's curve lies below and to the left of that of today's map, and at an equal stuck rate it holds
 back 40\% fewer trips at 3 days (CI 3--67\%) and 31\% at 7 days, where the interval ($-$2--69\%)
 includes zero. Completed routes are within 0.1\% of the best travel time. The product rule
 matches the fuzzy AND, the equal-weight mean with veto sends 1.8\% into mud at 3 days but takes
