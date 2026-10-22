@@ -263,10 +263,16 @@ antecedent index has decayed to 5\%, and $r_h$ is a ridge regression on 128 caus
 (settings in Table~\ref{tab:hyper}; all recurrent models in Table~\ref{tab:arch} share the GRU
 size). Equation (\ref{eq:forecast}) is
 ours: predicting the change makes persistence the zero-change forecast, and averaging a
-nonlinear sequence model with a linear feature model lets their errors partly cancel. In the
-NO-GO rule of (\ref{eq:decision}), $m_{b,h}$, searched in 0.25\,psi steps up to 40\,psi, is the
-smallest margin that catches 90\% of NO-GO days. This rule is ours and fixes the miss rate per
-vehicle class.
+nonlinear sequence model with a linear feature model lets their errors partly cancel. Comparing
+the forecast directly with $\mathrm{VCI}_1$ calls a NO-GO day passable whenever the forecast errs
+high: on the test years, a tenth of them at 1 day and a quarter at 7 days. The margin $m_{b,h}$ of
+(\ref{eq:decision}) is a buffer against this error. The error is the same for every vehicle, but
+it grows with $h$, and how often it changes a call depends on where the band's threshold lies:
+through each monsoon the soil hovers around the $\mathrm{VCI}_1$ of
+light tracked vehicles but stays well below that of wheeled ones (Fig.~\ref{fig:rci}). The margin
+is therefore set per band and lead time: searched in 0.25\,psi steps up to 40\,psi, it is the
+smallest that catches 90\% of NO-GO days. This rule is ours and fixes the miss rate per vehicle
+class.
 
 \subsection{Trafficability Mapping}
 A 90\,m grid of 76,218 cells (3$\times$3 blocks of a 30\,m Google Earth Engine export) holds the
