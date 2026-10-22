@@ -59,7 +59,7 @@
 \maketitle
 
 \begin{abstract}
-This work presents an integrated framework for forecasting terrain trafficability and planning safe routes for military ground vehicles. A hybrid GRU–Ridge model predicts soil strength using historical weather and soil-moisture data over a 1–7-day horizon. The predictions are combined with vehicle-specific mobility requirements and terrain characteristics to classify terrain and optimize vehicle movement, accounting for convoy-induced soil degradation. Experiments on the Pachmarhi plateau achieve an \(R^2\) of 0.922 for soil strength and, compared with current-condition planning, reduce trips encountering impassable terrain by 27\% and trips held back unnecessarily by 22\%, all at seven days. The framework supports predictive, risk-aware military mobility planning under changing environmental conditions.
+This work presents an integrated framework for forecasting terrain trafficability and planning safe routes for military ground vehicles. A hybrid GRU–Ridge model predicts soil strength using historical weather and soil-moisture data over a 1–7-day horizon. The predictions are combined with vehicle-specific mobility requirements and terrain characteristics to classify terrain and plan routes that avoid impassable ground, accounting for convoy-induced soil degradation. Experiments on the Pachmarhi plateau achieve an \(R^2\) of 0.922 for soil strength and, compared with current-condition planning, reduce trips encountering impassable terrain by 27\% and trips held back unnecessarily by 22\%, all at seven days. The framework supports predictive, risk-aware military mobility planning under changing environmental conditions.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -71,7 +71,14 @@ Military ground mobility depends on vehicle characteristics and changing terrain
 
 The Rating Cone Index (RCI) measures soil bearing strength, while the Vehicle Cone Index (VCI) represents vehicle-specific soil strength requirements. Although these indices underpin established mobility models~\cite{rula1971,haley1979}, integrating soil-strength forecasting with vehicle-specific trafficability assessment and route optimization remains a challenge. Machine-learning methods offer promising tools for forecasting soil conditions~\cite{wang2024hess,wang2024agwat}.
 
-This study proposes an integrated framework combining a hybrid Gated Recurrent Unit–Ridge model for 1–7-day RCI forecasting with vehicle-specific VCI, terrain characteristics, and Dijkstra-based route planning. It classifies terrain into GO, SLOW-GO, and NO-GO categories and accounts for track degradation during convoy movement. A novel element is the grouping of vehicles into five bands (A--E) by their one-pass VCI: each band is represented by its median requirements and receives its own forecast safety margin per lead time, so that decisions are made per vehicle class even when individual vehicle data are incomplete. The framework is evaluated using meteorological, vehicle, and geospatial data from the Pachmarhi plateau. The forecaster is lightweight, with a sixth of the parameters of the only tested model with a lower average error, and planning on its forecasts sends fewer trips into impassable terrain and holds back fewer unnecessarily than planning on current conditions.
+This study proposes an integrated framework combining a hybrid Gated Recurrent Unit–Ridge model for 1–7-day RCI forecasting with vehicle-specific VCI, terrain characteristics, and Dijkstra-based route planning. It classifies terrain into GO, SLOW-GO, and NO-GO categories and accounts for track degradation during convoy movement. The main contributions of this work are as follows:
+\begin{itemize}
+  \item A hybrid GRU–Ridge model that forecasts soil strength itself, rather than soil moisture, 1–7 days ahead, so that routes are planned for the day of travel rather than the day of planning.
+  \item The grouping of vehicles into five bands (A--E) by their one-pass VCI, where each band is represented by its median requirements and receives its own forecast safety margin per lead time, so that decisions are made per vehicle class at a fixed miss rate even when individual vehicle data are incomplete.
+  \item A quantification of SLOW-GO conditions by the number of vehicles one track can carry and the speed the soil allows.
+  \item A wear-aware convoy planner, in which each vehicle plans its route on the track left by those before it.
+\end{itemize}
+The framework is evaluated using meteorological, vehicle, and geospatial data from the Pachmarhi plateau. The forecaster is lightweight, with a sixth of the parameters of the only tested model with a lower average error, and planning on its forecasts sends fewer trips into impassable terrain and holds back fewer unnecessarily than planning on current conditions.
 
 \section{Related Works}
 
@@ -79,7 +86,7 @@ Military terrain trafficability assessment commonly relies on the RCI and VCI, s
 
 Despite these advances, forecasting soil strength and directly integrating it with vehicle-specific mobility requirements and future route planning remains challenging. Existing approaches often assess current terrain conditions without adequately accounting for changes before deployment. The present study addresses this gap by linking the soil-strength forecast directly to vehicle-specific requirements and route planning, including terrain degradation during convoy movement.
 
-\begin{table}[H]
+\begin{table}[t]
 \centering
 \caption{Comparison of existing approaches. Light-weight: designed or shown to run on edge hardware.}
 \label{tab:related-work}
@@ -453,39 +460,6 @@ ahead are largely seasonal.
   \end{tabular}
 \end{table}
 
-\subsubsection{Comparison with Past Works}
-Table~\ref{tab:past} compares the framework with published results; each $R^2$ is on the work's
-own target and data. The forecaster reaches $R^2$ of 0.993, 0.968 and 0.922 on soil strength at 1,
-3 and 7 days, higher at every lead time than all soil-moisture models of~\cite{wang2024hess},
-including their best (GAN-LSTM: 0.963, 0.919, 0.846), and than the mean 0.523
-of~\cite{wang2024agwat}. It is the only approach that combines a
-multi-day forecast with per-vehicle assessment and routing; against planning on current
-conditions as in~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days.
-
-\begin{table}[t]
-  \caption{Comparison with past works. SM: soil moisture; CI: cone index; TM: trafficability
-  map. Each $R^2$ is on the work's own target.}
-  \label{tab:past}
-  \centering
-  \footnotesize
-  \setlength{\tabcolsep}{2.6pt}
-  \begin{tabular}{@{}llcccccc@{}}
-    \toprule
-    & & & & & \multicolumn{3}{c}{$R^2$} \\
-    \cmidrule(l){6-8}
-    Work & Model & Target & Vehicle & Route & 1 d & 3 d & 7 d \\
-    \midrule
-    \cite{liu2025}        & AHP map     & TM  & \checkmark & \checkmark & -- & -- & -- \\
-    \cite{wang2024hess}   & RF          & SM  & $\times$   & $\times$   & 0.929 & 0.891 & 0.832 \\
-    \cite{wang2024hess}   & LSTM        & SM  & $\times$   & $\times$   & 0.963 & 0.916 & 0.842 \\
-    \cite{wang2024hess}   & Transformer & SM  & $\times$   & $\times$   & 0.952 & 0.912 & 0.843 \\
-    \cite{wang2024hess}   & GAN-LSTM    & SM  & $\times$   & $\times$   & 0.963 & 0.919 & 0.846 \\
-    \cite{wang2024agwat}  & Transformer & SM  & $\times$   & $\times$   & \multicolumn{3}{c}{0.523 (mean)} \\
-    \textbf{Ours} & \textbf{GRU--Ridge} & RCI & \checkmark & \checkmark & \textbf{0.993} & \textbf{0.968} & \textbf{0.922} \\
-    \bottomrule
-  \end{tabular}
-\end{table}
-
 \subsubsection{Results by Vehicle Band}
 Fig.~\ref{fig:rci} shows why decisions are made per band: the same soil strength crosses each
 band's $\mathrm{VCI}_1$ at a different time. Each monsoon it drops by over 100\,psi within two
@@ -601,6 +575,39 @@ around the transitions.
 A convoy of ten heavy tracked vehicles (band D) following its leader gets 5.5 through on average,
 as the lead track fails under those behind; the wear-aware mode gets 9.2 through. Wheeled
 vehicles (band E) gain less (6.8 to 7.3), as the forest leaves them few parallel lanes.
+
+\subsubsection{Comparison with Past Works}
+Table~\ref{tab:past} compares the framework with published results; each $R^2$ is on the work's
+own target and data. The forecaster reaches $R^2$ of 0.993, 0.968 and 0.922 on soil strength at 1,
+3 and 7 days, higher at every lead time than all soil-moisture models of~\cite{wang2024hess},
+including their best (GAN-LSTM: 0.963, 0.919, 0.846), and than the mean 0.523
+of~\cite{wang2024agwat}. It is the only approach that combines a
+multi-day forecast with per-vehicle assessment and routing; against planning on current
+conditions as in~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days.
+
+\begin{table}[t]
+  \caption{Comparison with past works. SM: soil moisture; CI: cone index; TM: trafficability
+  map. Each $R^2$ is on the work's own target.}
+  \label{tab:past}
+  \centering
+  \footnotesize
+  \setlength{\tabcolsep}{2.6pt}
+  \begin{tabular}{@{}llcccccc@{}}
+    \toprule
+    & & & & & \multicolumn{3}{c}{$R^2$} \\
+    \cmidrule(l){6-8}
+    Work & Model & Target & Vehicle & Route & 1 d & 3 d & 7 d \\
+    \midrule
+    \cite{liu2025}        & AHP map     & TM  & \checkmark & \checkmark & -- & -- & -- \\
+    \cite{wang2024hess}   & RF          & SM  & $\times$   & $\times$   & 0.929 & 0.891 & 0.832 \\
+    \cite{wang2024hess}   & LSTM        & SM  & $\times$   & $\times$   & 0.963 & 0.916 & 0.842 \\
+    \cite{wang2024hess}   & Transformer & SM  & $\times$   & $\times$   & 0.952 & 0.912 & 0.843 \\
+    \cite{wang2024hess}   & GAN-LSTM    & SM  & $\times$   & $\times$   & 0.963 & 0.919 & 0.846 \\
+    \cite{wang2024agwat}  & Transformer & SM  & $\times$   & $\times$   & \multicolumn{3}{c}{0.523 (mean)} \\
+    \textbf{Ours} & \textbf{GRU--Ridge} & RCI & \checkmark & \checkmark & \textbf{0.993} & \textbf{0.968} & \textbf{0.922} \\
+    \bottomrule
+  \end{tabular}
+\end{table}
 %--------------------
 \subsection{Limitations}
 Soil strength is computed from modeled soil moisture for one 9\, km cell, not measured, and its
