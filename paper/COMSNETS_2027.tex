@@ -71,14 +71,7 @@ Military ground mobility depends on vehicle characteristics and changing terrain
 
 The Rating Cone Index (RCI) measures soil bearing strength, while the Vehicle Cone Index (VCI) represents vehicle-specific soil strength requirements. Although these indices underpin established mobility models~\cite{rula1971,haley1979}, integrating soil-strength forecasting with vehicle-specific trafficability assessment and route optimization remains a challenge. Machine-learning methods offer promising tools for forecasting soil conditions~\cite{wang2024hess,wang2024agwat}.
 
-This study proposes an integrated framework combining a hybrid Gated Recurrent Unit–Ridge model for 1–7-day RCI forecasting with vehicle-specific VCI, terrain characteristics, and Dijkstra-based route planning. It classifies terrain into GO, SLOW-GO, and NO-GO categories and accounts for track degradation during convoy movement. The main contributions of this work are as follows:
-\begin{itemize}
-  \item A hybrid GRU–Ridge model that forecasts soil strength itself, rather than soil moisture, 1–7 days ahead, so that routes are planned for the day of travel rather than the day of planning.
-  \item The grouping of vehicles into five bands (A--E) by their one-pass VCI, where each band is represented by its median requirements and receives its own forecast safety margin per lead time, so that decisions are made per vehicle class at a fixed miss rate even when individual vehicle data are incomplete.
-  \item A quantification of SLOW-GO conditions by the number of vehicles one track can carry and the speed the soil allows.
-  \item A wear-aware convoy planner, in which each vehicle plans its route on the track left by those before it.
-\end{itemize}
-The framework is evaluated using meteorological, vehicle, and geospatial data from the Pachmarhi plateau. The forecaster is lightweight, with a sixth of the parameters of the only tested model with a lower average error, and planning on its forecasts sends fewer trips into impassable terrain and holds back fewer unnecessarily than planning on current conditions.
+This study proposes an integrated framework combining a hybrid Gated Recurrent Unit–Ridge model for 1–7-day RCI forecasting with vehicle-specific VCI, terrain characteristics, and Dijkstra-based route planning. It classifies terrain into GO, SLOW-GO, and NO-GO categories and accounts for track degradation during convoy movement. A novel element is the grouping of vehicles into five bands (A--E) by their one-pass VCI: each band is represented by its median requirements and receives its own forecast safety margin per lead time, so that decisions are made per vehicle class even when individual vehicle data are incomplete. The framework is evaluated using meteorological, vehicle, and geospatial data from the Pachmarhi plateau. The forecaster is lightweight, with a sixth of the parameters of the only tested model with a lower average error, and planning on its forecasts sends fewer trips into impassable terrain and holds back fewer unnecessarily than planning on current conditions.
 
 \section{Related Works}
 
@@ -86,7 +79,7 @@ Military terrain trafficability assessment commonly relies on the RCI and VCI, s
 
 Despite these advances, forecasting soil strength and directly integrating it with vehicle-specific mobility requirements and future route planning remains challenging. Existing approaches often assess current terrain conditions without adequately accounting for changes before deployment. The present study addresses this gap by linking the soil-strength forecast directly to vehicle-specific requirements and route planning, including terrain degradation during convoy movement.
 
-\begin{table}[t]
+\begin{table}[H]
 \centering
 \caption{Comparison of existing approaches. Light-weight: designed or shown to run on edge hardware.}
 \label{tab:related-work}
@@ -192,11 +185,11 @@ With the 0--7\,cm and 7--28\,cm soil moisture scaled to $s^{(1)}_t, s^{(2)}_t \i
   \left(1 - 0.15\min\!\left(R^{3d}_t / 50\,\mathrm{mm},\ 1\right)\right),
   \label{eq:rci}
 \end{gather}
-where $k = \ln(300/15)$. As in the strength--moisture model used in~\cite{liu2025},
+where $\mathrm{SWI}_t$ is the soil wetness index and $k = \ln(300/15)$. As in the strength--moisture model used in~\cite{liu2025},
 $\log(\mathrm{RCI})$ falls linearly with moisture. The constants are ours: the air-dry 300 lies in
 the 100--500\, psi excess strength beyond which NRMM treats fine-grained soil as a hard
 surface~\cite{haley1979}, and the saturated 15 follows field readings at
-immobilisation~\cite{rosca2018}. The deeper layer weighs more as it covers both NRMM critical
+immobilization~\cite{rosca2018}. The deeper layer weighs more as it covers both NRMM critical
 layers, 0--15\,cm for one pass and 15--30\,cm for 50~\cite{haley1979}; weights of 0.25/0.75 or
 0.5/0.5 change the daily class on at most 2\% of vehicle-days. The rain factor adds free surface
 water, which daily soil moisture misses; its 50\,mm is the top of the 25--50\,mm rainfall class
@@ -215,11 +208,11 @@ factors, and gives the strength needed for one and for 50 passes in one track~\c
   \mathrm{VCI}_1    &= 7.0 + 0.2\,\mathrm{MI} - 39.2/(\mathrm{MI} + 5.6), \\
   \mathrm{VCI}_{50} &= 19.27 + 0.43\,\mathrm{MI} - 125.79/(\mathrm{MI} + 7.08).
 \end{align}
-Wheeled vehicles use the wheeled forms~\cite{rosca2017,rosca2018} with 15\% tyre deflection and
+Wheeled vehicles use the wheeled forms~\cite{rosca2017,rosca2018} with 15\% tire deflection and
 automatic transmissions; half-tracks take the worse of the track unit (tracked) and the front
 axle (wheeled, 25\% of the weight). As the data give only mass, power and top speed, track
 dimensions are interpolated by mass through six published reference vehicles (M22 to Tiger~II)
-and tyres follow standard sizes per axle load (HMMWV to heavy 8$\times$8). The code reproduces
+and tires follow standard sizes per axle load (HMMWV to heavy 8$\times$8). The code reproduces
 the published M1 example (MI 98.6, $\mathrm{VCI}_1$ 26.3, $\mathrm{VCI}_{50}$
 60.5)~\cite{ciobotaru2009} and 24 published 8$\times$8 values to within
 1.7\,psi~\cite{rosca2017}. Vehicles fall into five $\mathrm{VCI}_1$ bands set by the fleet mix
@@ -252,7 +245,7 @@ and passes are blind. The NO-GO line stays at $\mathrm{VCI}_1$, 0.7--2.1\,psi ab
 level-ground limit. At $\mathrm{VCI}_1$ the relations give the 20\% slip at which NRMM defines it,
 and for the M1 they give 12\,km/h at $\mathrm{VCI}_1$ and 45\,km/h 20\,psi above, comparable to the
 published NRMM run of about 20--56\,km/h~\cite{ciobotaru2009}. Speeds are upper bounds, as NRMM's
-vegetation, ride and obstacle limits are not modelled.
+vegetation, ride and obstacle limits are not modeled.
 
 \subsection{GRU--Ridge Forecaster}
 Without numerical weather prediction, the forecaster reads 27 daily channels of the local log
@@ -314,7 +307,7 @@ map of~\cite{liu2025} does:
 \end{equation}
 
 \subsection{Route Planning and Convoys}
-Each cell is linked to its eight neighbours, NO-GO cells are removed, and an edge costs the time
+Each cell is linked to its eight neighbors, NO-GO cells are removed, and an edge costs the time
 to cross it at a speed proportional to $\mu$:
 \begin{equation}
   w(u,v) = d_{uv} \cdot \tfrac{1}{2}\left(1/\mu_u + 1/\mu_v\right),
