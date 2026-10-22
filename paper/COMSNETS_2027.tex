@@ -94,15 +94,15 @@ Despite these advances, forecasting soil strength and directly integrating it wi
 \hline
  \textbf{\cite{khan2021}} & Sentinel-2, ALOS PALSAR, soil maps & \Checkmark & \XSolid & \XSolid \\
 \hline
- \textbf{\cite{gao2019}} & GPS and sensor traffic data & \XSolid & \XSolid & \XSolid \\
-\hline
- \textbf{\cite{gupta2022}} & Google Maps and ISRO Bhuvan imagery & \XSolid & \Checkmark & \XSolid \\
-\hline
- \textbf{\cite{xu2025}} & IEEE CEC path-planning benchmarks & \XSolid & \XSolid & \XSolid \\
-\hline
  \textbf{\cite{dutta2024}} & DEM-derived elevation and slope & \Checkmark & \XSolid & \XSolid \\
 \hline
  \textbf{\cite{mema2026}} & Sentinel-2 land cover, SRTM DEM, OSM roads, soil surveys & \Checkmark & \XSolid & \XSolid \\
+\hline
+ \textbf{\cite{gao2019}} & GPS and sensor traffic data & \XSolid & \XSolid & \XSolid \\
+\hline
+ \textbf{\cite{xu2025}} & IEEE CEC path-planning benchmarks & \XSolid & \XSolid & \XSolid \\
+\hline
+ \textbf{\cite{gupta2022}} & Google Maps and ISRO Bhuvan imagery & \XSolid & \Checkmark & \XSolid \\
 \hline
  \textbf{Ours} & ERA5-Land, ERA5 and IMD weather, Earth Engine terrain, OSM roads, 1,145 vehicles & \Checkmark & \Checkmark & \Checkmark \\
 \hline
@@ -131,10 +131,8 @@ Each vehicle band $b$ is classified for day $t+h$ from the forecast soil strengt
 \section{Proposed Approach}
 \label{sec:approach}
 
-The proposed framework models terrain--vehicle interaction as a comparison between the rating
-cone index (RCI) of the soil and the vehicle cone index (VCI) of each vehicle, both in psi. It
-forecasts RCI from a local weather log, turns it into per-vehicle trafficability maps, and plans
-routes for the day of travel rather than the day of planning (Fig.~\ref{fig:framework}).
+Fig.~\ref{fig:framework} shows the framework; RCI and VCI are both in psi, and routes are planned
+for the day of travel rather than the day of planning.
 
 \begin{figure}[!b]
   \centering
