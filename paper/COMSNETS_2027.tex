@@ -69,7 +69,7 @@ Terrain trafficability, Soil strength forecasting, GRU–Ridge model, Vehicle Co
 \section{Introduction}
 Military ground mobility depends on vehicle characteristics and changing terrain conditions. Rainfall and soil-moisture variations can reduce soil strength, rendering planned routes impassable. However, existing trafficability methods largely assess current conditions rather than predict future terrain accessibility~\cite{khan2021,liu2025}.
 
-The Rating Cone Index (RCI) measures soil bearing strength, while the Vehicle Cone Index (VCI) represents vehicle-specific soil strength requirements. Although these indices underpin established mobility models~\cite{rula1971,haley1979}, integrating soil-strength forecasting with vehicle-specific trafficability assessment and route optimization remains a challenge. Machine-learning methods offer promising tools for forecasting soil conditions~\cite{wang2024hess,wang2024agwat}.
+The Rating Cone Index (RCI) measures soil bearing strength, while the Vehicle Cone Index (VCI) represents vehicle-specific soil strength requirements. Although these indices underpin established mobility models~\cite{rula1971,haley1979}, integrating soil-strength forecasting with vehicle-specific trafficability assessment and route optimization remains a challenge.
 
 This study proposes an integrated framework combining a hybrid Gated Recurrent Unit–Ridge model for 1–7-day RCI forecasting with vehicle-specific VCI, terrain characteristics, and Dijkstra-based route planning. The main contributions of this work are as follows:
 \begin{itemize}
@@ -83,7 +83,7 @@ This study proposes an integrated framework combining a hybrid Gated Recurrent U
 
 Military terrain trafficability assessment commonly relies on the RCI and VCI, supported by established models such as the NATO Reference Mobility Model \cite{haley1979,rula1971,ciobotaru2009}. Recent studies have developed terrain trafficability maps using environmental factors and route-planning algorithms \cite{liu2025}. GIS-based multi-criteria decision analysis maps off-road trafficability or land capability from elevation, land cover and soil data \cite{khan2021,dutta2024,mema2026}, path-planning studies select routes over road networks under uncertain conditions \cite{gao2019,xu2025}, and lightweight detectors classify military vehicles on edge devices \cite{gupta2022} (Table~\ref{tab:related-work}). Meanwhile, machine-learning methods, including recurrent neural networks and Transformers, have been applied to soil-moisture forecasting \cite{wang2024hess,wang2024agwat}.
 
-Despite these advances, forecasting soil strength and directly integrating it with vehicle-specific mobility requirements and future route planning remains challenging. Existing approaches often assess current terrain conditions without adequately accounting for changes before deployment. The present study addresses this gap by linking the soil-strength forecast directly to vehicle-specific requirements and route planning, including terrain degradation during convoy movement.
+Despite these advances, none of these approaches forecasts soil strength and links it directly to vehicle-specific requirements and route planning, including terrain degradation during convoy movement, which the present study addresses.
 
 \begin{table}[t]
 \centering
@@ -184,15 +184,16 @@ for the day of travel rather than the day of planning.
 
 \subsubsection{Soil Strength}
 With the 0--7\,cm and 7--28\,cm soil moisture scaled to $s^{(1)}_t, s^{(2)}_t \in [0,1]$ between
-20 and 49\,vol\% (the 11-year range, rounded) and $R^{3d}_t$, the rainfall of the last three days:
+20 and 49\,vol\% (the 11-year range, rounded) and $R^{3d}_t$ the rainfall of the last three days, the soil wetness index (SWI) and the soil
+strength are expressed as:
 \begin{gather}
   \mathrm{SWI}_t = 0.35\,s^{(1)}_t + 0.65\,s^{(2)}_t , \\
   \mathrm{RCI}_t = 300\,e^{-k\,\mathrm{SWI}_t}
   \left(1 - 0.15\min\!\left(R^{3d}_t / 50\,\mathrm{mm},\ 1\right)\right),
   \label{eq:rci}
 \end{gather}
-where $\mathrm{SWI}_t$ is the soil wetness index and $k = \ln(300/15)$. As in the strength--moisture model used in~\cite{liu2025},
-$\log(\mathrm{RCI})$ falls linearly with moisture. The constants are ours: the air-dry 300 lies in
+where $k = \ln(300/15)$. As in the strength--moisture model used in~\cite{liu2025},
+$\log(\mathrm{RCI})$ falls linearly with moisture. The constants are chosen in this work: the air-dry 300 lies in
 the 100--500\, psi excess strength beyond which NRMM treats fine-grained soil as a hard
 surface~\cite{haley1979}, and the saturated 15 follows field readings at
 immobilization~\cite{rosca2018}. The deeper layer weighs more as it covers both NRMM critical
@@ -203,7 +204,7 @@ of~\cite{liu2025}, and its 15\% cap is below their 20--50\% reductions because s
 already carries most of the rain's effect.
 
 \subsubsection{Vehicle Cone Index}
-The Mobility Index (MI)~\cite{rula1971,haley1979} of a tracked vehicle is:
+The Mobility Index (MI)~\cite{rula1971,haley1979} of a tracked vehicle is expressed as:
 \begin{equation}
   \mathrm{MI} = \left(\frac{\mathrm{CPF}\cdot\mathrm{WF}}{\mathrm{TF}\cdot\mathrm{GF}}
   + \mathrm{BF} - \mathrm{CF}\right)\mathrm{EF}\cdot\mathrm{TrF},
@@ -218,7 +219,7 @@ Wheeled vehicles use the wheeled forms~\cite{rosca2017,rosca2018} with 15\% tire
 automatic transmissions; half-tracks take the worse of the track unit (tracked) and the front
 axle (wheeled, 25\% of the weight). As the data give only mass, power and top speed, track
 dimensions are interpolated by mass through six published reference vehicles (M22 to Tiger~II)
-and tires follow standard sizes per axle load (HMMWV to heavy 8$\times$8). The code reproduces
+and tires follow standard sizes per axle load (HMMWV to heavy 8$\times$8). The implementation reproduces
 the published M1 example (MI 98.6, $\mathrm{VCI}_1$ 26.3, $\mathrm{VCI}_{50}$
 60.5)~\cite{ciobotaru2009} and 24 published 8$\times$8 values to within
 1.7\,psi~\cite{rosca2017}. Vehicles fall into five $\mathrm{VCI}_1$ bands set by the fleet mix
@@ -228,12 +229,12 @@ $\mathrm{VCI}_1$, $\mathrm{VCI}_{50}$, power-to-weight ratio, contact pressure a
 \subsubsection{Passes and Speed}
 The classes of (\ref{eq:decision}) carry the labels of military terrain analysis~\cite{khan2021}, NO-GO below
 $\mathrm{VCI}_1$ follows from its definition~\cite{rula1971}, and GO at $\mathrm{VCI}_{50}$ is our
-mapping. SLOW-GO is quantified by the vehicles one track carries:
+mapping. SLOW-GO is quantified by the number of vehicles $n$ that one track carries, expressed as:
 \begin{equation}
   n(\mathrm{RCI}) = 50^{(\mathrm{RCI} - \mathrm{VCI}_1)/(\mathrm{VCI}_{50} - \mathrm{VCI}_1)},
   \label{eq:passes}
 \end{equation}
-which is ours: only the 1-pass and 50-pass points are published~\cite{rula1971}, so the
+which is proposed in this work: only the 1-pass and 50-pass points are published~\cite{rula1971}, so the
 requirement rises with $\ln n$ between them. The speed follows the NRMM fine-grained soil
 relations~\cite{haley1979}, in which the resistance $R/W$, traction $T/W$ and slip $s$ depend on
 $\mathrm{RCI} - \mathrm{VCI}_1$. On a slope $\theta$ the vehicle is stuck if its
@@ -245,7 +246,7 @@ power, less slip, overcomes them:
   \label{eq:speed}
 \end{equation}
 with $P$ the engine power, $W$ the weight and $v_{\max}$ the table's top speed; paved roads use
-NRMM's hard-surface resistance. The constant power is ours, as the table has no gearbox data, and
+NRMM's hard-surface resistance. Constant power is assumed, as the table has no gearbox data, and
 $\eta = 0.8$ is an assumed driveline efficiency, to which speed is proportional and NO-GO calls
 and passes are blind. The NO-GO line stays at $\mathrm{VCI}_1$, 0.7--2.1\,psi above NRMM's own
 level-ground limit. At $\mathrm{VCI}_1$ the relations give the 20\% slip at which NRMM defines it,
@@ -254,7 +255,7 @@ published NRMM run of about 20--56\,km/h~\cite{ciobotaru2009}. Speeds are upper 
 vegetation, ride and obstacle limits are not modeled.
 
 \subsection{GRU--Ridge Forecaster}
-Without numerical weather prediction, the forecaster reads 27 daily channels of the local log
+Without numerical weather prediction, the forecaster uses 27 daily channels of the local log
 (soil moisture, RCI, rainfall, Hargreaves evapotranspiration, meteorology,
 antecedent precipitation indices with decay 0.85 and 0.95 and seasonal terms).
 As RCI has a lag-1 autocorrelation of 0.99, it predicts the change for
@@ -268,7 +269,7 @@ where $\bar g_h$ averages three GRU networks over a 60-day window, by which the 
 antecedent index has decayed to 5\%, and $r_h$ is a ridge regression on 128 causal features
 (settings in Table~\ref{tab:hyper}; all recurrent models in Table~\ref{tab:arch} share the GRU
 size). Equation (\ref{eq:forecast}) is
-ours: predicting the change makes persistence the zero-change forecast, and averaging a
+proposed in this work: predicting the change makes persistence the zero-change forecast, and averaging a
 nonlinear sequence model with a linear feature model lets their errors partly cancel. Comparing
 the forecast directly with $\mathrm{VCI}_1$ calls a NO-GO day passable whenever the forecast errs
 high: on the test years, a tenth of them at 1 day and a quarter at 7 days. The margin $m_{b,h}$ of
@@ -277,16 +278,17 @@ it grows with $h$, and how often it changes a call depends on where the band's t
 through each monsoon the soil hovers around the $\mathrm{VCI}_1$ of
 light tracked vehicles but stays well below that of wheeled ones (Fig.~\ref{fig:rci}). The margin
 is therefore set per band and lead time: searched in 0.25\,psi steps up to 40\,psi, it is the
-smallest that catches 90\% of NO-GO days. This rule is ours and fixes the miss rate per vehicle
+smallest that catches 90\% of NO-GO days. This rule, proposed in this work, fixes the miss rate per vehicle
 class.
 
 \subsection{Trafficability Mapping}
-A 90\,m grid of 76,218 cells (3$\times$3 blocks of a 30\,m Google Earth Engine export) holds the
+The map is built on a 90\,m grid of 76,218 cells (3$\times$3 blocks of a 30\,m Google Earth Engine
+export), which holds the
 mean elevation and slope, the dominant land cover and the peak NDVI over three seasons; cells that
 are mostly water are impassable. The SWI of each cell is shifted by $\delta_c = 0.1\,
 \mathrm{clip}(z_c, -2, 2)$, where $z_c$ is the z-score of its topographic wetness index, so that by (\ref{eq:rci})
-$\mathrm{RCI}_c = \widehat{\mathrm{RCI}}\,e^{-k\delta_c}$. The scale is ours: 2.9\,vol\% per
-standard deviation, capped at 5.8\,vol\%. The soil membership is:
+$\mathrm{RCI}_c = \widehat{\mathrm{RCI}}\,e^{-k\delta_c}$. The scale is chosen in this work: 2.9\,vol\% per
+standard deviation, capped at 5.8\,vol\%. The soil membership is expressed as:
 \begin{equation}
   \mu^{\mathrm{soil}}_c =
   \begin{cases}
@@ -296,7 +298,7 @@ standard deviation, capped at 5.8\,vol\%. The soil membership is:
   \label{eq:soil}
 \end{equation}
 where $\rho_c = (\mathrm{RCI}_c - \mathrm{VCI}_1)/(\mathrm{VCI}_{50} - \mathrm{VCI}_1)$. Equation
-(\ref{eq:soil}) is ours: the NRMM speed at $\mathrm{VCI}_1$ is 17--25\% of that at
+(\ref{eq:soil}) is proposed in this work: the NRMM speed at $\mathrm{VCI}_1$ is 17--25\% of that at
 $\mathrm{VCI}_{50}$ for the band vehicles, hence the floor of 0.25, and the linear rise is within
 0.1 of the NRMM curve at the midpoint. Slope and land-cover memberships follow the tables
 of~\cite{liu2025}, with the slope steps smoothed into a monotone curve. As 79\% of the plateau is
@@ -319,7 +321,7 @@ to cross it at a speed proportional to $\mu$:
   w(u,v) = d_{uv} \cdot \tfrac{1}{2}\left(1/\mu_u + 1/\mu_v\right),
   \label{eq:cost}
 \end{equation}
-where $d_{uv}$ is 90\,m, or $90\sqrt{2}$\,m on a diagonal; (\ref{eq:cost}) is ours and charges each
+where $d_{uv}$ is 90\,m, or $90\sqrt{2}$\,m on a diagonal; (\ref{eq:cost}) is proposed in this work and charges each
 half step at the speed of its cell. A trip planned on day $t$ for day $t+h$ forecasts
 $\widehat{\mathrm{RCI}}_{t+h}$ with (\ref{eq:forecast}), subtracts $m_{b,h}$, maps $\mu_c$ with
 (\ref{eq:soil}) and (\ref{eq:fuzzy}), and finds the least-cost route with Dijkstra's
@@ -469,8 +471,7 @@ and light tracked ones (band A) on 13\% (Table~\ref{tab:slowgo}). On a typical S
 carries 1.5--2.3 vehicles at 12--16\,km/h. At equal recall, the forecast makes 23--45\% fewer
 false NO-GO calls than the margin rule on persistence in every band, and pooled over all vehicles
 21\% fewer at 3 days (CI 4--37\%) and 31\% at 7 days (CI 14--46\%). Light tracked vehicles
-(band A) are the hardest case, as their $\mathrm{VCI}_1$ is close to the saturated strength: through each monsoon the soil hovers around their line
-(Fig.~\ref{fig:rci}), moving them in and out of NO-GO week to week.
+(band A) are the hardest case, as their $\mathrm{VCI}_1$ is close to the saturated strength (Fig.~\ref{fig:rci}).
 
 \begin{figure}[t]
   \centering
@@ -519,7 +520,7 @@ false NO-GO calls than the margin rule on persistence in every band, and pooled 
 \end{table}
 
 \subsubsection{Route Planning}
-Over 325,800 trips per planner, terrain alone sends 35.5\% of trips into mud. At 7 days, the
+Over 325,800 trips per planner, planning on terrain alone sends 35.5\% of trips into NO-GO ground. At 7 days, the
 forecast beats today's map on both errors: 2.9\% against 4.0\% stuck (27\% fewer, CI 11--54\%)
 and 4.5\% against 5.8\% held (CI 6--37\% fewer). At 3 days it gives 1.6\% against 2.1\% stuck and
 2.3\% against 3.0\% held, but both intervals include zero. A margin on today's map is slightly
@@ -528,7 +529,7 @@ both lead times (CI 25--62\% at 3 days, 27--61\% at 7 days). Fig.~\ref{fig:trade
 forecast's curve lies below and to the left of that of today's map, and at an equal stuck rate it holds
 back 40\% fewer trips at 3 days (CI 3--67\%) and 31\% at 7 days, where the interval ($-$2--69\%)
 includes zero. Completed routes are within 0.1\% of the best travel time. The product rule
-matches the fuzzy AND, the equal-weight mean with veto sends 1.8\% into mud at 3 days but takes
+matches the fuzzy AND, the equal-weight mean with veto sends 1.8\% into NO-GO ground at 3 days but takes
 10.4\% longer, and without the veto 34.8\%. Routing on travel time shortens trips by about 5\% at
 the same stuck rate (30.8 against 32.4 minutes at 3 days), with predicted times on average within
 0.3\% (3 days) and 1.0\% (7 days) of the travel day's, and 9 in 10 within $-$2.1\% to $+$3.4\%.
@@ -571,18 +572,18 @@ around the transitions.
 \end{figure}
 
 \subsubsection{Convoy Coordination}
-A convoy of ten heavy tracked vehicles (band D) following its leader gets 5.5 through on average,
-as the lead track fails under those behind; the wear-aware mode gets 9.2 through. Wheeled
+A convoy of ten heavy tracked vehicles (band D) following its leader completes the route with 5.5 vehicles on average,
+as the leader's track fails under the vehicles behind; the wear-aware mode completes it with 9.2. Wheeled
 vehicles (band E) gain less (6.8 to 7.3), as the forest leaves them few parallel lanes.
 
 \subsubsection{Comparison with Past Works}
 Table~\ref{tab:past} compares the framework with published results; each $R^2$ is on the work's
 own target and data. The forecaster reaches $R^2$ of 0.993, 0.968 and 0.922 on soil strength at 1,
 3 and 7 days, higher at every lead time than all soil-moisture models of~\cite{wang2024hess},
-including their best (GAN-LSTM: 0.963, 0.919, 0.846), and than the mean 0.523
-of~\cite{wang2024agwat}. It is the only approach that combines a
-multi-day forecast with per-vehicle assessment and routing; against planning on current
-conditions as in~\cite{liu2025}, it sends 27\% fewer trips into mud at 7 days.
+including their best, the GAN-LSTM, and than the Transformer of~\cite{wang2024agwat}. It is the
+only approach that combines a multi-day forecast with per-vehicle assessment and routing, and
+the route-planning results above show its gain over the current-condition planning
+of~\cite{liu2025}.
 
 \begin{table}[t]
   \caption{Comparison with past works. SM: soil moisture; CI: cone index; TM: trafficability
@@ -613,8 +614,7 @@ Soil strength is computed from modeled soil moisture for one 9\, km cell, not me
 spread by wetness index is unchecked in the field. Vehicle masses come from game files and the
 running gear is assumed, so results are reported by band. The pass and wear curves and the speed
 assumptions are ours, so speeds are upper bounds. Margins tuned on the two test years differ by
-up to 7.25\, psi, and two test years leave some intervals wide. Field cone-index readings at the
-site are the next step.
+up to 7.25\, psi, and two test years leave some intervals wide.
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
@@ -623,7 +623,7 @@ This study presents an integrated framework for forecasting terrain trafficabili
 
 Experiments using meteorological, vehicle, and geospatial data for the Pachmarhi plateau demonstrate the potential of the proposed approach. The GRU–Ridge model, with a sixth of the parameters of the only tested model with a lower average error, achieves an average RMSE of 14.64 psi across the seven forecast horizons and an \(R^2\) of 0.922 for soil strength at a seven-day horizon. Compared with route planning based on current terrain conditions, the forecast-based approach reduces the proportion of trips encountering impassable terrain by 27\% and of trips held back unnecessarily by 22\% at seven days. Furthermore, incorporating track degradation into convoy planning increases the average number of heavy tracked vehicles that complete a route from 5.5 to 9.2 out of 10. These findings highlight the benefits of integrating predictive soil strength assessment with vehicle-specific mobility constraints and route optimization.
 
-Despite these encouraging results, the framework relies on modeled rather than field-measured soil strength, and some vehicle characteristics and track-degradation relationships are estimated from assumptions. Future work will focus on validating the predictions using field cone-index measurements, improving vehicle parameter estimation, incorporating numerical weather forecasts, and evaluating the framework across additional terrains and seasonal conditions. Overall, the proposed approach provides a promising basis for anticipatory, risk-aware military mobility planning under dynamic environmental conditions.
+Future work will focus on validating the predictions using field cone-index measurements, improving vehicle parameter estimation, incorporating numerical weather forecasts, and evaluating the framework across additional terrains and seasonal conditions. Overall, the proposed approach provides a promising basis for anticipatory, risk-aware military mobility planning under dynamic environmental conditions.
 
 \section*{Acknowledgment}
 The authors gratefully acknowledge Mr. Chandrasekhar Lekala Reddy for his valuable assistance with vehicle data collection.
@@ -636,14 +636,14 @@ Data will be available on request
 \bibitem{liu2025} Q. Liu, X. You, X. Zhang, and J. Zuo, ``Construction of dynamic trafficability map for unmanned vehicles considering multiple environmental factors and path planning,'' Scientific Reports, vol. 15, p. 9957, 2025.
 \bibitem{rula1971} A. A. Rula and C. J. Nuttall, Jr., ``An analysis of ground mobility models (ANAMOB),'' U.S. Army Engineer Waterways Experiment Station, Vicksburg, MS, Tech. Rep. M-71-4, 1971.
 \bibitem{haley1979} P. W. Haley, M. P. Jurkat, and P. M. Brady, Jr., ``NATO reference mobility model, Edition I, users guide, volume I,'' U.S. Army Tank-Automotive Research and Development Command, Warren, MI, Tech. Rep. 12503, 1979.
-\bibitem{wang2024hess} Y. Wang, L. Shi, Y. Hu, X. Hu, W. Song, and L. Wang, ``A comprehensive study of deep learning for soil moisture prediction,'' Hydrology and Earth System Sciences, vol. 28, pp. 917--943, 2024.
-\bibitem{wang2024agwat} Y. Wang and Y. Zha, ``Comparison of transformer, LSTM and coupled algorithms for soil moisture prediction in shallow-groundwater-level areas with interpretability analysis,'' Agricultural Water Management, vol. 305, p. 109120, 2024.
 \bibitem{ciobotaru2009} T. Ciobotaru, ``Semi-empiric algorithm for assessment of the vehicle mobility,'' Leonardo Electronic Journal of Practices and Technologies, vol. 8, no. 15, pp. 19--30, 2009.
 \bibitem{dutta2024} A. Dutta, M. Banerjee, and R. Ray, ``Land capability assessment of Sali watershed for agricultural suitability using a multi-criteria-based decision-making approach,'' Environmental Monitoring and Assessment, vol. 196, no. 3, p. 237, 2024.
 \bibitem{mema2026} O. Mema, E. Jojie, P. Laze, V. Vorpsi, N. Vata, and I. Salillari, ``Optimizing land management: A GIS-based model for sustainable agricultural machinery operation in Frakulla administrative unit, Albania,'' International Journal of Geoinformatics, vol. 22, no. 3, pp. 51--69, 2026.
 \bibitem{gao2019} H. Gao, W. Huang, and X. Yang, ``Applying probabilistic model checking to path planning in an intelligent transportation system using mobility trajectories and their statistical data,'' Intelligent Automation \& Soft Computing, vol. 25, no. 3, 2019.
 \bibitem{xu2025} Z. Xu et al., ``Multi-objective optimization for multimodal multi-objective multi-point shortest path problem considering unforeseeable road eventualities,'' IEEE Transactions on Intelligent Transportation Systems, 2025.
 \bibitem{gupta2022} P. Gupta, B. Pareek, G. Singal, and D. V. Rao, ``Edge device based military vehicle detection and classification from UAV,'' Multimedia Tools and Applications, vol. 81, no. 14, pp. 19813--19834, 2022.
+\bibitem{wang2024hess} Y. Wang, L. Shi, Y. Hu, X. Hu, W. Song, and L. Wang, ``A comprehensive study of deep learning for soil moisture prediction,'' Hydrology and Earth System Sciences, vol. 28, pp. 917--943, 2024.
+\bibitem{wang2024agwat} Y. Wang and Y. Zha, ``Comparison of transformer, LSTM and coupled algorithms for soil moisture prediction in shallow-groundwater-level areas with interpretability analysis,'' Agricultural Water Management, vol. 305, p. 109120, 2024.
 \bibitem{rosca2018} P. Ro\c{s}ca, T. Ciobotaru, G. Olaru, and C. Puic\u{a}, ``Considerations regarding vehicle cone index for fine-grained soil,'' Journal of Military Technology, vol. 1, no. 2, pp. 39--44, 2018.
 \bibitem{rosca2017} P. Ro\c{s}ca and T. Ciobotaru, ``8$\times$8 armoured personnel carrier mobility evaluations using vehicle cone index,'' MTA Review, vol. 27, no. 2, pp. 77--82, 2017.
 \bibitem{munoz2021} J. Mu\~{n}oz-Sabater et al., ``ERA5-Land: A state-of-the-art global reanalysis dataset for land applications,'' Earth System Science Data, vol. 13, pp. 4349--4383, 2021.
