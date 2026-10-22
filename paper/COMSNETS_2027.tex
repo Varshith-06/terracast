@@ -77,7 +77,8 @@ This study proposes an integrated framework combining a hybrid Gated Recurrent U
   \item The grouping of vehicles into five bands (A--E) by their one-pass VCI, where each band is represented by its median requirements and receives its own safety margin against forecast error per lead time, so that decisions are made per vehicle class at a fixed miss rate even when individual vehicle data are incomplete.
   \item A classification of terrain into GO, SLOW-GO, and NO-GO for each band, with SLOW-GO quantified by the number of vehicles one track can carry and the speed the soil allows.
   \item Fuzzy trafficability maps for each band on the day of travel, which combine the forecast soil strength with slope, land cover, and roads, Dijkstra-based routing on these maps, and a wear-aware convoy planner in which each vehicle plans its route on the track left by those before it.
-  \item An evaluation using meteorological, vehicle, and geospatial data from the Pachmarhi plateau, in which planning on the forecasts sends fewer trips into impassable terrain and holds back fewer unnecessarily than planning on current conditions.
+  \item A daily soil-strength record for 2015--2025 derived from soil moisture and rainfall, and the cone indices of 1,145 vehicles computed with the NRMM Mobility Index and checked against published values.
+  \item An evaluation using meteorological, vehicle, and geospatial data from the Pachmarhi plateau, which compares the forecaster with 21 other forecasting models and rules, and in which planning on the forecasts sends fewer trips into impassable terrain and holds back fewer unnecessarily than planning on current conditions.
 \end{itemize}
 
 \section{Related Works}
