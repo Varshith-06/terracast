@@ -59,7 +59,7 @@
 \maketitle
 
 \begin{abstract}
-This work presents an integrated framework for forecasting terrain trafficability and planning safe routes for military ground vehicles. A hybrid GRU–Ridge model predicts soil strength using historical weather and soil-moisture data over a 1–7-day horizon. The predictions are combined with vehicle-specific mobility requirements and terrain characteristics to classify terrain and optimize vehicle movement, accounting for convoy-induced soil degradation. Experiments on the Pachmarhi plateau achieve an \(R^2\) of 0.922 for soil strength and reduce trips encountering impassable terrain by 27\% compared with current-condition planning, both at seven days. The framework supports predictive, risk-aware military mobility planning under changing environmental conditions.
+This work presents an integrated framework for forecasting terrain trafficability and planning safe routes for military ground vehicles. A hybrid GRU–Ridge model predicts soil strength using historical weather and soil-moisture data over a 1–7-day horizon. The predictions are combined with vehicle-specific mobility requirements and terrain characteristics to classify terrain and optimize vehicle movement, accounting for convoy-induced soil degradation. Experiments on the Pachmarhi plateau achieve an \(R^2\) of 0.922 for soil strength and, compared with current-condition planning, reduce trips encountering impassable terrain by 27\% and trips held back unnecessarily by 22\%, all at seven days. The framework supports predictive, risk-aware military mobility planning under changing environmental conditions.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -71,7 +71,7 @@ Military ground mobility depends on vehicle characteristics and changing terrain
 
 The Rating Cone Index (RCI) measures soil bearing strength, while the Vehicle Cone Index (VCI) represents vehicle-specific soil strength requirements. Although these indices underpin established mobility models~\cite{rula1971,haley1979}, integrating soil-strength forecasting with vehicle-specific trafficability assessment and route optimization remains a challenge. Machine-learning methods offer promising tools for forecasting soil conditions~\cite{wang2024hess,wang2024agwat}.
 
-This study proposes an integrated framework combining a hybrid Gated Recurrent Unit–Ridge model for 1–7-day RCI forecasting with vehicle-specific VCI, terrain characteristics, and Dijkstra-based route planning. It classifies terrain into GO, SLOW-GO, and NO-GO categories and accounts for track degradation during convoy movement. A novel element is the grouping of vehicles into five bands (A--E) by their one-pass VCI: each band is represented by its median requirements and receives its own forecast safety margin per lead time, so that decisions are made per vehicle class even when individual vehicle data are incomplete. The framework is evaluated using meteorological, vehicle, and geospatial data from the Pachmarhi plateau.
+This study proposes an integrated framework combining a hybrid Gated Recurrent Unit–Ridge model for 1–7-day RCI forecasting with vehicle-specific VCI, terrain characteristics, and Dijkstra-based route planning. It classifies terrain into GO, SLOW-GO, and NO-GO categories and accounts for track degradation during convoy movement. A novel element is the grouping of vehicles into five bands (A--E) by their one-pass VCI: each band is represented by its median requirements and receives its own forecast safety margin per lead time, so that decisions are made per vehicle class even when individual vehicle data are incomplete. The framework is evaluated using meteorological, vehicle, and geospatial data from the Pachmarhi plateau. The forecaster is lightweight, with a sixth of the parameters of the only tested model with a lower average error, and planning on its forecasts holds back fewer trips unnecessarily than planning on current conditions.
 
 \section{Related Works}
 
@@ -333,7 +333,6 @@ In this study, the following three datasets are utilized:
   ERA5-Land, wind, pressure and cloud cover from ERA5, and
   IMD gridded rainfall, replaced in 2025 by ERA5, whose day runs 00--24\,h rather
   than 08:30--08:30 IST.
-  RCI falls through the vehicle thresholds every monsoon (Fig.~\ref{fig:rci}).
   \item \emph{Vehicle Attribute Dataset:} 2,451 records compiled from a simulation game's files,
   of which mass, power and top speed are used. After removing non-vehicles and replacing 111
   default masses with public figures, 1,145 ground vehicles remain (1,004 tracked, 125 wheeled,
@@ -346,31 +345,6 @@ In this study, the following three datasets are utilized:
 \end{enumerate}
 The record is split into Training (2015--21), Validation (2022--23) and Testing (2024--25), with
 2,498, 730 and 724 forecast origins.
-
-\begin{figure}[t]
-  \centering
-  \begin{tikzpicture}
-    \begin{axis}[
-        width=\columnwidth, height=2.8cm, ymode=log, ymin=12, ymax=320,
-        xmin=0, xmax=24, xtick={0,3,...,24},
-        xticklabels={Jan,Apr,Jul,Oct,Jan,Apr,Jul,Oct,Jan},
-        ytick={15,25,50,100,200}, yticklabels={15,25,50,100,200},
-        ylabel={RCI (psi)}, ylabel style={font=\scriptsize}, tick label style={font=\scriptsize},
-        extra x ticks={12}, extra x tick labels={}, extra x tick style={grid=major}]
-      \addplot[thick, blue!70!black] coordinates {(0.00,84.0) (0.23,75.1) (0.46,96.4) (0.69,113.2) (0.92,135.0) (1.15,152.8) (1.38,162.8) (1.61,176.4) (1.84,144.4) (2.07,163.6) (2.30,186.9) (2.53,181.0) (2.76,192.3) (2.99,192.8) (3.22,135.8) (3.45,130.7) (3.68,158.9) (3.91,186.4) (4.14,195.6) (4.37,183.3) (4.60,199.3) (4.83,212.4) (5.06,205.2) (5.29,178.0) (5.52,122.2) (5.75,20.0) (5.98,18.5) (6.21,18.8) (6.44,16.8) (6.67,16.2) (6.90,16.3) (7.13,17.7) (7.36,18.6) (7.59,18.0) (7.82,19.8) (8.05,18.5) (8.28,19.0) (8.51,26.7) (8.74,20.1) (8.97,30.7) (9.20,30.9) (9.43,21.8) (9.66,33.2) (9.89,55.2) (10.12,78.6) (10.35,101.2) (10.58,120.5) (10.81,135.5) (11.04,146.3) (11.27,156.2) (11.50,165.3) (11.73,146.4) (11.96,101.6) (12.19,128.5) (12.42,141.5) (12.65,160.6) (12.88,174.5) (13.11,184.9) (13.34,191.9) (13.57,197.4) (13.80,202.1) (14.03,205.4) (14.26,208.5) (14.49,207.8) (14.72,211.4) (14.95,212.3) (15.18,213.3) (15.41,216.2) (15.64,217.8) (15.87,214.2) (16.10,197.9) (16.33,192.9) (16.56,158.5) (16.79,105.5) (17.02,139.2) (17.25,166.1) (17.48,83.0) (17.71,22.1) (17.94,16.3) (18.17,15.7) (18.40,19.5) (18.63,18.6) (18.86,17.9) (19.09,29.0) (19.32,17.3) (19.55,16.8) (19.78,16.3) (20.01,17.5) (20.24,18.2) (20.47,18.2) (20.70,24.0) (20.93,21.2) (21.16,28.3) (21.39,47.3) (21.62,41.1) (21.85,20.4) (22.08,31.3) (22.31,49.4) (22.54,68.3) (22.77,86.7) (23.00,104.2) (23.23,120.0) (23.46,133.2) (23.69,143.8) (23.92,150.8)};
-      \addplot[densely dashed, red!80!black, domain=0:24] {17.6};
-      \addplot[dashed, orange!90!black, domain=0:24] {26.2};
-      \addplot[dotted, thick, black, domain=0:24] {36.7};
-      \node[font=\tiny, red!80!black, anchor=south west, inner sep=1pt] at (axis cs:0.2,17.6) {band A};
-      \node[font=\tiny, orange!90!black, anchor=south west, inner sep=1pt] at (axis cs:2.2,26.2) {band D};
-      \node[font=\tiny, anchor=south west, inner sep=1pt] at (axis cs:0.2,36.7) {band E};
-    \end{axis}
-  \end{tikzpicture}
-  \caption{Weekly mean soil strength over the 2024--25 test years against the one-pass cone
-  index $\mathrm{VCI}_1$ of bands A (light tracked), D (heavy tracked) and E (wheeled). Below a
-  line, that band is NO-GO.}
-  \label{fig:rci}
-\end{figure}
 
 \subsection{Evaluation Setup and Metrics}
 Forecasts use only inputs observed up to each test day, and margins are tuned on one test year
@@ -427,8 +401,11 @@ Table~\ref{tab:hyper} lists the hyperparameters of the two forecaster members.
 \end{table}
 
 \subsubsection{Model Selection}
-Twenty-two forecasting models and rules, ours included, were tested on the same inputs and years
-(Table~\ref{tab:arch}). The GRU--Ridge forecaster has the second-lowest RMSE averaged over the
+Twenty-two forecasting models and rules, ours included, were tested on the same inputs and years.
+Table~\ref{tab:arch} lists fourteen, with parameters counted over all three seeds; the other
+eight, all with a higher 7-day RMSE than GRU--Ridge, are seasonal naive, ARIMA, ExtraTrees,
+LightGBM with linear leaves, a bidirectional GRU with attention (point and quantile versions),
+and the 10th-percentile (P10) rules of the TFT and of that GRU. The GRU--Ridge forecaster has the second-lowest RMSE averaged over the
 seven lead times (14.64\,psi, after 14.45 for the TFT) and the fewest false NO-GO calls of the
 deep models at 7 days, with a sixth of the TFT's parameters; each member alone is worse at every
 lead time. Climatology with a margin makes the fewest false calls at 7 days, as NO-GO days a week
@@ -436,9 +413,7 @@ ahead are largely seasonal.
 
 \begin{table}[t]
   \caption{Forecasting models tested, 2024--25: RMSE (psi) by lead time and false NO-GO calls
-  per vehicle-year (FP/yr) at 90\% recall; parameters count all three seeds. Also tested, all with a higher 7-day RMSE than GRU--Ridge: seasonal naive, ARIMA, ExtraTrees, LightGBM with linear
-  leaves, a bidirectional GRU with attention (point and quantile versions), and the 10th-percentile (P10) rules of the TFT and of
-  that GRU.}
+  per vehicle-year (FP/yr) at 90\% recall.}
   \label{tab:arch}
   \centering
   \footnotesize
@@ -507,7 +482,34 @@ On a typical SLOW-GO day only 2--5 vehicles can use one track, at 14--32\,km/h a
 carries 1.5--2.3 vehicles at 12--16\,km/h. At equal recall, the forecast makes 23--45\% fewer
 false NO-GO calls than the margin rule on persistence in every band, and pooled over all vehicles
 21\% fewer at 3 days (CI 4--37\%) and 31\% at 7 days (CI 14--46\%). Light tracked vehicles
-(band A) are the hardest case, as their $\mathrm{VCI}_1$ is close to the saturated strength.
+(band A) are the hardest case, as their $\mathrm{VCI}_1$ is close to the saturated strength. Fig.~\ref{fig:rci}
+shows both ends: through each monsoon the soil strength stays below the line of band E for
+months but hovers around that of band A, so band A moves in and out of NO-GO week to week.
+
+\begin{figure}[t]
+  \centering
+  \begin{tikzpicture}
+    \begin{axis}[
+        width=\columnwidth, height=2.8cm, ymode=log, ymin=12, ymax=320,
+        xmin=0, xmax=24, xtick={0,3,...,24},
+        xticklabels={Jan,Apr,Jul,Oct,Jan,Apr,Jul,Oct,Jan},
+        ytick={15,25,50,100,200}, yticklabels={15,25,50,100,200},
+        ylabel={RCI (psi)}, ylabel style={font=\scriptsize}, tick label style={font=\scriptsize},
+        extra x ticks={12}, extra x tick labels={}, extra x tick style={grid=major}]
+      \addplot[thick, blue!70!black] coordinates {(0.00,84.0) (0.23,75.1) (0.46,96.4) (0.69,113.2) (0.92,135.0) (1.15,152.8) (1.38,162.8) (1.61,176.4) (1.84,144.4) (2.07,163.6) (2.30,186.9) (2.53,181.0) (2.76,192.3) (2.99,192.8) (3.22,135.8) (3.45,130.7) (3.68,158.9) (3.91,186.4) (4.14,195.6) (4.37,183.3) (4.60,199.3) (4.83,212.4) (5.06,205.2) (5.29,178.0) (5.52,122.2) (5.75,20.0) (5.98,18.5) (6.21,18.8) (6.44,16.8) (6.67,16.2) (6.90,16.3) (7.13,17.7) (7.36,18.6) (7.59,18.0) (7.82,19.8) (8.05,18.5) (8.28,19.0) (8.51,26.7) (8.74,20.1) (8.97,30.7) (9.20,30.9) (9.43,21.8) (9.66,33.2) (9.89,55.2) (10.12,78.6) (10.35,101.2) (10.58,120.5) (10.81,135.5) (11.04,146.3) (11.27,156.2) (11.50,165.3) (11.73,146.4) (11.96,101.6) (12.19,128.5) (12.42,141.5) (12.65,160.6) (12.88,174.5) (13.11,184.9) (13.34,191.9) (13.57,197.4) (13.80,202.1) (14.03,205.4) (14.26,208.5) (14.49,207.8) (14.72,211.4) (14.95,212.3) (15.18,213.3) (15.41,216.2) (15.64,217.8) (15.87,214.2) (16.10,197.9) (16.33,192.9) (16.56,158.5) (16.79,105.5) (17.02,139.2) (17.25,166.1) (17.48,83.0) (17.71,22.1) (17.94,16.3) (18.17,15.7) (18.40,19.5) (18.63,18.6) (18.86,17.9) (19.09,29.0) (19.32,17.3) (19.55,16.8) (19.78,16.3) (20.01,17.5) (20.24,18.2) (20.47,18.2) (20.70,24.0) (20.93,21.2) (21.16,28.3) (21.39,47.3) (21.62,41.1) (21.85,20.4) (22.08,31.3) (22.31,49.4) (22.54,68.3) (22.77,86.7) (23.00,104.2) (23.23,120.0) (23.46,133.2) (23.69,143.8) (23.92,150.8)};
+      \addplot[densely dashed, red!80!black, domain=0:24] {17.6};
+      \addplot[dashed, orange!90!black, domain=0:24] {26.2};
+      \addplot[dotted, thick, black, domain=0:24] {36.7};
+      \node[font=\tiny, red!80!black, anchor=south west, inner sep=1pt] at (axis cs:0.2,17.6) {band A};
+      \node[font=\tiny, orange!90!black, anchor=south west, inner sep=1pt] at (axis cs:2.2,26.2) {band D};
+      \node[font=\tiny, anchor=south west, inner sep=1pt] at (axis cs:0.2,36.7) {band E};
+    \end{axis}
+  \end{tikzpicture}
+  \caption{Weekly mean soil strength over the 2024--25 test years against the one-pass cone
+  index $\mathrm{VCI}_1$ of bands A (light tracked), D (heavy tracked) and E (wheeled). Below a
+  line, that band is NO-GO.}
+  \label{fig:rci}
+\end{figure}
 
 \begin{table}[t]
   \caption{Results by vehicle band, 2024--25: share of days NO-GO and SLOW-GO, median passes and level-ground speed on SLOW-GO days, and false NO-GO calls per vehicle-year at 7 days for persistence (P) and the forecaster (F).}
@@ -599,7 +601,7 @@ site are the next step.
 \section{Conclusion}
 This study presents an integrated framework for forecasting terrain trafficability and planning safe, efficient routes for heterogeneous military ground vehicles under changing environmental conditions. The proposed framework combines a hybrid Gated Recurrent Unit–Ridge (GRU–Ridge) model for 1–7-day soil strength forecasting with vehicle-specific cone index requirements, terrain characteristics, fuzzy trafficability mapping, and Dijkstra-based route optimization. Convoy coordination is further incorporated to account for the progressive degradation of soil bearing capacity caused by repeated vehicle passage.
 
-Experiments using meteorological, vehicle, and geospatial data for the Pachmarhi plateau demonstrate the potential of the proposed approach. The GRU–Ridge model achieves an average RMSE of 14.64 psi across the seven forecast horizons and an \(R^2\) of 0.922 for soil strength at a seven-day horizon. Compared with route planning based on current terrain conditions, the forecast-based approach reduces the proportion of trips encountering impassable terrain by 27\% at seven days, while also reducing unnecessary trip cancellations. Furthermore, incorporating track degradation into convoy planning increases the average number of heavy tracked vehicles that complete a route from 5.5 to 9.2 out of 10. These findings highlight the benefits of integrating predictive soil strength assessment with vehicle-specific mobility constraints and route optimization.
+Experiments using meteorological, vehicle, and geospatial data for the Pachmarhi plateau demonstrate the potential of the proposed approach. The GRU–Ridge model, with a sixth of the parameters of the only tested model with a lower average error, achieves an average RMSE of 14.64 psi across the seven forecast horizons and an \(R^2\) of 0.922 for soil strength at a seven-day horizon. Compared with route planning based on current terrain conditions, the forecast-based approach reduces the proportion of trips encountering impassable terrain by 27\% and of trips held back unnecessarily by 22\% at seven days. Furthermore, incorporating track degradation into convoy planning increases the average number of heavy tracked vehicles that complete a route from 5.5 to 9.2 out of 10. These findings highlight the benefits of integrating predictive soil strength assessment with vehicle-specific mobility constraints and route optimization.
 
 Despite these encouraging results, the framework relies on modeled rather than field-measured soil strength, and some vehicle characteristics and track-degradation relationships are estimated from assumptions. Future work will focus on validating the predictions using field cone-index measurements, improving vehicle parameter estimation, incorporating numerical weather forecasts, and evaluating the framework across additional terrains and seasonal conditions. Overall, the proposed approach provides a promising basis for anticipatory, risk-aware military mobility planning under dynamic environmental conditions.
 
