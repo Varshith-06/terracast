@@ -76,12 +76,13 @@ This study proposes an integrated framework combining a hybrid Gated Recurrent U
   \item A forecast of soil strength for the day of travel, 1–7 days ahead, instead of planning on current conditions and assuming that they persist. The hybrid GRU–Ridge forecaster is lightweight, with a sixth of the parameters of the only tested model with a lower average error.
   \item The grouping of vehicles into five bands (A--E) by their one-pass VCI, each with its median requirements and its own safety margin against forecast error per lead time, so that terrain is classified as GO, SLOW-GO, or NO-GO per class at a fixed miss rate, with SLOW-GO quantified by the number of vehicles one track can carry and the speed the soil allows.
   \item Fuzzy trafficability maps for each band on the day of travel, which combine the forecast soil strength with slope, land cover, and roads, Dijkstra-based routing on these maps, and a wear-aware convoy planner in which each vehicle plans its route on the track left by those before it.
-  \item A daily soil-strength record for 2015--2025, cone indices for 1,145 vehicles checked against published values, and an evaluation on the Pachmarhi plateau against 21 other forecasting models and rules, in which planning on the forecasts sends fewer trips into impassable terrain and holds back fewer unnecessarily than planning on current conditions.
 \end{itemize}
 
 \section{Related Works}
 
 Military terrain trafficability assessment commonly relies on the RCI and VCI, supported by established models such as the NATO Reference Mobility Model \cite{haley1979,rula1971,ciobotaru2009}. Recent studies have developed terrain trafficability maps using environmental factors and route-planning algorithms \cite{liu2025}. GIS-based multi-criteria decision analysis maps off-road trafficability or land capability from elevation, land cover and soil data \cite{khan2021,dutta2024,mema2026}, path-planning studies select routes over road networks under uncertain conditions \cite{gao2019,xu2025}, and lightweight detectors classify military vehicles on edge devices \cite{gupta2022} (Table~\ref{tab:related-work}). Meanwhile, machine-learning methods, including recurrent neural networks and Transformers, have been applied to soil-moisture forecasting \cite{wang2024hess,wang2024agwat}.
+
+Despite these advances, none of these approaches forecasts soil strength and links it directly to vehicle-specific requirements and route planning, including terrain degradation during convoy movement, which the present study addresses.
 
 \begin{table}[H]
 \centering
@@ -113,8 +114,6 @@ Military terrain trafficability assessment commonly relies on the RCI and VCI, s
 \end{tabular}
 \end{adjustbox}
 \end{table}
-
-Despite these advances, none of these approaches forecasts soil strength and links it directly to vehicle-specific requirements and route planning, including terrain degradation during convoy movement, which the present study addresses.
 
 \section{Problem Statement}
 \label{sec:problem-statement}
