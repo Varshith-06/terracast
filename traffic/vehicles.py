@@ -8,10 +8,18 @@ mass and engine power are used. Masses are per-template values in the game files
 off its real figure; results should be reported by firmness band, not by name.
 
 Formulas
-  Wheeled  Rosca et al. (2018), J. Military Technology 1(2), doi:10.32754/JMT.2018.2.07
+  Mobility Index and the four MI -> VCI curves: Rula & Nuttall (1971), An Analysis of
+           Ground Mobility Models (ANAMOB), US Army WES TR M-71-4, App. A, tables A1-A2,
+           fig. A1; repeated in Haley, Jurkat & Brady (1979), NRMM Edition I Users Guide
+           Vol. I, TARADCOM TR 12503, subroutine II12.
+  Wheeled  NRMM II additions (weight factor above 31,500 lb, VCI1 for MI > 115, tyre
+           deflection factor) as given by Rosca & Ciobotaru (2017), MTA Review 27(2):77-82,
+           and Rosca et al. (2018), J. Military Technology 1(2), doi:10.32754/JMT.2018.2.07.
+           Checked here against the six 8x8 vehicles of Rosca & Ciobotaru (2017) Table II.
   Tracked  Ciobotaru (2009), Leonardo El. J. Pract. Technol. 8(15):19-30.
            Checked here against its M1 example: MI 98.59, VCI1 26.34, VCI50 60.48.
-Cone-index values are in psi-convention units, the same units as data.RCI.
+Cone-index values are in psi-convention units, the same units as data.RCI. "hp/ton" in
+the engine factor is per US short ton (2,000 lb): the sources work in pounds throughout.
 """
 
 from __future__ import annotations
@@ -128,15 +136,18 @@ HALFTRACK_FRONT_SHARE = 0.25
 
 # -------------------------------------------------------------- Mobility Index
 def _wf_wheeled(axle_lb):
-    """Weight factor on average axle load (lb), NRMM piecewise fit."""
+    """Weight factor on average axle load (lb): ANAMOB table A2, plus the NRMM II range
+    above 31,500 lb (Rosca & Ciobotaru 2017, eq. 10)."""
     k = axle_lb / 1000.0
     if axle_lb < 2000:
         return 0.553 * k
     if axle_lb < 13500:
-        return 0.033 * k + 1.050          # the range Rosca et al. (2018) state
+        return 0.033 * k + 1.050
     if axle_lb < 20000:
         return 0.142 * k - 0.420
-    return 0.278 * k - 3.115
+    if axle_lb < 31500:
+        return 0.278 * k - 3.115
+    return 0.836 * k - 20.686
 
 
 def _wf_tracked(gross_lb):
@@ -150,7 +161,8 @@ def _wf_tracked(gross_lb):
 
 
 def _ef(mass_t, hp):
-    return 1.05 if hp / mass_t < 10.0 else 1.0
+    """Engine factor: 1.05 below 10 hp per short ton (2,000 lb) of vehicle weight."""
+    return 1.05 if hp / (mass_t * 1000 * KG_TO_LB / 2000) < 10.0 else 1.0
 
 
 def mi_tracked(mass_t, hp, width_in, length_in, wheels, clear_in,
@@ -185,11 +197,11 @@ def vci_tracked(mi):
 
 
 def vci_wheeled(mi, dcf=1.0):
-    """DCF = (0.15 / (deflection/section height))**0.25 = 1 at 15% tyre deflection."""
-    if mi <= 115:
-        return ((11.48 + 0.2 * mi - 39.2 / (mi + 3.74)) * dcf,
-                (28.23 + 0.43 * mi - 92.67 / (mi + 3.74)) * dcf)
-    return 4.1 * mi ** 0.446 * dcf, 9.0 * mi ** 0.446 * dcf
+    """DCF = (0.15 / (deflection/section height))**0.25 = 1 at 15% tyre deflection.
+    VCI1 has an NRMM II branch above MI 115; VCI50 is the one ANAMOB curve for all MI
+    (Rosca & Ciobotaru 2017 apply it that way, eq. 19 and table II)."""
+    v1 = 11.48 + 0.2 * mi - 39.2 / (mi + 3.74) if mi <= 115 else 4.1 * mi ** 0.446
+    return v1 * dcf, (28.23 + 0.43 * mi - 92.67 / (mi + 3.67)) * dcf
 
 
 # ------------------------------------------------------------------ pipeline
@@ -214,6 +226,8 @@ def load_vehicles(path=paths.VEHICLES_CSV) -> pd.DataFrame:
         "name": raw["vehicle_name"].astype(str),
         "mass_t": pd.to_numeric(raw["mass_kg"], errors="coerce") / 1000.0,
         "hp": pd.to_numeric(raw["horsePowers_hp"], errors="coerce"),
+        # game template top speed (mostly 60 or 75 km/h): a rough cap, not a real figure
+        "vmax_kmh": pd.to_numeric(raw["maxSpeed_kmh"], errors="coerce"),
     })
     n0 = len(df)
     df = df[~df["name"].str.contains("|".join(DROP_PATTERNS))]
@@ -237,9 +251,18 @@ def load_vehicles(path=paths.VEHICLES_CSV) -> pd.DataFrame:
     return df.reset_index(drop=True)
 
 
+def cpf_tracked(mass_t, width_in, length_in):
+    """Contact pressure factor (psi): gross weight over the area of both tracks."""
+    return mass_t * 1000 * KG_TO_LB / (2 * length_in * width_in)
+
+
+def cpf_wheeled(axle_lb, d_in, b_in, tyres_per_axle=2):
+    return axle_lb / (0.5 * tyres_per_axle * d_in * b_in)
+
+
 def add_vci(df: pd.DataFrame) -> pd.DataFrame:
     out = df.copy()
-    mi, v1, v50 = [], [], []
+    mi, v1, v50, cpf = [], [], [], []
     for i, r in out.iterrows():
         m, hp = r["mass_t"], r["hp"]
         tr = dict(width_in=np.interp(m, _TR_MASS, _TR_WIDTH),
@@ -253,19 +276,26 @@ def add_vci(df: pd.DataFrame) -> pd.DataFrame:
         if r["type"] == "tracked":
             x = mi_tracked(m, hp, **tr)
             a, b = vci_tracked(x)
+            c = cpf_tracked(m, tr["width_in"], tr["length_in"])
         elif r["type"] == "wheeled":
-            x = mi_wheeled(m, hp, ax, **_tyre(m / ax))
+            ty = _tyre(m / ax)
+            x = mi_wheeled(m, hp, ax, **ty)
             a, b = vci_wheeled(x)
+            c = cpf_wheeled(m * 1000 * KG_TO_LB / ax, ty["d_in"], ty["b_in"])
         else:
             front_t = HALFTRACK_FRONT_SHARE * m
+            ty = _tyre(front_t)
             xt = mi_tracked(m, hp, **tr)
-            xw = mi_wheeled(m, hp, 1, w_axle=front_t * 1000 * KG_TO_LB, **_tyre(front_t))
+            xw = mi_wheeled(m, hp, 1, w_axle=front_t * 1000 * KG_TO_LB, **ty)
             (at, bt), (aw, bw) = vci_tracked(xt), vci_wheeled(xw)
-            x, a, b = (xt, at, bt) if at >= aw else (xw, aw, bw)
+            if at >= aw:
+                x, a, b, c = xt, at, bt, cpf_tracked(m, tr["width_in"], tr["length_in"])
+            else:
+                x, a, b, c = xw, aw, bw, cpf_wheeled(front_t * 1000 * KG_TO_LB, ty["d_in"], ty["b_in"])
             ax = np.nan
         out.at[i, "axles"] = ax
-        mi.append(x); v1.append(a); v50.append(b)
-    out["mi"], out["vci1"], out["vci50"] = mi, v1, v50
+        mi.append(x); v1.append(a); v50.append(b); cpf.append(c)
+    out["mi"], out["vci1"], out["vci50"], out["cpf"] = mi, v1, v50, cpf
     out["band"] = out["vci1"].map(band_of)
     return out
 
@@ -290,9 +320,34 @@ def m1_check():
     return mi, *vci_tracked(mi)
 
 
+# Rosca & Ciobotaru (2017) tables I-II: GVW lb, tyre d, b, h, clearance (in), road and
+# mud/sand deflection (in), and their VCI1 / VCI50 at road and at mud/sand pressure
+_APC8X8 = {
+    "Boxer": (84878, 52.3, 15.9, 12.7, 19.7, 1.62, 4.08, (53, 42, 156, 124)),
+    "VBCI": (70548, 49.4, 15.4, 13.7, 19.7, 1.52, 5.04, (47, 35, 121, 90)),
+    "SuperAV": (55115, 49.5, 15.1, 14.7, 17.7, 1.23, 4.06, (40, 30, 90, 67)),
+    "Stryker": (42000, 44.5, 12.2, 12.25, 17.4, 0.95, 2.66, (42, 32, 96, 74)),
+    "LAV II H": (41000, 40.8, 13.6, 10.4, 17.0, 1.20, 2.81, (36, 29, 82, 67)),
+    "SAUR 2": (35274, 49.6, 15.4, 13.8, 16.5, 1.33, 6.38, (26, 18, 61, 41)),
+}
+
+
+def apc_check():
+    """Largest |ours - paper| over the 24 published 8x8 VCI values (paper rounds to 1 psi)."""
+    worst = 0.0
+    for gvw, d, b, h, hc, d_road, d_mud, paper in _APC8X8.values():
+        mi = mi_wheeled(gvw / KG_TO_LB / 1000, 1e4, 4, d, b, hc)     # 8x8, EF = 1
+        ours = [vci_wheeled(mi, (0.15 / (dfl / h)) ** 0.25) for dfl in (d_road, d_mud)]
+        got = (ours[0][0], ours[1][0], ours[0][1], ours[1][1])
+        worst = max(worst, max(abs(g - p) for g, p in zip(got, paper)))
+    return worst
+
+
 if __name__ == "__main__":
     print("M1 check  MI %.2f  VCI1 %.2f  VCI50 %.2f   (paper: 98.59 / 26.34 / 60.48)"
           % m1_check())
+    print("8x8 check  largest difference from Rosca & Ciobotaru (2017) table II: %.2f psi"
+          % apc_check())
     v = add_vci(load_vehicles())
     print(v.groupby("type")[["mass_t", "vci1", "vci50"]].describe().round(1).T)
     paths.VEHICLES_OUT.mkdir(parents=True, exist_ok=True)

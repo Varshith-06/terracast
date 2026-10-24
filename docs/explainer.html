@@ -15,6 +15,15 @@ h1 { font-family: "IBM Plex Sans Condensed"; font-weight: 700; font-size: 30pt; 
 h2 { font-size: 19pt; line-height: 1.2; margin: 0 0 4mm; padding-top: 2mm; break-before: page; }
 h2.cont { break-before: auto; margin-top: 9mm; }
 h3 { font-size: 12.5pt; margin: 6mm 0 2mm; break-after: avoid; }
+h4 { font-size: 11pt; margin: 5mm 0 1.5mm; break-after: avoid; }
+table.we { font-size: 8.6pt; break-inside: auto; }
+table.we tr { break-inside: avoid; }
+table.we td:first-child { width: 27mm; }
+table.we td:nth-child(2) { width: 50mm; }
+table.formulas { font-size: 8.8pt; break-inside: auto; }
+table.formulas tr { break-inside: avoid; }
+table.formulas td:first-child { width: 48mm; }
+table.formulas td:nth-child(3) { width: 34mm; }
 p { margin: 0 0 3mm; } ul, ol { margin: 0 0 3mm; padding-left: 6mm; } li { margin-bottom: 1.2mm; }
 .lede { font-size: 13pt; color: var(--ink2); line-height: 1.4; margin-bottom: 10mm; }
 table { width: 100%; border-collapse: collapse; margin: 2mm 0 5mm; font-size: 9.6pt; break-inside: avoid;
@@ -27,6 +36,7 @@ tr.us td { font-weight: 600; } tr.us td:first-child { color: var(--ours); }
 tr.foil td:first-child { color: var(--foil); }
 .box { border-left: 3pt solid; padding: 3mm 4.5mm; margin: 4mm 0 5mm; break-inside: avoid; }
 .box b.t { display: block; margin-bottom: 1mm; }
+.box.brk { break-inside: auto; }
 .box p:last-child, .box ul:last-child { margin-bottom: 0; }
 .blue { background: #eef4fc; border-color: #2a78d6; }
 .orange { background: #fdf2e9; border-color: #eb6834; }
@@ -47,8 +57,8 @@ code { font-family: "IBM Plex Mono"; font-size: 9pt; background: #f1efe7; paddin
 <p class="lede">A from-scratch explainer of the project, the data, what was built and what it
 found, and what goes to the ICDCN 2027 poster track.</p>
 <table class="meta">
-  <tr><td>Updated</td><td><b>11 October 2026</b>. Replaces the 10 October version.</td></tr>
-  <tr><td>Poster deadline</td><td><b>15 October 2026</b> (4 days from this document)</td></tr>
+  <tr><td>Updated</td><td><b>13 October 2026</b>. Replaces the 10 October version.</td></tr>
+  <tr><td>Poster deadline</td><td><b>15 October 2026</b> (2 days from this document)</td></tr>
   <tr><td>Venue</td><td>ICDCN 2027, NITK Surathkal, India, 4–7 January 2027</td></tr>
   <tr><td>Project folder</td><td>Documents\meteorology</td></tr>
 </table>
@@ -65,6 +75,11 @@ found, and what goes to the ICDCN 2027 poster track.</p>
   logo and links are the only gaps.</li>
   <li><b>Corrections:</b> ZIS-30 is a tracked tank destroyer, not a truck. The September
   forecasting numbers no longer apply (Section 5).</li>
+  <li><b>New: SLOW-GO in numbers.</b> A SLOW-GO day now also says how many vehicles one track
+  carries and how fast the band can drive. The planner can choose routes by travel time and
+  report trip times in minutes (Section 6, Step 8).</li>
+  <li><b>New: the whole chain on one real trip</b>, every formula with its real numbers (Section 7),
+  and where every formula comes from and how its numbers were set (Appendix B).</li>
 </ul></div>
 <div class="box blue"><b class="t">How to read this</b>
 <p>Each section builds on the one before. Blue boxes explain an idea in plain words. Orange
@@ -80,12 +95,14 @@ so it matches the poster and the abstract exactly.</p></div>
 <tr><td>4</td><td>The data, file by file</td></tr>
 <tr><td>5</td><td>The forecaster</td></tr>
 <tr><td>6</td><td>What was built, step by step</td></tr>
-<tr><td>7</td><td>Your questions, answered</td></tr>
-<tr><td>8</td><td>Limitations to be honest about</td></tr>
-<tr><td>9</td><td>Status and what is needed from you</td></tr>
-<tr><td>10</td><td>Where everything is</td></tr>
+<tr><td>7</td><td>One trip, end to end: every formula with real numbers</td></tr>
+<tr><td>8</td><td>Your questions, answered</td></tr>
+<tr><td>9</td><td>Limitations to be honest about</td></tr>
+<tr><td>10</td><td>Status and what is needed from you</td></tr>
+<tr><td>11</td><td>Where everything is</td></tr>
 <tr><td>A</td><td>Glossary</td></tr>
-<tr><td>B</td><td>References</td></tr>
+<tr><td>B</td><td>Every formula: where it comes from and how it was set</td></tr>
+<tr><td>C</td><td>References</td></tr>
 </table>
 
 <h2>1. The problem in one page</h2>
@@ -288,11 +305,11 @@ template mass. A band is a real range of vehicle needs, whichever names fall in 
 The ZIS-43 is a half-track. Classification is now done by name with checked keyword lists.</p></div>
 <table class="num">
 <tr><th>Band</th><th>VCI₁ range (psi)</th><th>Mostly</th><th>Vehicles</th><th>Typical VCI₁ / VCI₅₀</th><th>Days NO-GO, 2015–25</th></tr>
-<tr><td>A</td><td>0–18</td><td>light tracked</td><td>217</td><td>17.6 / 41.5</td><td>10%</td></tr>
-<tr><td>B</td><td>18–21</td><td>light-medium tracked</td><td>327</td><td>19.1 / 44.7</td><td>15%</td></tr>
-<tr><td>C</td><td>21–24</td><td>medium tracked, some half-tracks</td><td>185</td><td>21.6 / 50.2</td><td>20%</td></tr>
-<tr><td>D</td><td>24–30</td><td>heavy tracked, some wheeled</td><td>350</td><td>26.2 / 60.1</td><td>24%</td></tr>
-<tr><td>E</td><td>30+</td><td>medium and heavy wheeled</td><td>66</td><td>36.7 / 80.6</td><td>30%</td></tr>
+<tr><td>A</td><td>0–18</td><td>light tracked</td><td>209</td><td>17.6 / 41.5</td><td>10%</td></tr>
+<tr><td>B</td><td>18–21</td><td>light-medium tracked</td><td>321</td><td>19.0 / 44.5</td><td>15%</td></tr>
+<tr><td>C</td><td>21–24</td><td>medium tracked, some half-tracks</td><td>199</td><td>21.6 / 50.2</td><td>20%</td></tr>
+<tr><td>D</td><td>24–30</td><td>heavy tracked, some wheeled</td><td>347</td><td>26.2 / 60.1</td><td>24%</td></tr>
+<tr><td>E</td><td>30+</td><td>medium and heavy wheeled</td><td>69</td><td>36.7 / 86.2</td><td>30%</td></tr>
 </table>
 <div class="fig"><img src="explainer_figs/f2_fleet.png">
 <div class="cap"><b>Figure 2.</b> One-pass vehicle cone index of every vehicle, coloured by type,
@@ -342,10 +359,10 @@ scored on 2025, then the other way round, and the two results are pooled.</p></d
 <table class="num">
 <tr><th>Band (7 days ahead)</th><th>Today's value + margin: recall / false alarms per vehicle-year</th><th>Forecast + margin: same</th><th>Margin tuned on 2024 / 2025 (psi)</th></tr>
 <tr><td>A</td><td>89% / 74</td><td>91% / 54</td><td>13.8 / 7.0</td></tr>
-<tr><td>B</td><td>89% / 54</td><td>91% / 34</td><td>10.8 / 9.2</td></tr>
+<tr><td>B</td><td>88% / 54</td><td>91% / 34</td><td>10.8 / 9.2</td></tr>
 <tr><td>C</td><td>90% / 44</td><td>90% / 28</td><td>10.8 / 17.8</td></tr>
 <tr><td>D</td><td>91% / 29</td><td>90% / 22</td><td>19.5 / 14.8</td></tr>
-<tr><td>E</td><td>90% / 14</td><td>90% / 7</td><td>5.8 / 9.8</td></tr>
+<tr><td>E</td><td>90% / 14</td><td>90% / 8</td><td>6.0 / 9.8</td></tr>
 </table>
 <p>At the same catch rate, the forecast raises 23–45% fewer false alarms at 7
 days than putting the same kind of margin on today's value.</p>
@@ -413,19 +430,24 @@ and the forecast, both made three days earlier.</div></div>
 <h3>Step 1. Vehicle profiles</h3>
 <p>Each vehicle needs VCI₁ and VCI₅₀. They come from the US Army's <b>Mobility Index</b> method
 (NRMM; test procedure TOP 02-2-619A), which turns weight, track or tyre size, ground clearance,
-power and gearbox into one number. Wheeled formulas follow Roșca et al. [2], tracked ones
-Ciobotaru [3].</p>
+power and gearbox into one number. The Mobility Index tables and all four MI-to-VCI curves
+come from Rula and Nuttall [12] and the NRMM Edition I users guide [13]; the wheeled additions
+of NRMM II (weight factor above 31,500 lb, VCI₁ above MI 115, tyre deflection) follow Roșca and
+Ciobotaru [14] and Roșca et al. [2], and the tracked worked example is Ciobotaru's [3].</p>
 <div class="box purple"><b class="t">The formulas</b>
 <p><b>Tracked:</b> MI = (CPF·WF / (TEF·GF) + BF − CF) · EF · TF, with CPF = W / (2·L·B), TEF = B/100,
 BF = W / (10 · road wheels · shoe area), CF = clearance/10. VCI₁ = 7.0 + 0.2·MI − 39.2/(MI + 5.6);
 VCI₅₀ = 19.27 + 0.43·MI − 125.79/(MI + 7.08).</p>
 <p><b>Wheeled:</b> MI = (CPF·WF / (TEF·GF) + WLF − CF) · EF · TF, with CPF = axle load / (0.5 · tyres
 per axle · diameter · width), TEF = (10 + width)/100, WLF = axle load/2000.
-VCI₁ = 11.48 + 0.2·MI − 39.2/(MI + 3.74); VCI₅₀ = 28.23 + 0.43·MI − 92.67/(MI + 3.74). Loads in lb,
-lengths in inches, VCI in psi.</p></div>
-<div class="box green"><b class="t">Checked against a published example</b>
+VCI₁ = 11.48 + 0.2·MI − 39.2/(MI + 3.74) up to MI 115, 4.1·MI^0.446 above;
+VCI₅₀ = 28.23 + 0.43·MI − 92.67/(MI + 3.67). The engine factor is 1.05 below 10 hp per short
+ton (2,000 lb). Loads in lb, lengths in inches, VCI in psi.</p></div>
+<div class="box green"><b class="t">Checked against published examples</b>
 <p>With the M1 Abrams' public specifications, the tracked code gives MI 98.61, VCI₁ 26.35 and
-VCI₅₀ 60.48. Ciobotaru [3] reports 98.59, 26.34 and 60.48.</p></div>
+VCI₅₀ 60.48. Ciobotaru [3] reports 98.59, 26.34 and 60.48. For the six 8×8 personnel carriers
+of Roșca and Ciobotaru [14], the wheeled code matches 22 of the 24 published VCI values to
+the nearest psi; the other two (one vehicle's VCI₅₀) are within 1.7 psi.</p></div>
 <p><b>What had to be assumed.</b> The file has no track or tyre sizes, so they come from weight:
 tracks interpolated between real vehicles from the M22 Locust to the Tiger II, tyres by the
 load each axle carries. Transmissions are taken as automatic and tyres at road pressure.
@@ -460,7 +482,8 @@ measurements behind it. The poster and abstract say so.</p></div>
 <h3>Step 4. Combining into one score</h3>
 <p>Soil scores 0 below VCI₁ (NO-GO) and rises to 1 at VCI₅₀, so SLOW-GO ground is slow but
 allowed. The three scores combine by <b>fuzzy AND, the minimum</b>. A cell is as passable as its
-worst factor, so a deal-breaker can never be averaged away.</p>
+worst factor, so a deal-breaker can never be averaged away. Step 8 turns the SLOW-GO range into
+two plain numbers: vehicles per track and km/h.</p>
 
 <h3>Step 5. Planning routes</h3>
 <p>The planner finds the fastest route, with speed proportional to the cell's score, on a grid
@@ -473,6 +496,8 @@ of 253 × 315 cells. Five planners are compared:</p>
 <tr><td><b>Forecast + margin (ours)</b></td><td>The forecast for the travel day minus the band's margin</td></tr>
 <tr><td>Oracle</td><td>The real ground on the travel day, used only to score the others</td></tr>
 </table>
+<p>"Speed proportional to the score" makes the route cost a relative time, not minutes. Step 8
+adds a speed model in km/h, and the same maps can be routed by real travel time instead.</p>
 
 <h3>Step 6. The backtest</h3>
 <p>For every day of 2024–25 (724 planning days), each of the five bands, and departures 1, 3
@@ -482,20 +507,20 @@ travel day.</p>
 <table class="num">
 <tr><th>Planner: stuck / held back</th><th>1 day</th><th>3 days</th><th>7 days</th></tr>
 <tr><td>Terrain only (no soil)</td><td>35.5% / 0.0%</td><td>35.5% / 0.0%</td><td>35.5% / 0.0%</td></tr>
-<tr class="foil"><td>Today's map (what Liu et al. do)</td><td>0.8% / 1.1%</td><td>2.1% / 3.0%</td><td>3.9% / 5.8%</td></tr>
+<tr class="foil"><td>Today's map (what Liu et al. do)</td><td>0.8% / 1.1%</td><td>2.1% / 3.0%</td><td>4.0% / 5.8%</td></tr>
 <tr><td>Today's map + safety margin</td><td>0.7% / 1.5%</td><td>1.5% / 4.4%</td><td>2.5% / 8.4%</td></tr>
-<tr class="us"><td>Forecast + safety margin (ours)</td><td>0.7% / 0.7%</td><td>1.6% / 2.3%</td><td>2.9% / 4.4%</td></tr>
+<tr class="us"><td>Forecast + safety margin (ours)</td><td>0.7% / 0.7%</td><td>1.6% / 2.3%</td><td>2.9% / 4.5%</td></tr>
 </table>
 <div class="box green"><b class="t">What the backtest supports, and what it does not</b>
 <ul>
 <li><b>Against today's map:</b> at 3 days, 1.6% of forecast-planned trips got stuck
 against 2.1% (24% fewer), and fewer were held back (2.3% against
-3.0%). At 7 days, 26% fewer stuck.</li>
+3.0%). At 7 days, 27% fewer stuck.</li>
 <li><b>Against a margin on today's map:</b> the forecast does <i>not</i> get fewer trips stuck at the
 tuned setting. What it does is hold back far fewer trips at the same risk. Turning each planner's
 margin from none up to three times the tuned value (Figure 7), the forecast holds back
 40% (3 days) and 31% (7 days) fewer trips at an equal stuck rate.</li>
-<li><b>Cost:</b> forecast-planned routes are only 0.05% slower than the best possible route.</li>
+<li><b>Cost:</b> forecast-planned routes are only 0.06% slower than the best possible route.</li>
 <li>Ignoring soil altogether sends 36% of trips into mud.</li>
 </ul></div>
 <div class="fig"><img src="explainer_figs/f5_tradeoff.png">
@@ -529,52 +554,212 @@ not a published law. The start and finish areas are not churned, because every v
 <li><b>Wear-aware:</b> each vehicle plans on the shared pass-count map and broadcasts its own track (4 bytes per cell).</li>
 </ul>
 <p>Heavy tracked vehicles: <b>5.5</b> of 10 get through following the leader,
-<b>9.2</b> with the shared map, for 6.9 kB of track updates per convoy. Wheeled
-vehicles: 6.4 and 7.0. In this forest they have few parallel lanes to spread
+<b>9.2</b> with the shared map, for 7.2 kB of track updates per convoy. Wheeled
+vehicles: 6.8 and 7.3. In this forest they have few parallel lanes to spread
 onto.</p>
 <div class="fig"><img src="explainer_figs/f6_convoy.png">
 <div class="cap"><b>Figure 10.</b> Vehicles of ten that get through, by band and convoy method.</div></div>
 
-<h3>Step 8. Edge numbers</h3>
+<h3>Step 8. SLOW-GO in numbers: passes and speed</h3>
+<p>SLOW-GO covers everything from "one vehicle gets across, barely" to "forty-nine vehicles can
+use the same track at a decent pace". A commander needs to know where in that range the day
+falls. Two numbers now say it: how many vehicles one track carries, and how fast the band can
+drive.</p>
+
+<h4>Passes: how many vehicles one track carries</h4>
+<div class="box blue"><b class="t">The idea</b>
+<p>VCI₁ is the firmness one vehicle needs; VCI₅₀ is the firmness fifty vehicles need on the
+same track. Every pass churns the soil, so each vehicle needs a little more firmness than the
+one before it. Ground that sits partway between VCI₁ and VCI₅₀ carries a number of vehicles
+partway between 1 and 50. This is the convoy wear rule of Step 7 turned round: Step 7 asks
+"how firm must the ground be for vehicle number <i>n</i>?", this asks "how many vehicles can
+this ground take?".</p></div>
+<div class="box purple"><b class="t">The formula</b>
+<p>passes <span class="math">n</span> = 50<sup>(RCI − VCI₁) / (VCI₅₀ − VCI₁)</sup></p>
+<p>It gives 1 at VCI₁, 50 at VCI₅₀ (GO), and 0 below VCI₁ (NO-GO). It is the exact inverse of
+the wear rule, firmness needed = VCI₁ + (VCI₅₀ − VCI₁)·ln(<span class="math">n</span>)/ln(50).</p></div>
+<div class="box orange"><b class="t">Our assumption</b>
+<p>The published sources give only the two end points, 1 pass and 50 passes [12]. The
+logarithmic curve between them is ours, shared with the wear rule.</p></div>
+
+<h4>Speed: how fast the band can drive</h4>
+<p>The speed comes from the soil relations of the NATO Reference Mobility Model (NRMM), the
+model the US Army and NATO use to predict cross-country speed [13]. Its fine-grained soil
+relations were fitted to more than 1,600 field tests with wheeled and tracked vehicles [12]. In
+plain words, a vehicle on soft ground faces three things:</p>
+<ul>
+<li><b>Excess firmness</b>, <span class="math">x</span> = RCI − VCI₁: how far the ground is above
+the vehicle's limit. Everything else is a function of it.</li>
+<li><b>Motion resistance</b>, R/W: the drag of sinking and pushing soil, as a fraction of the
+vehicle's weight. It is about 0.40 at VCI₁ (pulling 40% of your own weight just to keep
+moving) and falls to about 0.05 on firm ground.</li>
+<li><b>Drawbar pull</b>, D/W: the pull left over after that drag. It is 0 at VCI₁, which is
+what VCI₁ means: the vehicle can just move itself and nothing more.</li>
+</ul>
+<p>On a slope the vehicle also has to lift its own weight, so the force it needs is the soil
+drag plus the slope. If the soil cannot grip hard enough to supply that force, the vehicle is
+stuck on that slope even though the soil is above VCI₁. Otherwise the engine sets the speed:
+power is force times speed, so speed = engine power ÷ force needed. Finally the tracks or wheels
+slip a little in soft soil, which takes some of that speed away.</p>
+<div class="box purple brk"><b class="t">The formulas (NRMM Edition I, fine-grained soil [13])</b>
+<p><span class="math">x</span> = RCI − VCI₁</p>
+<p>Drawbar pull at 20% slip: D/W = <span class="math">a + bx</span> − √((<span class="math">a + bx</span>)² − <span class="math">cx</span>) for <span class="math">x</span> ≥ 0; <span class="math">s·x</span> below.</p>
+<p>Motion resistance: R/W = <span class="math">p</span> + <span class="math">q</span> / (<span class="math">x + r</span>) for <span class="math">x</span> ≥ 0; <span class="math">u − s′x</span> below.</p>
+<p>Most traction the soil can give (at 100% slip): CF = D/W − <span class="math">k</span>₁ + R/W, TFOR/W = CF + <span class="math">k</span>₂.</p>
+<p>Force needed on a slope of angle θ: load = sin θ + R/W · cos θ. Stuck if TFOR/W · cos θ &lt; load.</p>
+<p>Slip: <span class="math">S</span> = <span class="math">αy + β + γ</span>/(<span class="math">δ − y</span>), with <span class="math">y</span> = load / cos θ − CF.</p>
+<p>Speed: <span class="math">v</span> = η · <span class="math">P</span> / (<span class="math">W</span> · load) · (1 − <span class="math">S</span>), capped at the top speed. <span class="math">P</span> engine power, <span class="math">W</span> weight, η = 80% of the engine's power reaching the tracks or wheels.</p>
+<p>Paved road ignores the soil: R/W = 0.045 for tracks, 0.007 + 0.0939/tyre pressure for tyres [13].</p>
+<table class="num">
+<tr><th>Running gear (contact pressure)</th><th>a, b, c, s</th><th>p, q, r, u, s′</th><th>k₁, k₂</th><th>α, β, γ, δ</th></tr>
+<tr><td>Tracked, below 4 psi</td><td>.544, .0463, .0702, .076</td><td>.045, 2.3075, 6.5, .4, .072</td><td>.758, .82</td><td>.0257, −.0161, .01519, .8353</td></tr>
+<tr><td>Tracked, 4 psi or more</td><td>.455, .0392, .0526, .056</td><td>.045, 2.3075, 6.5, .4, .052</td><td>.671, .71</td><td>.0733, −.0063, .00734, .7177</td></tr>
+<tr><td>Wheeled, below 4 psi</td><td>.3885, .0265, .0358, .046</td><td>.035, .861, 3.249, .3, .043</td><td>.674, .76</td><td>.0621, −.021, .01888, .7794</td></tr>
+<tr><td>Wheeled, 4 psi or more</td><td>.379, .0219, .0257, .033</td><td>.045, 2.3075, 6.5, .4, .029</td><td>.585, .655</td><td>.084, −.016, .01414, .6697</td></tr>
+</table></div>
+<div class="box green"><b class="t">Two checks</b>
+<ul>
+<li><b>It agrees with our NO-GO line.</b> At exactly VCI₁ the relations give 20% slip, the slip at
+which NRMM's VCI₁ is defined, and a level-ground speed above zero. On a slope at VCI₁ the
+vehicle is stuck, because there is no spare pull to climb with.</li>
+<li><b>M1 Abrams:</b> the model gives 12 km/h at the M1's VCI₁ and 45 km/h at 20 psi
+above it. Ciobotaru's published NRMM run for the M1 [3] shows speeds of about 20 km/h just before
+NO-GO and 56 km/h at most, the same range.</li>
+</ul></div>
+<table class="num">
+<tr><th>Band</th><th>Type</th><th>hp/t</th><th>Contact pressure (psi)</th><th>km/h at VCI₁</th><th>+5 psi</th><th>+10</th><th>+20</th><th>+40</th><th>Vehicles per track at +5 / +10 / +20 psi</th></tr>
+<tr><td>A</td><td>tracked</td><td>19.0</td><td>9.2</td><td>8</td><td>16</td><td>22</td><td>31</td><td>43</td><td>2 / 5 / 26</td></tr>
+<tr><td>B</td><td>tracked</td><td>15.6</td><td>9.5</td><td>7</td><td>13</td><td>18</td><td>25</td><td>36</td><td>2 / 5 / 21</td></tr>
+<tr><td>C</td><td>tracked</td><td>14.0</td><td>12.0</td><td>6</td><td>12</td><td>16</td><td>23</td><td>32</td><td>2 / 4 / 15</td></tr>
+<tr><td>D</td><td>tracked</td><td>15.7</td><td>12.8</td><td>7</td><td>13</td><td>18</td><td>26</td><td>36</td><td>2 / 3 / 10</td></tr>
+<tr><td>E</td><td>wheeled</td><td>19.2</td><td>20.0</td><td>8</td><td>16</td><td>22</td><td>31</td><td>44</td><td>1 / 2 / 5</td></tr>
+</table>
+<p>Each band's planning vehicle takes the median power-to-weight and contact pressure of the
+band's vehicles of its type.</p>
+<div class="fig"><img src="explainer_figs/speed_curves.png">
+<div class="cap"><b>Figure 11.</b> Left: level-ground speed of each band's planning vehicle as the
+ground firms up past its VCI₁. Right: vehicles one track carries; 50 is GO.</div></div>
+
+<h4>Routing by travel time</h4>
+<p>Every map cell now has a speed: the soil speed above, using the slope along the direction of
+travel (from the elevation of the two cells), so uphill is slower than downhill. Off the road
+the speed is scaled by the land-cover score, so open forest is slower than grass. Paved roads
+use road rolling resistance and ignore the soil. A step between two cells takes half its length
+at each cell's speed, and Dijkstra finds the route with the least total time. The result is a
+trip time in minutes.</p>
+<table class="num">
+<tr><th>Planner: stuck / held back / minutes per trip</th><th>1 day</th><th>3 days</th><th>7 days</th></tr>
+<tr><td>Published planner (passability cost)</td><td>0.7% / 0.7% / 32.5 min</td><td>1.7% / 2.3% / 32.4 min</td><td>2.9% / 4.5% / 32.2 min</td></tr>
+<tr class="us"><td>Routed by travel time</td><td>0.8% / 0.7% / 31.0 min</td><td>1.6% / 2.4% / 30.8 min</td><td>2.9% / 4.5% / 30.7 min</td></tr>
+</table>
+<div class="box green"><b class="t">What the speed backtest shows</b>
+<ul>
+<li><b>Same safety:</b> choosing routes by travel time changes stuck and held-back trips by at
+most 0.05 percentage points. Here "stuck" also counts climbs the soil cannot carry the vehicle up.</li>
+<li><b>Faster trips:</b> routes are 5% quicker at 3 days.</li>
+<li><b>Trip times can be planned:</b> the time predicted on the forecast map is
++0.3% off the time on the real travel day at 3 days on average (+1.0% at 7),
+and 9 trips in 10 are within -2.1% to +3.4%. Times run slightly long, because
+the safety margin makes the planned ground a little softer than the real ground.</li>
+</ul></div>
+<div class="box orange"><b class="t">What had to be assumed for speed</b>
+<ul>
+<li>The vehicle file has engine power but no gearbox, so the engine is taken as giving the same
+power at every speed. NRMM builds the pull at each speed gear by gear.</li>
+<li>η = 80% of the engine's power reaches the ground. Speed scales with it: at 70% every
+speed is -12% lower.</li>
+<li>Top speed is the game's template value (60 or 75 km/h), not a real figure.</li>
+<li>NRMM also limits speed for tree stems, ride comfort and obstacles. None of these is modelled,
+so speeds are upper bounds; the land-cover score stands in for vegetation.</li>
+<li>The travel-day times come from the same model, so the backtest shows what forecast error
+does to trip times, not that the model's km/h are right in the field.</li>
+</ul></div>
+
+<h3>Step 9. Edge numbers</h3>
 <table class="num">
 <tr><th>What</th><th>Value</th></tr>
 <tr><td>Model size (3 GRUs of 176,775 parameters, plus ridge)</td><td>531k parameters, 2.0 MB</td></tr>
 <tr><td>One 7-day forecast, one CPU thread</td><td>12 ms (+ 21 ms to build inputs)</td></tr>
-<tr><td>Re-planning one route, 76k-cell map</td><td>25 ms</td></tr>
+<tr><td>Re-planning one route, 76k-cell map</td><td>19 ms</td></tr>
+<tr><td>Re-planning one route by travel time</td><td>82 ms</td></tr>
 <tr><td>Sending a 7-day forecast</td><td>18 bytes</td></tr>
 <tr><td>Sending one passability map instead</td><td>76 kB (4,200× more)</td></tr>
 <tr><td>Maps for 5 bands × 7 days</td><td>2.7 MB</td></tr>
 </table>
 <p>Because every vehicle rebuilds its own maps from the forecast and the shared tracks, the
-radio link only ever carries the small things.</p>
+radio link only ever carries the small things. Passes and speed are worked out on the vehicle
+from the same 18-byte forecast, so they add nothing to the link. In the edge bundle,
+<code>outlook()</code> gives status, passes and level-ground km/h for each of the next 7 days, and
+<code>plan(..., by="time")</code> routes by travel time.</p>
 
-<h2>7. Your questions, answered</h2>
-<h3>7.1 Should we use JEPA?</h3>
+<h2>7. One trip, end to end: every formula with real numbers</h2>
+<p>This follows one real planning day through every stage, from the weather log to the route and
+the check on the travel day. On <b>24 October 2024</b> the plateau was drying out after the monsoon:
+firmness was 33.2 psi. A band-D unit (heavy tracked) plans a trip for
+<b>27 October 2024</b>, three days later. Every number below is computed by the project's own code
+when this document is built; where a stage can be checked against another part of the
+pipeline, the build checks it.</p>
+<table class="we">
+<tr><th>Stage</th><th>Formula</th><th>With the numbers</th><th>Result</th></tr>
+<tr><td><b>1. Soil moisture → wetness</b></td><td class='math2'>s = (θ − 20) / (49 − 20), clipped to 0–1<br>SWI = 0.35·s<sub>0–7</sub> + 0.65·s<sub>7–28</sub></td><td>θ = 40.3 and 41.9 vol% → s = 0.700, 0.754<br>SWI = 0.35·0.700 + 0.65·0.754</td><td>SWI = 0.735</td></tr>
+<tr><td><b>2. Wetness → firmness today</b></td><td class='math2'>RCI = 300·e<sup>−2.996·SWI</sup>·(1 − 0.15·min(R<sub>3d</sub>/50, 1))</td><td>R<sub>3d</sub> = 0.0 mm → rain factor 1.000<br>300·e<sup>−2.996·0.735</sup>·1.000</td><td>RCI<sub>today</sub> = 33.2 psi</td></tr>
+<tr><td><b>3. Forecast for the travel day</b></td><td class='math2'>RCI<sub>t+3</sub> = RCI<sub>t</sub> + ½·(ΔGRU + Δridge)</td><td>33.2 + ½·(+6.99 + 12.40)<br>3 GRUs averaged: ΔGRU; 1 ridge regression: Δridge</td><td>RCI<sub>forecast</sub> = 42.9 psi</td></tr>
+<tr><td><b>4. Safety margin</b></td><td class='math2'>RCI<sub>safe</sub> = forecast − m(band, lead)</td><td>m(D, 3 days) = 1.75 psi, tuned on 2025<br>42.9 − 1.75</td><td>RCI<sub>safe</sub> = 41.1 psi</td></tr>
+<tr><td><b>5. A band-D vehicle → MI</b></td><td class='math2'>MI = (CPF·WF / (TEF·GF) + BF − CF)·EF·TF</td><td>50.0 t = 110,231 lb, 810 hp; tracks 24.4 × 176 in, 14 road wheels, clearance 18.8 in<br>CPF = 12.82, WF = 1.8, TEF = 0.244, GF = 1, BF = 4.97, CF = 1.88, EF = 1.00, TF = 1</td><td>MI = 97.72</td></tr>
+<tr><td><b>6. MI → vehicle cone index</b></td><td class='math2'>VCI₁ = 7.0 + 0.2·MI − 39.2/(MI + 5.6)<br>VCI₅₀ = 19.27 + 0.43·MI − 125.79/(MI + 7.08)</td><td>MI = 97.72</td><td>VCI₁ = 26.2, VCI₅₀ = 60.1 psi</td></tr>
+<tr><td><b>7. Band planning vehicle</b></td><td class='math2'>median VCI₁, VCI₅₀, power-to-weight and contact pressure of band D's tracked vehicles</td><td>347 vehicles in band D</td><td>VCI₁ 26.2, VCI₅₀ 60.1 psi; 15.7 hp/t; CPF 12.8 psi</td></tr>
+<tr><td><b>8. Decision</b></td><td class='math2'>NO-GO if RCI<sub>safe</sub> < VCI₁; SLOW-GO if < VCI₅₀; else GO</td><td>26.2 ≤ 41.1 &lt; 60.1</td><td><b>SLOW-GO</b></td></tr>
+<tr><td><b>9. Passes per track</b></td><td class='math2'>n = 50<sup>(RCI − VCI₁)/(VCI₅₀ − VCI₁)</sup></td><td>50<sup>(41.1 − 26.2)/(60.1 − 26.2)</sup></td><td>5.6 → <b>5 vehicles</b> per track</td></tr>
+<tr><td><b>10. Soil traction (NRMM)</b></td><td class='math2'>x = RCI − VCI₁<br>D/W = a + bx − √((a + bx)² − cx)<br>R/W = p + q/(x + r)</td><td>x = 15.0 psi; tracked, CPF ≥ 4 psi<br>D/W = 0.496, R/W = 0.153<br>TFOR/W = D/W − 0.671 + R/W + 0.71 = 0.687</td><td>moves if TFOR/W ≥ R/W (0.687 ≥ 0.153)</td></tr>
+<tr><td><b>11. Speed on level ground</b></td><td class='math2'>v = η·P / (W·R/W) · (1 − S), capped at top speed</td><td>η = 0.8, P/W = 15.7 hp/t → power-limited 22.6 km/h<br>slip S at y = R/W − CF = 0.175: 2.0%</td><td><b>22.1 km/h</b></td></tr>
+<tr><td><b>12. Firmness in one map cell</b></td><td class='math2'>shift = 0.10·clip(z<sub>TWI</sub>, −2, 2); RCI<sub>cell</sub> = RCI·e<sup>−2.996·shift</sup></td><td>the route's weakest unpaved-track cell: z = +0.62 → shift +0.062</td><td>RCI<sub>cell</sub> = 34.1 psi</td></tr>
+<tr><td><b>13. Cell passability</b></td><td class='math2'>min(slope score, cover score, soil score)<br>soil = 0.25 + 0.75·(RCI − VCI₁)/(VCI₅₀ − VCI₁)</td><td>unpaved track: slope and cover count as 1 on roads; soil 0.25 + 0.75·(34.1 − 26.2)/(60.1 − 26.2) = 0.43</td><td>μ = 0.43</td></tr>
+<tr><td><b>14. Route (published planner)</b></td><td class='math2'>Dijkstra on cost = step·½(1/μ<sub>u</sub> + 1/μ<sub>v</sub>)</td><td>trip of 26.9 km on the grid, 253 cells</td><td>cost 29.52 (km ÷ speed fraction)</td></tr>
+<tr><td><b>15. Speed in that cell</b></td><td class='math2'>same as 10–11 with load = sin θ + R/W·cos θ, × cover score</td><td>step into the cell: grade +8.2%, cell RCI 34.1 psi</td><td>11.5 km/h</td></tr>
+<tr><td><b>16. Travel time</b></td><td class='math2'>Σ step·½(1/v<sub>u</sub> + 1/v<sub>v</sub>)</td><td>this route; the route chosen by travel time instead</td><td>46 min; 44 min</td></tr>
+<tr><td><b>17. Check on the travel day</b></td><td class='math2'>real RCI on the travel day, same map rules</td><td>27 Oct 2024: RCI 42.2 psi</td><td>route passable; 45 min (best possible 44)</td></tr>
+<tr><td><b>18. What is radioed</b></td><td class='math2'>4-byte day number + 7 × 16-bit firmness values</td><td>4 + 7 × 2</td><td>18 bytes</td></tr>
+</table>
+<div class="box blue"><b class="t">Reading the chain</b>
+<ul>
+<li><b>Stages 1–4 run on the vehicle once a day</b> and serve every band: one firmness forecast,
+minus each band's margin.</li>
+<li><b>Stages 5–7 are done once, in advance</b>: every vehicle's VCI, and one planning vehicle per band.</li>
+<li><b>Stages 8–11 turn the forecast into the band's call</b>: SLOW-GO, how many vehicles a
+track carries, and how fast on level ground.</li>
+<li><b>Stages 12–16 build the map and the route</b>: each cell's firmness, its passability, the
+route, and the trip time.</li>
+<li><b>Stage 17 is the backtest's check</b>: the travel day's real firmness was 42.2 psi, and
+the route is scored against it. Stage 18 is what crosses the radio link.</li>
+</ul></div>
+
+<h2>8. Your questions, answered</h2>
+<h3>8.1 Should we use JEPA?</h3>
 <p><b>Not for this poster.</b> JEPA teaches an image model without labels by predicting hidden
 parts of images. It needs a large amount of imagery and a labelled task to show it helped. We
 have three seasonal snapshots of one area and no labels. It is a good future-work line: a
 JEPA-style model trained on years of Sentinel-1 and Sentinel-2 images could learn how the
 terrain changes over time.</p>
-<h3>7.2 Did the forecasting models need retraining?</h3>
+<h3>8.2 Did the forecasting models need retraining?</h3>
 <p><b>Yes, but not because of the new data.</b> The vehicle file and the maps still add nothing
 the forecaster can use, since it predicts one plateau-wide firmness from the weather log. It was
 retrained because the firmness target itself changed (Section 4.2). That took under a minute on
 the GPU.</p>
-<h3>7.3 Should we train a separate GO / SLOW-GO / NO-GO classifier?</h3>
+<h3>8.3 Should we train a separate GO / SLOW-GO / NO-GO classifier?</h3>
 <p><b>No.</b> The labels are firmness with cut-offs applied, so a classifier would learn a blurrier
 copy of the forecast. One forecaster serves every vehicle, because only the cut-offs change.
 There are no ground-truth labels for the map. The per-band margin does the decision job.</p>
-<h3>7.4 Can we model how vehicles change the terrain?</h3>
+<h3>8.4 Can we model how vehicles change the terrain?</h3>
 <p><b>Yes, and it is built</b> (Step 7): pass-count wear on a shared map. Ruts that persist and recover
 over days, and full soil physics, remain future work. Both need measurements we do not have.</p>
-<h3>7.5 Can we use fuzzy sets?</h3>
+<h3>8.5 Can we use fuzzy sets?</h3>
 <p><b>Yes, and it is built.</b> Smooth curves replace Liu's step tables, and the fuzzy AND (minimum)
 combines factors without needing a veto. The comparison against Liu's weighted average is in Step 6.</p>
-<h3>7.6 Do the vehicles have to be Indian?</h3>
+<h3>8.6 Do the vehicles have to be Indian?</h3>
 <p><b>No.</b> This is preliminary work. The poster uses every usable vehicle in the file, of any
 origin, reported by firmness band.</p>
 
-<h2>8. Limitations to be honest about</h2>
+<h2>9. Limitations to be honest about</h2>
 <table>
 <tr><th>Limitation</th><th>Why it matters</th><th>What we do</th></tr>
 <tr><td>Ground firmness is computed, not measured</td><td>No cone-penetrometer readings from Pachmarhi</td><td>State it; field readings are the first next step</td></tr>
@@ -585,14 +770,19 @@ origin, reported by firmness band.</p>
 <tr><td>Margins move between years</td><td>By up to 7.2 psi</td><td>Score across years; state it</td></tr>
 <tr><td>No weather forecast input</td><td>Monsoon onset cannot be foreseen</td><td>Show it openly (Figure 4)</td></tr>
 <tr><td>Convoy wear curve is our assumption</td><td>Not a published law</td><td>Say so</td></tr>
+<tr><td>Passes between 1 and 50 follow the same assumed curve</td><td>Only the two end points are published</td><td>Say so</td></tr>
+<tr><td>Speed: same power at every speed, 80% efficiency, game top speed</td><td>No gearbox data; speeds scale with the efficiency</td><td>State it; report speeds as upper bounds</td></tr>
+<tr><td>No vegetation, ride or obstacle speed limits</td><td>NRMM checks all three; we have no stem or roughness data</td><td>Land-cover score stands in; say so</td></tr>
 <tr><td>Rainfall source changes in 2025</td><td>IMD to ERA5, with a different day definition</td><td>Documented</td></tr>
 </table>
 
-<h2>9. Status and what is needed from you</h2>
+<h2>10. Status and what is needed from you</h2>
 <div class="box green"><b class="t">Done</b>
 <ul>
 <li>Vehicle table (1,145 vehicles), terrain grid, roads, forecaster, margins, planner,
 backtest, trade-off sweep, convoy experiment, edge numbers.</li>
+<li>Passes per track, NRMM soil speed, routing by travel time and its backtest; all in the edge
+bundle too.</li>
 <li>A0 poster: <code>poster/poster.pdf</code>. 2-page abstract: <code>paper/abstract.pdf</code>.</li>
 <li>Both checked: the abstract is exactly 2 pages, ACM format, with all fonts embedded.</li>
 </ul></div>
@@ -600,7 +790,7 @@ backtest, trade-off sweep, convoy experiment, edge numbers.</li>
 <ol>
 <li><b>Author names, affiliations and emails</b>, for both files. Review is single-blind, so they must be on the abstract.</li>
 <li><b>Institution logo</b>, a <b>project URL</b> (for the poster's QR code) and a <b>contact email</b>.</li>
-<li><b>A read-through by co-authors or your advisor.</b> The modelling choices listed in Section 8
+<li><b>A read-through by co-authors or your advisor.</b> The modelling choices listed in Section 9
 should be agreed by everyone whose name goes on it.</li>
 <li><b>Check whether your institution must approve defence-related publications.</b> All data is
 public, but some institutions require sign-off.</li>
@@ -615,7 +805,7 @@ back; page 2 has room for it.</li>
 <li>One author presents in person, 4–7 January 2027.</li>
 </ol>
 
-<h2>10. Where everything is</h2>
+<h2>11. Where everything is</h2>
 <table>
 <tr><th>Folder</th><th>Contents</th></tr>
 <tr><td><code>data/</code></td><td>Weather record, vehicle file, Earth Engine GeoTIFFs, OpenStreetMap roads</td></tr>
@@ -630,7 +820,9 @@ back; page 2 has room for it.</li>
 <tr><th>Command</th><th>What it does</th></tr>
 <tr><td><code>python -m traffic.check</code></td><td>Checks packages, files and data loading</td></tr>
 <tr><td><code>python -m traffic.forecast</code></td><td>Retrains the forecaster and margins (under a minute)</td></tr>
-<tr><td><code>python -m traffic.planner</code></td><td>Backtest and convoys (about 12 minutes); <code>--tradeoff</code> for the margin sweep (about 15)</td></tr>
+<tr><td><code>python -m traffic.forecast --decisions-only</code></td><td>Re-tunes the margins after a change to the vehicle table, without retraining</td></tr>
+<tr><td><code>python -m traffic.mobility</code></td><td>Passes and level-ground speed of each band's planning vehicle</td></tr>
+<tr><td><code>python -m traffic.planner</code></td><td>Backtest and convoys (about 12 minutes); <code>--tradeoff</code> for the margin sweep (about 15); <code>--speed</code> for the travel-time backtest</td></tr>
 <tr><td><code>python -m traffic.poster_figs</code> then <code>poster_build</code></td><td>Rebuilds the poster</td></tr>
 <tr><td><code>python -m traffic.abstract_build</code></td><td>Rebuilds the abstract and reports its page count</td></tr>
 <tr><td><code>python -m traffic.explainer_build</code></td><td>Rebuilds this document</td></tr>
@@ -644,25 +836,101 @@ back; page 2 has room for it.</li>
 <tr><td>Backtest</td><td>Testing a method on past data as if live, then checking against what happened</td></tr>
 <tr><td>Band (A–E)</td><td>A range of one-pass vehicle cone index; results are reported per band</td></tr>
 <tr><td>Cone index / RCI</td><td>Ground firmness from pushing a cone into the soil; RCI also allows for traffic weakening it</td></tr>
+<tr><td>Contact pressure factor (CPF)</td><td>Vehicle weight over the area of its tracks or tyres, in psi; NRMM's soil relations differ below and above 4 psi</td></tr>
+<tr><td>Drawbar pull (D/W)</td><td>The pull a vehicle has left after overcoming the soil's drag, as a fraction of its weight</td></tr>
 <tr><td>Edge computing</td><td>Running software on a device in the field instead of a data centre</td></tr>
 <tr><td>ERA5 / ERA5-Land</td><td>Global reconstructions of past weather and land conditions</td></tr>
 <tr><td>Fuzzy AND</td><td>Combining 0–1 scores by taking the smallest</td></tr>
 <tr><td>GEE</td><td>Google Earth Engine, a platform for processing satellite data</td></tr>
 <tr><td>GRU</td><td>Gated recurrent unit: a neural network that reads a sequence of days one at a time [6]</td></tr>
 <tr><td>Held back</td><td>A planner found no route although one existed: the costly error</td></tr>
+<tr><td>Excess firmness (x)</td><td>RCI − VCI₁: how far the ground is above what the vehicle needs</td></tr>
 <tr><td>Mobility Index (MI)</td><td>A US Army formula turning vehicle specifications into one number, from which VCI follows</td></tr>
+<tr><td>Motion resistance (R/W)</td><td>The soil's drag on a moving vehicle, as a fraction of its weight</td></tr>
+<tr><td>NRMM</td><td>NATO Reference Mobility Model: the standard model of cross-country vehicle speed</td></tr>
+<tr><td>Passes</td><td>How many vehicles one track carries before it fails: 1 at VCI₁, 50 at VCI₅₀</td></tr>
 <tr><td>NDVI</td><td>A satellite index of green vegetation; used here for canopy density</td></tr>
 <tr><td>Persistence</td><td>The forecast "tomorrow equals today"</td></tr>
 <tr><td>Precision / recall</td><td>Of warnings given, how many were right / of real events, how many were warned about</td></tr>
 <tr><td>Ridge regression</td><td>A straight-line model protected against over-fitting</td></tr>
 <tr><td>Safety margin</td><td>An amount subtracted from the forecast so borderline days count as NO-GO</td></tr>
+<tr><td>Slip</td><td>The share of track or wheel movement lost to soil shearing instead of moving the vehicle</td></tr>
 <tr><td>Stuck</td><td>A planner's route crossed ground that was NO-GO on the travel day: the dangerous error</td></tr>
 <tr><td>SWI</td><td>Soil wetness index: the two soil layers combined, 0 driest to 1 wettest</td></tr>
 <tr><td>TWI</td><td>Topographic wetness index: from the elevation map, high where water collects</td></tr>
 <tr><td>VCI₁ / VCI₅₀</td><td>Firmness a vehicle needs to pass once / fifty times on the same track</td></tr>
 </table>
 
-<h2>B. References</h2>
+<h2>B. Every formula: where it comes from and how it was set</h2>
+<p>Each formula is marked <b>published</b> (taken from a source, with its numbers), <b>standard</b>
+(a textbook method), or <b>ours</b> (a choice made in this project). For ours, the last column
+says how the numbers were chosen. Section 7 shows each one applied to a real trip.</p>
+
+<h3>B.1 Weather to ground firmness</h3>
+<table class="formulas">
+<tr><th>Formula</th><th>What it does</th><th>Source</th><th>How it was set</th></tr>
+<tr><td>s = (θ − 20)/(49 − 20), clipped to 0–1</td><td>Scales each soil layer's moisture θ (vol%) to 0 driest, 1 wettest</td><td>Standard scaling</td><td>20 and 49 are the driest and wettest ERA5 values in the 11 years (20.7, 48.85), rounded</td></tr>
+<tr><td>SWI = 0.35·s<sub>0–7 cm</sub> + 0.65·s<sub>7–28 cm</sub></td><td>One wetness number for the depth a vehicle works in</td><td>Ours</td><td>Judgement: vehicles sink into roughly the top 30 cm, most of it in the deeper layer. ANAMOB's critical layers, 0–15 cm for one pass and 15–30 cm for fifty [12], would support about 0.47 / 0.53 for one pass</td></tr>
+<tr><td>RCI = 300·e<sup>−2.996·SWI</sup></td><td>Firmness falls steeply as soil wets, then levels off</td><td>Ours, one end published</td><td>Two anchors: 15 psi when saturated, from field lanes where a 4×4 bogged down [2]; 300 psi when dry, assumed. 2.996 = ln(300/15) makes the curve pass through both. The published alternative, ln RCI = a + b·ln(moisture) with constants per soil type [3], needs the soil type</td></tr>
+<tr><td>× (1 − 0.15·min(R<sub>3 days</sub>/50 mm, 1))</td><td>Briefly softens the surface after rain</td><td>Ours</td><td>Assumed: daily soil moisture misses standing water and surface mud; at most 15%, reached at 50 mm in 3 days</td></tr>
+<tr><td>ET₀ = 0.0023·(T<sub>mean</sub> + 17.8)·√(T<sub>max</sub> − T<sub>min</sub>)·R<sub>a</sub>·0.408</td><td>Evaporation demand, a forecaster input</td><td>Published [15]</td><td>As published; R<sub>a</sub> from latitude and day of year</td></tr>
+<tr><td>API<sub>t</sub> = k·API<sub>t−1</sub> + rain<sub>t−1</sub></td><td>Rain memory that fades, a forecaster input</td><td>Standard [19]</td><td>k = 0.85 and 0.95: a short and a long memory</td></tr>
+</table>
+
+<h3>B.2 The forecast and the call</h3>
+<table class="formulas">
+<tr><th>Formula</th><th>What it does</th><th>Source</th><th>How it was set</th></tr>
+<tr><td>RCI<sub>t+h</sub> = RCI<sub>t</sub> + ½·(ΔGRU + Δridge)</td><td>Forecasts the change, not the level, then adds today back</td><td>Ours</td><td>Firmness barely changes day to day, so learning the change works far better (Section 5.1). GRU and ridge, 3 GRUs averaged, chosen on the 2022–23 validation years</td></tr>
+<tr><td>m(band, lead) = smallest margin, in 0.25 psi steps, catching ≥ 90% of NO-GO days</td><td>Lowers the forecast so borderline days count as NO-GO</td><td>Ours</td><td>90% recall is the target; pooled over the band's vehicles; tuned on one test year, scored on the other</td></tr>
+<tr><td>NO-GO if RCI − m &lt; VCI₁; SLOW-GO if &lt; VCI₅₀; else GO</td><td>The call</td><td>Labels published [16]; VCI₁ line published [12]; VCI₅₀ line ours</td><td>NO-GO below VCI₁ is what VCI₁ means. Putting GO at VCI₅₀ (fifty vehicles can follow) is our mapping onto the three labels</td></tr>
+</table>
+
+<h3>B.3 Vehicles</h3>
+<table class="formulas">
+<tr><th>Formula</th><th>What it does</th><th>Source</th><th>How it was set</th></tr>
+<tr><td>MI = (CPF·WF/(TEF·GF) + BF − CF)·EF·TF (tracked); WLF in place of BF (wheeled)</td><td>Turns a vehicle's specifications into one mobility number</td><td>Published [12, 13]</td><td>As published. CPF contact pressure; WF weight factor (steps at 50, 70, 100 thousand lb tracked; a line per load range wheeled, the range above 31,500 lb from NRMM II [14]); TEF track or tyre width; GF grousers or chains; BF / WLF load per road wheel or axle; CF clearance/10; EF 1.05 below 10 hp per short ton; TF 1.05 for manual gearboxes</td></tr>
+<tr><td>VCI₁ = 7.0 + 0.2·MI − 39.2/(MI + 5.6); VCI₅₀ = 19.27 + 0.43·MI − 125.79/(MI + 7.08)</td><td>Tracked: firmness needed for 1 and 50 passes</td><td>Published [12]</td><td>As published; reproduces the M1 example [3]</td></tr>
+<tr><td>VCI₁ = (11.48 + 0.2·MI − 39.2/(MI + 3.74))·DCF, or 4.1·MI<sup>0.446</sup>·DCF above MI 115; VCI₅₀ = (28.23 + 0.43·MI − 92.67/(MI + 3.67))·DCF</td><td>Wheeled: the same</td><td>Published [12, 14, 2]</td><td>As published. DCF = (0.15/(δ/h))<sup>0.25</sup> corrects for tyre deflection; we assume 15% deflection, so DCF = 1. Reproduces six published 8×8 vehicles [14]</td></tr>
+<tr><td>Track width, length, road wheels and clearance by weight</td><td>Fills in running gear the file lacks</td><td>Ours</td><td>Straight-line interpolation on weight between six real vehicles, M22 Locust to Tiger II</td></tr>
+<tr><td>Tyre size by axle load</td><td>The same for wheeled vehicles</td><td>Ours</td><td>Five standard military tyre sizes, from HMMWV to heavy launcher, picked by the load per axle</td></tr>
+<tr><td>Half-track = worse of track unit and front axle</td><td>Rates a vehicle with both</td><td>Ours</td><td>No published formula. Track unit rated as tracked; steered axle rated as wheeled carrying 25% of the weight</td></tr>
+<tr><td>Bands A–E at VCI₁ 18, 21, 24, 30 psi</td><td>Groups vehicles with similar needs</td><td>Ours</td><td>Read off the fleet's VCI₁ spread so each band is mostly one kind of vehicle</td></tr>
+<tr><td>Planning vehicle = band medians</td><td>One vehicle stands for each band</td><td>Ours</td><td>Median VCI₁ and VCI₅₀ of the band; majority type; median power-to-weight and contact pressure of that type</td></tr>
+</table>
+
+<h3>B.4 The map</h3>
+<table class="formulas">
+<tr><th>Formula</th><th>What it does</th><th>Source</th><th>How it was set</th></tr>
+<tr><td>Slope score</td><td>0–1 passability by slope, per vehicle type</td><td>Published [1], smoothed by us</td><td>Liu et al.'s Table 1, itself vehicle speed on each slope class relative to flat ground. A smooth curve through the middle of each class replaces the steps</td></tr>
+<tr><td>Land-cover score</td><td>0–1 passability by land cover</td><td>Published [1], tree split ours</td><td>Liu et al.'s Table 3. Tree cover goes to their forest, bush-wood or grassland row by peak NDVI: 0.75 and above, 0.60–0.75, below 0.60</td></tr>
+<tr><td>TWI = ln(a / tan β)</td><td>High where water collects</td><td>Standard [7, 17]</td><td>a is the area draining through a cell (D8 flow routing), β its slope</td></tr>
+<tr><td>shift = 0.10·clip(z<sub>TWI</sub>, −2, 2); RCI<sub>cell</sub> = RCI·e<sup>−2.996·shift</sup></td><td>Spreads one plateau value over the map</td><td>Ours</td><td>A rule of thumb with no field data: up to 0.2 wetter in hollows, 0.2 drier on ridges, average unchanged. The second formula follows from the firmness formula</td></tr>
+<tr><td>Soil score: 0 below VCI₁, then 0.25 + 0.75·(RCI − VCI₁)/(VCI₅₀ − VCI₁), up to 1</td><td>Soil passability</td><td>Ours</td><td>0.25 at VCI₁ makes the worst SLOW-GO ground four times slower than firm ground; straight line up to VCI₅₀</td></tr>
+<tr><td>μ = min(slope, cover, soil)</td><td>One passability score per cell</td><td>Standard fuzzy AND [8]</td><td>Compared against Liu's weighted mean in Step 6</td></tr>
+</table>
+
+<h3>B.5 Routes</h3>
+<table class="formulas">
+<tr><th>Formula</th><th>What it does</th><th>Source</th><th>How it was set</th></tr>
+<tr><td>cost = step·½(1/μ<sub>u</sub> + 1/μ<sub>v</sub>)</td><td>Relative travel time of a step between cells u and v</td><td>Ours</td><td>Treats μ as a fraction of full speed, as Liu et al.'s slope scores are</td></tr>
+<tr><td>Dijkstra's algorithm</td><td>Finds the cheapest route exactly</td><td>Standard [18]</td><td>—</td></tr>
+<tr><td>Firmness needed on pass n = VCI₁ + (VCI₅₀ − VCI₁)·ln n / ln 50</td><td>Convoy wear</td><td>Ours, ends published</td><td>Joins the two published points, 1 and 50 passes [12], with a log curve</td></tr>
+<tr><td>Track updates: 4 bytes per cell; forecast: 4 + 7 × 2 = 18 bytes</td><td>What crosses the radio link</td><td>Ours</td><td>A 32-bit cell number per cell of track; a 32-bit day number and seven 16-bit firmness values</td></tr>
+</table>
+
+<h3>B.6 Passes and speed</h3>
+<table class="formulas">
+<tr><th>Formula</th><th>What it does</th><th>Source</th><th>How it was set</th></tr>
+<tr><td>n = 50<sup>(RCI − VCI₁)/(VCI₅₀ − VCI₁)</sup></td><td>Vehicles one track carries</td><td>Ours, ends published</td><td>The wear rule above, solved for n</td></tr>
+<tr><td>D/W, R/W, TFOR/W, slip S (tables in Step 8)</td><td>Pull, drag, most traction and slip on fine-grained soil, from excess firmness</td><td>Published [13]</td><td>As published (NRMM I subroutines IV3 and IV5), from Rula and Nuttall [12] revised by Turnage (1972); two sets each, for contact pressure below and above 4 psi. Slip is set to 0 rather than NRMM's 1 when the force goes negative downhill</td></tr>
+<tr><td>load = sin θ + R/W·cos θ; stuck if TFOR/W·cos θ &lt; load</td><td>Force needed on a slope; whether the soil can supply it</td><td>Published [13]</td><td>As published (subroutine IV8); θ from the elevation difference along each step</td></tr>
+<tr><td>v = η·P/(W·load)·(1 − S), capped at top speed</td><td>Speed at which engine power meets the force needed</td><td>Method published [13]; constant power ours</td><td>NRMM builds the pull at each speed from engine torque and gears; with no gearbox data we take constant power. η = 80% assumed. Top speed is the game template value</td></tr>
+<tr><td>Paved road: R/W = 0.045 (tracks), 0.007 + 0.0939/psi (tyres)</td><td>Rolling resistance on hard surface</td><td>Published [13]</td><td>Tyre pressure 75 psi, inside the 50–105 psi road pressures of the 8×8s in [14]; road traction 0.8, which only limits steep grades</td></tr>
+<tr><td>Off-road speed × land-cover score</td><td>Slows forest and shrub</td><td>Ours</td><td>Stands in for NRMM's vegetation limits, for which we have no stem data</td></tr>
+<tr><td>time = Σ step·½(1/v<sub>u</sub> + 1/v<sub>v</sub>)</td><td>Trip time in hours</td><td>Ours</td><td>Half of each step at each end cell's speed, as for the cost above</td></tr>
+</table>
+
+<h2 class="cont">C. References</h2>
 <ol>
 <li>Liu, Q., You, X., Zhang, X., Zuo, J. (2025). Construction of dynamic trafficability map for unmanned vehicles considering multiple environmental factors and path planning. <i>Scientific Reports</i> 15:9957. doi:10.1038/s41598-025-94377-4</li>
 <li>Roșca, P., Ciobotaru, T., Olaru, G., Puică, C. (2018). Considerations regarding vehicle cone index for fine-grained soil. <i>Journal of Military Technology</i> 1(2):39–44. doi:10.32754/JMT.2018.2.07</li>
@@ -675,5 +943,13 @@ back; page 2 has room for it.</li>
 <li>OpenStreetMap contributors (2026). https://www.openstreetmap.org, data under ODbL.</li>
 <li>ICDCN 2027 Call for Posters. cs3-lab.github.io/icdcn/submission/call-for-poster.html</li>
 <li>Project files: README.md, traffic/*.py, outputs/.</li>
+<li>Rula, A. A., Nuttall, C. J., Jr. (1971). An analysis of ground mobility models (ANAMOB). Technical Report M-71-4, US Army Engineer Waterways Experiment Station, Vicksburg, MS.</li>
+<li>Haley, P. W., Jurkat, M. P., Brady, P. M., Jr. (1979). NATO Reference Mobility Model, Edition I, Users Guide, Volume I: Operational Modules. Technical Report 12503, US Army Tank-Automotive Research and Development Command, Warren, MI.</li>
+<li>Roșca, P., Ciobotaru, T. (2017). 8×8 armoured personnel carrier mobility evaluations using vehicle cone index. <i>MTA Review</i> 27(2):77–82.</li>
+<li>Hargreaves, G. H., Samani, Z. A. (1985). Reference crop evapotranspiration from temperature. <i>Applied Engineering in Agriculture</i> 1(2):96–99.</li>
+<li>Headquarters, Department of the Army (1990). FM 5-33, Terrain Analysis. Washington, DC.</li>
+<li>O'Callaghan, J. F., Mark, D. M. (1984). The extraction of drainage networks from digital elevation data. <i>Computer Vision, Graphics, and Image Processing</i> 28(3):323–344.</li>
+<li>Dijkstra, E. W. (1959). A note on two problems in connexion with graphs. <i>Numerische Mathematik</i> 1:269–271.</li>
+<li>Kohler, M. A., Linsley, R. K. (1951). Predicting the runoff from storm rainfall. Research Paper 34, US Weather Bureau, Washington, DC.</li>
 </ol>
 </body></html>

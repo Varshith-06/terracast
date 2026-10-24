@@ -45,7 +45,7 @@ RAIN_PENALTY_MAX = 0.15
 RAIN_PENALTY_SCALE = 50.0      # mm of 3-day antecedent rainfall for full penalty
 
 # --------------------------------------------------------------- vehicle definitions
-# VCI1 / VCI50 = vehicle cone index for 1 and 50 passes (kPa).
+# VCI1 / VCI50 = vehicle cone index for 1 and 50 passes (psi-convention units, as RCI).
 # GO:      RCI >= VCI50   (sustained traffic, 50 passes)
 # SLOW-GO: VCI1 <= RCI < VCI50   (a few passes; ruts, reduced speed)
 # NO-GO:   RCI < VCI1     (immobilisation on the first pass)

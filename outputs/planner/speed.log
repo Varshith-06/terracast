@@ -1,0 +1,23 @@
+  speed 2024-01-01  maps 45
+  speed 2024-03-01  maps 1450
+  speed 2024-04-30  maps 2091
+  speed 2024-06-29  maps 2610
+  speed 2024-08-28  maps 2806
+  speed 2024-10-27  maps 3288
+  speed 2024-12-26  maps 3644
+  speed 2025-02-24  maps 3725
+  speed 2025-04-25  maps 3926
+  speed 2025-06-24  maps 4015
+  speed 2025-08-23  maps 4101
+  speed 2025-10-22  maps 4182
+  speed 2025-12-21  maps 4315
+               stuck_pct  held_pct  ...  pred_error_pct  no_pred_pct
+h routing                           ...                             
+1 fastest           0.77      0.71  ...            0.00         0.00
+  passability       0.74      0.70  ...           -0.03         0.16
+3 fastest           1.64      2.35  ...            0.31         0.00
+  passability       1.65      2.34  ...            0.32         0.10
+7 fastest           2.88      4.49  ...            0.96         0.00
+  passability       2.93      4.49  ...            1.09         0.07
+
+[6 rows x 6 columns]

@@ -118,6 +118,7 @@ S["ridge"], _ = timeit(lambda: fc_model.ridge(Xtab))
 S["gru_x3"], _ = timeit(lambda: fc_model.gru(win))
 S["forecast_total"], fc = timeit(lambda: fc_model.forecast(LOG))
 S["assess_all_bands"], _ = timeit(lambda: [fc_model.assess(fc, band=b) for b in "ABCDE"])
+S["outlook_all_bands"], _ = timeit(lambda: [fc_model.outlook(fc, band=b) for b in "ABCDE"])
 mem["after_forecast"] = rss_mb()
 
 # ------------------------------------------------------------------ planner stages
@@ -129,6 +130,8 @@ S["fuzzy_and"], mu = timeit(lambda: pl.passability(v["kind"], soil))
 S["graph_build"], G = timeit(lambda: pl.graph(mu))
 S["dijkstra_1_trip"], _ = timeit(lambda: pl.routes(mu, pairs[:1], G))
 S["replan_1_trip"], _ = timeit(lambda: pl.plan(rci, band, pairs[:1]))
+S["time_graph_build"], _ = timeit(lambda: pl.hours_graph(rci, v))
+S["replan_by_time_1_trip"], _ = timeit(lambda: pl.plan(rci, band, pairs[:1], by="time"))
 S["end_to_end_1_trip"], _ = timeit(lambda: E.end_to_end(fc_model, pl, LOG, band, pairs[:1], h))
 cx = expected["convoy"]
 S["convoy_10_wear_aware"], cv = timeit(lambda: pl.convoy(cx["rci"], cx["band"], cx["src"], cx["dst"]),
@@ -173,7 +176,12 @@ ok_fc = np.allclose(fc["rci"], expected["forecast"]["rci"], atol=0.05)
 got = pl.plan(rci, band, pairs)
 ok_rt = all((q is None) == (e["cells"] is None) and (q is None or len(q) == e["cells"])
             for (q, _), e in zip(got, expected["routes"]["trips"]))
+got = pl.plan(rci, band, pairs, by="time")
+ok_tm = all((q is None) == (e["cells"] is None)
+            and (q is None or (len(q) == e["cells"] and abs(tt - e["hours"]) < 1e-3))
+            for (q, tt), e in zip(got, expected["routes_by_time"]["trips"]))
 R["correctness"] = dict(forecast_matches=bool(ok_fc), routes_match=bool(ok_rt),
+                        time_routes_match=bool(ok_tm),
                         convoy_matches=list(cv) == [cx["through"], cx["bytes"]])
 
 # ------------------------------------------------------------------ accuracy (optional)

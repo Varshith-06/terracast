@@ -122,7 +122,7 @@ trips of 8--25\,km between points on the road network and score each plan agains
 ground on the day of travel. A plan is \emph{stuck} if its route crosses a NO-GO cell and
 \emph{held} if it finds no route when one existed (Table~\ref{tab:bt}). Planning on the
 forecast beats today's map on both errors: 1.6\% against 2.1\% stuck at 3 days
-($-$24\%) and 2.9\% against 3.9\% at 7 days ($-$26\%), with fewer
+($-$24\%) and 2.9\% against 4.0\% at 7 days ($-$27\%), with fewer
 trips held back. A margin on today's value is slightly safer at its tuned setting but holds
 back far more trips. Sweeping both margins (Fig.~\ref{fig:tradeoff}) shows the forecast
 dominating: at an equal stuck rate it holds back 40\% (3 days) and 31\% (7
@@ -142,9 +142,9 @@ comes in the days around the transitions.
     Planner & stuck & held & stuck & held \\
     \midrule
     Terrain only            & 35.5\% & 0.0\% & 35.5\% & 0.0\% \\
-    Today's map~\cite{liu2025} & 2.1\% & 3.0\% & 3.9\% & 5.8\% \\
+    Today's map~\cite{liu2025} & 2.1\% & 3.0\% & 4.0\% & 5.8\% \\
     Today + margin          & 1.5\% & 4.4\% & 2.5\% & 8.4\% \\
-    \textbf{Forecast + margin} & \textbf{1.6\%} & \textbf{2.3\%} & \textbf{2.9\%} & \textbf{4.4\%} \\
+    \textbf{Forecast + margin} & \textbf{1.6\%} & \textbf{2.3\%} & \textbf{2.9\%} & \textbf{4.5\%} \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -160,11 +160,11 @@ comes in the days around the transitions.
 
 \textbf{Convoys and the network.} On 54 soft days, ten heavy tracked vehicles that
 follow the leader get 5.5 through on average; re-planning on the shared pass-count
-map gets 9.2 through, for 6.9\,kB of track updates per convoy. Wheeled vehicles
-gain less (6.4 to 7.0) because the forest leaves them few parallel lanes. A
+map gets 9.2 through, for 7.2\,kB of track updates per convoy. Wheeled vehicles
+gain less (6.8 to 7.3) because the forest leaves them few parallel lanes. A
 7-day forecast is 18\,B, against 76\,kB for one passability map, so the link
 carries 4,200$\times$ less when vehicles rebuild maps locally. The model is
-2.0\,MB, and re-planning a route takes 25\,ms.
+2.0\,MB, and re-planning a route takes 19\,ms.
 
 \section{Limitations and Next Steps}
 RCI is computed from modelled soil moisture in one 9\,km cell, not measured, and spreading

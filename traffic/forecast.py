@@ -212,5 +212,18 @@ def main():
     print(f"-> {OUT.relative_to(paths.ROOT)}   total {time.time()-t0:.0f}s")
 
 
+def decisions_only():
+    """Re-tune margins and rescore decisions from the saved test forecasts, for a change
+    to the vehicle table that leaves the forecaster itself untouched."""
+    fc = np.load(OUT / "test_forecasts.npz")
+    years = pd.to_datetime(fc["dates"]).year.values
+    fleet = V.add_vci(V.load_vehicles())
+    dec = decision_table(fc["actual"], {k: fc[k.replace("+", "_")] for k in ["Persistence", "GRU+Ridge"]},
+                         years, fleet)
+    dec.to_csv(OUT / "decisions_by_band.csv", index=False)
+    print(dec[dec.h.isin([1, 3, 7])].round(3).to_string(index=False))
+
+
 if __name__ == "__main__":
-    main()
+    import sys
+    decisions_only() if "--decisions-only" in sys.argv else main()

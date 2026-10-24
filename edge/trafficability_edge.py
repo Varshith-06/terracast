@@ -7,7 +7,14 @@ Vehicle trafficability on the edge: the runtime for the two pickles.
                                             531,228 parameters.
     vehicle_trafficability_planner.pkl      firmness -> passability map of the Pachmarhi
                                             plateau (90 m grid, 76,218 cells) -> fastest
-                                            route that avoids NO-GO ground (Dijkstra)
+                                            route that avoids NO-GO ground (Dijkstra),
+                                            with travel time in hours from the speed model
+
+SLOW-GO in numbers (same code as traffic/mobility.py in the repo):
+    passes  vehicles one track carries before it fails, 50 ** ((RCI - VCI1) / (VCI50 - VCI1))
+    speed   km/h from the NRMM Edition I fine-grained soil relations (drawbar pull, motion
+            resistance, soil-limited traction, slip) against slope, with a constant-power rim
+            pull; see traffic/mobility.py for sources and assumptions
 
 The pickles hold only plain Python types (arrays as dtype, shape and raw bytes), so they
 unpickle with any Python 3.8+ and any numpy. Each carries a sample input: the forecaster a
@@ -22,7 +29,9 @@ GRU also runs in plain numpy, same forecasts to 1e-4 psi).
     log = fc.sample_log()                      # or a CSV / DataFrame with the same columns
     f = fc.forecast(log)                       # dict: date, rci_today, rci[0..6] = days 1..7
     fc.assess(f, band="D")                     # GO / SLOW-GO / NO-GO for days 1..7
+    fc.outlook(f, band="D")                    # + passes per track and level-ground km/h
     f, rci, routes = end_to_end(fc, pl, log, "D", pl.sample_trips(), h=3)   # travel in 3 days
+    pl.plan(rci, "D", pl.sample_trips(), by="time")   # routes by travel time, hours
 
 Bands group vehicles by VCI1 (firmness needed for one pass): A < 18, B 18-21, C 21-24,
 D 24-30, E >= 30 psi. The log needs 400 consecutive days (Date as dd-mm-yyyy).
@@ -39,6 +48,59 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import dijkstra
 
 CLASSES = ("NO-GO", "SLOW-GO", "GO")
+
+
+# ===================================================== passes and speed (traffic.mobility)
+G_ACC, HP_W = 9.81, 745.7
+ETA = 0.80            # engine-to-sprocket/wheel efficiency (assumed)
+ROAD_PSI = 75.0       # tyre pressure on paved road (assumed)
+ROAD_TRACTION = 0.8   # traction coefficient on dry pavement (assumed)
+# NRMM Edition I fine-grained soil (TARADCOM TR 12503, subroutines IV3, IV5), keyed by
+# (running gear, contact pressure factor >= 4 psi)
+_PULL = {("tracked", False): (.544, .0463, .0702, .076), ("tracked", True): (.455, .0392, .0526, .056),
+         ("wheeled", False): (.3885, .0265, .0358, .046), ("wheeled", True): (.379, .0219, .0257, .033)}
+_RES = {("tracked", False): (.045, 2.3075, 6.5, .4, .072), ("tracked", True): (.045, 2.3075, 6.5, .4, .052),
+        ("wheeled", False): (.035, .861, 3.249, .3, .043), ("wheeled", True): (.045, 2.3075, 6.5, .4, .029)}
+_TFOR = {("tracked", False): (.758, .82), ("tracked", True): (.671, .71),
+         ("wheeled", False): (.674, .76), ("wheeled", True): (.585, .655)}
+_SLIP = {("tracked", False): (.0257, -.0161, .01519, .8353), ("tracked", True): (.0733, -.0063, .00734, .7177),
+         ("wheeled", False): (.0621, -.021, .01888, .7794), ("wheeled", True): (.084, -.016, .01414, .6697)}
+
+
+def passes(rci, vci1, vci50):
+    """Vehicles one track carries before it fails: 0 below VCI1, 50 at VCI50, more above."""
+    rci = np.asarray(rci, float)
+    return np.where(rci < vci1, 0.0, 50.0 ** ((rci - vci1) / (vci50 - vci1)))
+
+
+def speed(rci, sin_t, veh, paved=False, need=None):
+    """Steady speed (km/h) on soil of strength rci (psi) along a slope of sine sin_t
+    (+ uphill). veh: dict(kind, vci1, cpf, hp_per_t, vmax_kmh). 0 where it cannot move."""
+    rci, sin_t, paved = np.broadcast_arrays(np.asarray(rci, float), np.asarray(sin_t, float),
+                                            np.asarray(paved, bool))
+    need = veh["vci1"] if need is None else need
+    key = ("wheeled" if veh["kind"] == "wheeled" else "tracked", bool(veh["cpf"] >= 4.0))
+    cos_t = np.sqrt(1.0 - sin_t ** 2)
+    x = rci - need
+    xp = np.maximum(x, 0.0)
+    a, b, c, s = _PULL[key]
+    t = a + b * xp
+    d = np.where(x < 0, s * x, t - np.sqrt(t * t - c * xp))
+    p, q, r0, u, s = _RES[key]
+    r = np.where(x < 0, u - s * x, p + q / (xp + r0))
+    k1, k2 = _TFOR[key]
+    cf = d - k1 + r
+    tfor = np.where(paved, ROAD_TRACTION, cf + k2)
+    r = np.where(paved, .007 + .0939 / ROAD_PSI if veh["kind"] == "wheeled" else .045, r)
+    load = sin_t + r * cos_t
+    a, b, c, dd = _SLIP[key]
+    y = load / cos_t - cf
+    yy = np.minimum(y, dd - 1e-6)
+    sl = np.where(y >= dd, 1.0, np.clip(a * yy + b + c / (dd - yy), 0.0, 1.0))
+    sl = np.where(paved, 0.0, sl)
+    v = ETA * veh["hp_per_t"] * HP_W / (1000.0 * G_ACC * np.maximum(load, 1e-9)) * 3.6 * (1 - sl)
+    v = np.where(load <= 0, veh["vmax_kmh"], np.minimum(v, veh["vmax_kmh"]))
+    return np.where((tfor * cos_t < load) | (~paved & (x < 0)), 0.0, v)
 
 
 def load_pickle(path):
@@ -336,6 +398,22 @@ class Forecaster:
         cls = np.where(safe >= vci50, 2, np.where(safe >= vci1, 1, 0))
         return [CLASSES[c] for c in cls]
 
+    def outlook(self, fc, band=None, vehicle=None):
+        """Per day 1..H: status, firmness after the band's margin, passes one track carries
+        (50+ is GO) and level-ground speed off road (km/h, before land cover)."""
+        if vehicle is not None:
+            r = self.vehicles.set_index("name").loc[vehicle]
+            v = dict(kind=r.type, vci1=float(r.vci1), vci50=float(r.vci50), cpf=float(r.cpf),
+                     hp_per_t=float(r.hp / r.mass_t), vmax_kmh=float(r.vmax_kmh))
+        else:
+            v = self.band_vehicle(band)
+        safe = fc["rci"] - np.array(self.p["margins"][self.band_of(v["vci1"])])
+        status = self.assess(fc, vci1=v["vci1"], vci50=v["vci50"])
+        n, sp = passes(safe, v["vci1"], v["vci50"]), speed(safe, 0.0, v)
+        return [dict(day=h + 1, status=status[h], rci=round(float(safe[h]), 1),
+                     passes=None if status[h] == "NO-GO" else ("50+" if n[h] >= 50 else int(n[h])),
+                     speed_kmh=round(float(sp[h]), 1)) for h in range(self.H)]
+
     @staticmethod
     def message(fc):
         """The forecast as broadcast to a convoy: 4-byte day number + H x float16."""
@@ -367,6 +445,9 @@ class Planner:
             u = (r * self.shape[1] + c)[ok]
             v = ((r + dr) * self.shape[1] + (c + dc))[ok]
             self._edges.append((u, v, p["cell_m"] / 1000 * np.hypot(dr, dc)))
+        self._z = p["elevation"].ravel()
+        self._sin = [(self._z[v] - self._z[u]) / np.hypot(self._z[v] - self._z[u], step * 1000)
+                     for u, v, step in self._edges]
 
     def sample_trips(self):
         """30 trips of 8-25 km between road cells, as (source cell, destination cell)."""
@@ -428,10 +509,51 @@ class Planner:
         step = self.p["cell_m"] / 1000 * np.hypot(np.diff(r), np.diff(c))
         return float(np.sum(step * 0.5 * (1 / f[:-1] + 1 / f[1:])))
 
-    def plan(self, rci, band, trips):
-        """Routes for a band's planning vehicle on ground of firmness `rci` (psi, already
-        net of the safety margin). -> list of (path or None, time)."""
+    # ------------------------------------------------- travel time (speed model)
+    def _cell_speed(self, cells, sin_t, rci, v, passes_=None):
+        """km/h per cell: soil/slope speed (paved roads ignore the soil) times the
+        land-cover score off road; 0 where slope or cover rule the cell out."""
+        s, c = (a.ravel()[cells] for a in self.p["static"]["wheeled" if v["kind"] == "halftrack" else v["kind"]])
+        need = None
+        if passes_ is not None:
+            need = v["vci1"] + (v["vci50"] - v["vci1"]) * np.log(passes_.ravel()[cells] + 1.0) / np.log(50.0)
+        sp = speed(rci * self.decay.ravel()[cells], sin_t, v, self.paved.ravel()[cells], need)
+        return np.where(s > 0, sp * c, 0.0)
+
+    def hours_graph(self, rci, v, passes_=None):
+        us, vs, ws = [], [], []
+        for (u, w, step), sin_t in zip(self._edges, self._sin):
+            a = self._cell_speed(u, sin_t, rci, v, passes_)
+            b = self._cell_speed(w, sin_t, rci, v, passes_)
+            ok = (a > 0) & (b > 0)
+            us.append(u[ok]); vs.append(w[ok])
+            ws.append(step * 0.5 * (1 / a[ok] + 1 / b[ok]))
+        return csr_matrix((np.concatenate(ws), (np.concatenate(us), np.concatenate(vs))),
+                          shape=(self.n, self.n))
+
+    def path_hours(self, path, rci, band, passes_=None):
+        """Travel time (hours) of a path for the band's vehicle; inf if a stretch is
+        impassable (NO-GO soil, or a climb the soil cannot carry it up)."""
         v = self.p["band_vehicles"][band]
+        r, c = np.divmod(path, self.shape[1])
+        step = self.p["cell_m"] / 1000 * np.hypot(np.diff(r), np.diff(c))
+        z = self._z[path]
+        sin_t = np.diff(z) / np.hypot(np.diff(z), step * 1000)
+        a = self._cell_speed(path[:-1], sin_t, rci, v, passes_)
+        b = self._cell_speed(path[1:], sin_t, rci, v, passes_)
+        if (a <= 0).any() or (b <= 0).any():
+            return np.inf
+        return float(np.sum(step * 0.5 * (1 / a + 1 / b)))
+
+    def plan(self, rci, band, trips, by="passability"):
+        """Routes for a band's planning vehicle on ground of firmness `rci` (psi, already
+        net of the safety margin). by="passability": the published planner, time in
+        km / speed-fraction units; by="time": routes minimising travel time, in hours.
+        -> list of (path or None, time)."""
+        v = self.p["band_vehicles"][band]
+        if by == "time":
+            return [(p, None if p is None else self.path_hours(p, rci, band))
+                    for p in self.routes(None, trips, self.hours_graph(rci, v))]
         mu = self.passability(v["kind"], self.soil(rci, v["vci1"], v["vci50"]))
         return [(p, None if p is None else self.path_time(p, mu)) for p in self.routes(mu, trips)]
 
@@ -467,11 +589,11 @@ class Planner:
         return through, shared
 
 
-def end_to_end(fc_model: Forecaster, planner: Planner, log, band, trips, h):
+def end_to_end(fc_model: Forecaster, planner: Planner, log, band, trips, h, by="passability"):
     """Weather log -> forecast -> margin -> map -> routes for travel in h days."""
     fc = fc_model.forecast(log)
     rci = float(fc["rci"][h - 1]) - fc_model.margin(band, h)
-    return fc, rci, planner.plan(rci, band, trips)
+    return fc, rci, planner.plan(rci, band, trips, by=by)
 
 
 # ============================================================================ demo
@@ -505,8 +627,14 @@ if __name__ == "__main__":
           + " ".join(f"{x:.1f}" for x in f["rci"]) + f"   ({fc_ms:.0f} ms)")
     for b in "ABCDE":
         print(f"  band {b}: " + " ".join(s_[:2] for s_ in fc_model.assess(f, band=b)) + "   (GO / SL / NO, days 1-7)")
+    print(f"band {a.band} outlook (passes per track, level-ground km/h):")
+    for o in fc_model.outlook(f, band=a.band):
+        print(f"  day {o['day']}: {o['status']:7s} RCI {o['rci']:5.1f}  passes {o['passes']}  {o['speed_kmh']} km/h")
     ok = [p_ for p_, _ in res if p_ is not None]
     print(f"band {a.band}, travel in {a.h} days: RCI after margin {rci:.1f} psi; "
           f"{len(ok)}/{len(trips)} trips have a route; mean {np.mean([len(p_) for p_ in ok]) if ok else 0:.0f} cells")
+    tm = [t_ for p_, t_ in planner.plan(rci, a.band, trips, by="time") if p_ is not None]
+    if tm:
+        print(f"  routed by travel time: mean {60 * np.mean(tm):.0f} min per trip")
     print(f"end to end (log -> forecast -> map -> {len(trips)} routes): {e2e_ms:.0f} ms")
     print(f"forecast message: {len(Forecaster.message(f))} bytes")

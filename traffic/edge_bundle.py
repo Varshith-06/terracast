@@ -12,7 +12,7 @@ against this repo's published forecasts and routes.
 
 The pickles hold only plain Python types (arrays as dtype, shape, bytes) and carry a
 sample weather log and sample trips. dist/vehicle_trafficability_edge.zip holds just the
-two pickles and trafficability_edge.py, which runs them (python trafficability_edge.py).
+two pickles, trafficability_edge.py, which runs them, and train_trafficability.py, which retrains the forecaster.
 
 Usage:  python -m traffic.edge_bundle
 """
@@ -42,7 +42,7 @@ DIST = paths.ROOT / "dist"
 F_PKL = EDGE / "vehicle_trafficability_forecaster.pkl"
 P_PKL = EDGE / "vehicle_trafficability_planner.pkl"
 WINDOW = 400           # days of log per forecast; API memory 0.95^340 is negligible
-BUNDLE = [F_PKL.name, P_PKL.name, "trafficability_edge.py"]     # what gets sent: nothing else
+BUNDLE = [F_PKL.name, P_PKL.name, "trafficability_edge.py", "train_trafficability.py"]   # what gets sent
 
 
 def _needs_numpy(pkls):
@@ -84,7 +84,8 @@ def forecaster_payload(ds, fleet, reps):
         margins=margins, margins_cross_year=cross,
         bands=[(b, float(lo), float(hi)) for b, lo, hi in V.BANDS],
         band_vehicles=reps,
-        vehicles={c: fleet[c].tolist() for c in ("name", "type", "mass_t", "vci1", "vci50", "band")},
+        vehicles={c: fleet[c].tolist() for c in ("name", "type", "mass_t", "hp", "cpf", "vmax_kmh",
+                                                  "vci1", "vci50", "band")},
         params=dict(gru_each=int(n_gru), gru_count=len(states), ridge=int(n_ridge),
                     total=int(len(states) * n_gru + n_ridge)),
         info=dict(site="Pachmarhi plateau, Satpura range, 1,067 m", units="psi",
@@ -104,9 +105,11 @@ def planner_payload(t, g, reps):
         format="vehicle_trafficability_planner/1",
         shape=list(g.shape), cell_m=float(T.CELL_M), slow_floor=PL.SLOW_FLOOR,
         valid=t["valid"], paved=g.paved, decay=g.decay,
+        elevation=np.nan_to_num(t["elevation"]).astype(np.float64),
         static={k: tuple(np.asarray(a, np.float64) for a in v) for k, v in g.static.items()},
         band_vehicles=reps, crs=str(t["crs"]), transform=tuple(t["transform"])[:6],
-        info="fuzzy AND (min) of slope, land cover and soil; speed proportional to membership",
+        info="routes: fuzzy AND (min) of slope, land cover and soil, speed proportional to "
+             "membership; or by travel time from the NRMM soil/slope speed model (traffic.mobility)",
     )
 
 
@@ -132,7 +135,7 @@ def main():
     ds = R.build_arrays()
     fleet = V.add_vci(V.load_vehicles())
     reps = PL.representatives(fleet)
-    reps = {b: dict(kind=v["kind"], vci1=v["vci1"], vci50=v["vci50"], n=int(v["n"])) for b, v in reps.items()}
+    reps = {b: dict(v, n=int(v["n"])) for b, v in reps.items()}
     t = T.load()
     g = PL.Grid(t)
     setup = json.load(open(PL.OUT / "setup.json"))
@@ -180,9 +183,24 @@ def main():
                 q = theirs[(s, d)]
                 same += (p is None and q is None) or (p is not None and q is not None and np.array_equal(p, q))
     report["routes_identical_to_repo_planner"] = f"{same}/{5 * 4 * len(pairs)}"
+    # routes by travel time and their hours against the repo's speed model
+    same, worst = 0, 0.0
+    for band in "ABCDE":
+        for rci in (40.0, 60.0, 150.0):
+            mine = pl.plan(rci, band, pairs, by="time")
+            theirs = g.fastest(rci, reps[band], setup["sources"], setup["dests"])
+            for (p, tt), (s, d) in zip(mine, pairs):
+                q = theirs[(s, d)]
+                ok = (p is None and q is None) or (p is not None and q is not None and np.array_equal(p, q))
+                same += ok
+                if ok and p is not None:
+                    worst = max(worst, abs(tt - g.path_hours(q, rci, reps[band])))
+    report["time_routes_identical_to_repo_planner"] = f"{same}/{5 * 3 * len(pairs)}"
+    report["max_diff_travel_hours_vs_repo"] = worst
 
     h, band = 3, "D"
     fc, rci, res = E.end_to_end(m, pl, EDGE / "sample_weather_log.csv", band, pairs, h)
+    res_time = pl.plan(rci, band, pairs, by="time")
     # a convoy case where sharing tracks matters: wear-aware gets more through than follow
     cv = None
     for s, d in pairs:
@@ -198,9 +216,13 @@ def main():
         forecast=dict(date=str(fc["date"].date()), rci_today=fc["rci_today"], rci=fc["rci"].tolist(),
                       message_hex=E.Forecaster.message(fc).hex()),
         assess={b: m.assess(fc, band=b) for b in "ABCDE"},
+        outlook={b: m.outlook(fc, band=b) for b in "ABCDE"},
         routes=dict(band=band, h=h, rci_after_margin=rci,
                     trips=[dict(src=s, dst=d, cells=None if p is None else len(p), time=tt)
                            for (s, d), (p, tt) in zip(pairs, res)]),
+        routes_by_time=dict(band=band, h=h, rci_after_margin=rci,
+                            trips=[dict(src=s, dst=d, cells=None if p is None else len(p), hours=tt)
+                                   for (s, d), (p, tt) in zip(pairs, res_time)]),
         convoy=cv,
         checks=report,
     )

@@ -12,13 +12,29 @@ weather log (400 days) -> features -> GRU x3 + ridge -> RCI forecast, days 1-7  
    -> graph -> Dijkstra -> route
 ```
 
+SLOW-GO is also given in numbers:
+
+- **Passes:** how many vehicles one track carries before it fails: `50 ** ((RCI - VCI1) / (VCI50 - VCI1))`. This gives 1 at VCI1 and 50 at VCI50.
+- **Speed:** km/h from the NATO Reference Mobility Model's fine-grained soil relations: drawbar pull, motion resistance, soil-limited traction and slip, against the slope in the direction of travel.
+
+```
+fc.outlook(f, band="D")                     # per day: status, RCI after margin, passes, km/h
+pl.plan(rci, "D", trips, by="time")         # routes by travel time; times in hours
+```
+
+`by="passability"` (the default) is the published planner. Sources and assumptions are in
+`traffic/mobility.py` in the repo. The rim pull is constant power with an assumed 80%
+driveline efficiency, and the top speed is the game template value. Vegetation and ride
+limits are not modelled, so speeds are upper bounds.
+
 ## Files
 
 | File | What it is |
 |---|---|
 | `vehicle_trafficability_forecaster.pkl` | 3 GRUs (128x2) and 7 ridge regressions with their scalers, feature lists, RCI constants, safety margins, and the VCI table of 1,145 vehicles. 531,228 parameters |
-| `vehicle_trafficability_planner.pkl` | 90 m terrain grid: slope and land-cover scores, roads, wetness index, and the planning vehicle for each band |
+| `vehicle_trafficability_planner.pkl` | 90 m terrain grid: slope and land-cover scores, roads, elevation, wetness index, and the planning vehicle for each band (with the power-to-weight, contact pressure and top speed the speed model needs) |
 | `trafficability_edge.py` | The runtime. `Forecaster`, `Planner`, `end_to_end()` |
+| `train_trafficability.py` | Retrains the forecaster from a weather log and writes a new forecaster pickle in the same format. Needs torch |
 | `benchmark.py` | Size, load time, memory, per-stage latency, scaling for 10–50 requests, accuracy, correctness |
 | `edge_node.py` | Three-node TCP test bed (source → inference → sink), like a fetch / inference / end-to-end table |
 | `sample_weather_log.csv` | One forecast input: the last 400 days of the log |
@@ -36,7 +52,7 @@ so they unpickle with any Python 3.8+ and need no numpy, torch or scikit-learn t
 ```
 python3 -m venv venv && . venv/bin/activate
 pip install -r requirements.txt          # numpy, pandas, scipy, psutil
-python benchmark.py --backend numpy      # last line should say all three checks are True
+python benchmark.py --backend numpy      # last line should say all four checks are True
 ```
 
 PyTorch is optional. With `--backend numpy` the GRU runs in plain numpy and gives the same
@@ -55,8 +71,8 @@ It measures:
 - **Cold start:** import time, plus load time for each pickle.
 - **Memory:** RSS after imports, after each load, after forecasting and after planning, and the process peak.
 - **Latency per stage:** mean, p50, p95 and max over 30 runs after 3 warm-up runs.
-  - Forecaster stages: `read_log`, `features`, `ridge`, `gru_x3`, `forecast_total`, `assess_all_bands`.
-  - Planner stages: `soil_map`, `fuzzy_and`, `graph_build`, `dijkstra_1_trip`, `replan_1_trip`.
+  - Forecaster stages: `read_log`, `features`, `ridge`, `gru_x3`, `forecast_total`, `assess_all_bands`, `outlook_all_bands`.
+  - Planner stages: `soil_map`, `fuzzy_and`, `graph_build`, `dijkstra_1_trip`, `replan_1_trip`, `time_graph_build`, `replan_by_time_1_trip`.
   - Whole pipeline: `end_to_end_1_trip` (log to route) and `convoy_10_wear_aware` (10 vehicles, each re-planning on the shared pass-count map).
 - **Scaling with 10, 20, 30, 40 and 50 requests**, in two modes:
   - *independent*: each request runs the whole pipeline.
@@ -65,7 +81,7 @@ It measures:
 - **Accuracy (`--accuracy`):**
   - RMSE against persistence for 2024–25.
   - Per band at 7 days: NO-GO recall, precision and false alarms. Margins are tuned on the other year.
-- **Correctness:** forecast, routes and convoy must match `expected_outputs.json`.
+- **Correctness:** forecast, routes, routes by travel time and convoy must match `expected_outputs.json`.
 
 It defaults to one CPU thread, like a single-core budget. Results go to
 `benchmark_<host>_<backend>.json`.
@@ -126,6 +142,16 @@ Test bed on localhost, numpy, mean of 5 runs:
 Accuracy, 2024–25 test years:
 - **Firmness forecast:** 7-day RMSE 20.76 psi against 26.02 for persistence. At 1 day it is 6.05 against 6.71, and at 3 days 13.29 against 15.16.
 - **NO-GO calls at 7 days:** 90% recall in every band. Precision runs from 0.43 (light tracked) to 0.94 (wheeled).
+
+## Retraining
+
+```
+python train_trafficability.py --log weather_log_2015_2025.csv [--train-end 2021-12-31 --val-end 2023-12-31]
+```
+
+The script refits the ridge regressions and the 3 GRUs. It then re-tunes the safety margins on the test period: everything after `--val-end`, or the validation period if there is no test period. The vehicle table, bands and constants are copied from the current forecaster pickle, so the planner pickle stays valid.
+
+The output is `vehicle_trafficability_forecaster_retrained.pkl`. Rename it to replace the current forecaster pickle. To train on newer data, extend the log and move both dates forward.
 
 ## Notes
 

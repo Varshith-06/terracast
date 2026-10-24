@@ -12,10 +12,12 @@ rainfall + evaporative demand
         ↓  (already integrated by ERA5-Land)
 soil moisture, 0–7 cm and 7–28 cm       [observed columns]
         ↓  soil wetness index, profile-weighted 0.35 / 0.65
-        ↓  RCI = 300 · exp(−2.485 · SWI) · rain_factor
-Rating Cone Index (kPa)                 [the modelled target]
+        ↓  RCI = 300 · exp(−3.0 · SWI) · rain_factor
+Rating Cone Index (psi)                 [the modelled target]
         ↓  compare against vehicle cone index
-GO / SLOW-GO / NO-GO, per vehicle class [the decision]
+GO / SLOW-GO / NO-GO, per vehicle band  [the decision]
+        ↓  SLOW-GO in numbers (traffic/mobility.py)
+passes one track carries; speed (km/h) from the NRMM soil relations
 ```
 
 `RCI` is soil bearing strength. A vehicle moves if `RCI ≥ VCI50` (its cone index for
@@ -68,10 +70,13 @@ pip install -r requirements.txt   # torch: see the note at the top of the file
 python -m traffic.check           # setup check: packages, inputs, loaders, terrain grids
 python -m traffic.vehicles        # vehicle table + VCI1/VCI50 -> outputs/vehicles/
 python -m traffic.forecast        # GRU+Ridge forecaster, per-band margins, edge numbers -> outputs/forecaster/
+python -m traffic.forecast --decisions-only   # re-tune margins after a vehicle-table change, no retraining
+python -m traffic.mobility        # passes and level-ground speed of each band's planning vehicle
 python -m traffic.edge_bundle     # edge test bundle (2 pickles + runtime + benchmark) -> edge/, dist/*.zip
 python -m traffic.terrain         # 90 m terrain grid, OSM roads, wetness index -> outputs/terrain/
 python -m traffic.planner         # route backtest + convoy (~12 min) -> outputs/planner/
 python -m traffic.planner --tradeoff      # margin-scale sweep (~15 min)
+python -m traffic.planner --speed         # travel times from the speed model, two route choices -> speed.csv
 python -m traffic.poster_figs     # poster figures -> poster/figures/
 python -m traffic.poster_build    # poster/poster.html, poster.pdf (A0), poster_preview.png
 python -m traffic.abstract_build  # paper/abstract.pdf: 2-page ACM sigconf abstract (needs tools/tectonic)
@@ -91,11 +96,14 @@ data/
   terrain/      per-season 17-band GeoTIFF stacks (30 m, EPSG:32643) + parquet tables
     quicklooks/ maps.zip, the original PNG renders, superseded by the GeoTIFFs
 docs/           project explainer (ICDCN poster plan), August report
-  references/   Liu et al. 2025 (inspiration), Rosca et al. 2018 (VCI formulas)
+  references/   Liu et al. 2025 (inspiration); VCI and soil-speed sources: Rula & Nuttall 1971
+                (ANAMOB), Haley et al. 1979 (NRMM I users guide vol. I), Ciobotaru 2009,
+                Rosca & Ciobotaru 2017, Rosca et al. 2018
 traffic/
   paths.py      every file location
   data.py       loading, RCI target chain, 128 causal features
   vehicles.py   vehicle cleaning, tracked/wheeled split, Mobility Index -> VCI1/VCI50
+  mobility.py   passes per track and NRMM soil/slope speed for a vehicle
   dl.py         PyTorch sequence models + training loop
   run.py        experiment orchestration, metrics, splits
   report.py     figures and the written comparison

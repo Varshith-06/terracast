@@ -33,6 +33,7 @@ from scipy.sparse import csr_matrix
 from scipy.sparse.csgraph import dijkstra
 
 from traffic import data as D
+from traffic import mobility as M
 from traffic import paths
 from traffic import terrain as T
 from traffic import vehicles as V
@@ -47,12 +48,18 @@ _NBRS = [(-1, -1), (-1, 0), (-1, 1), (0, -1), (0, 1), (1, -1), (1, 0), (1, 1)]
 
 # ------------------------------------------------------------------ vehicles
 def representatives(fleet):
-    """One planning vehicle per band: majority type, median VCI1 / VCI50."""
+    """One planning vehicle per band: majority type, median VCI1 / VCI50; for the speed
+    model, the median power-to-weight, contact pressure factor and top speed of the
+    band's vehicles of that type."""
     reps = {}
     for band, g in fleet.groupby("band"):
         kind = g["type"].mode().iloc[0]
+        k = g[g["type"] == kind]
+        vmax = k["vmax_kmh"][k["vmax_kmh"] > 0]
         reps[band] = dict(kind=kind, vci1=float(g["vci1"].median()),
-                          vci50=float(g["vci50"].median()), n=len(g))
+                          vci50=float(g["vci50"].median()), n=len(g),
+                          hp_per_t=float((k["hp"] / k["mass_t"]).median()),
+                          cpf=float(k["cpf"].median()), vmax_kmh=float(vmax.median()))
     return reps
 
 
@@ -72,6 +79,9 @@ class Grid:
             u = (r * self.shape[1] + c)[ok]
             v = ((r + dr) * self.shape[1] + (c + dc))[ok]
             self._edges.append((u, v, T.CELL_M / 1000 * np.hypot(dr, dc)))
+        # sine of the slope along each edge, from u to v (+ uphill), for the speed model
+        z = np.nan_to_num(t["elevation"]).ravel()
+        self._sin = [(z[v] - z[u]) / np.hypot(z[v] - z[u], step * 1000) for u, v, step in self._edges]
 
     def soil(self, rci, vci1, vci50, passes=None):
         """Soil membership per cell. passes: prior vehicle passes per cell (convoy wear),
@@ -132,6 +142,60 @@ class Grid:
         r, c = np.divmod(path, self.shape[1])
         step = T.CELL_M / 1000 * np.hypot(np.diff(r), np.diff(c))
         return float(np.sum(step * 0.5 * (1 / f[:-1] + 1 / f[1:])))
+
+    # ---------------------------------------------------- travel time (traffic.mobility)
+    def _cell_speed(self, cells, sin_t, rci, rep, passes):
+        """km/h in each cell along a slope: NRMM soil/slope speed (paved roads ignore the
+        soil) times the land-cover score off road; 0 where slope or cover rule it out."""
+        k = "wheeled" if rep["kind"] == "halftrack" else rep["kind"]
+        s, c = (a.ravel()[cells] for a in self.static[k])
+        need = None
+        if passes is not None:
+            need = rep["vci1"] + (rep["vci50"] - rep["vci1"]) * np.log(passes.ravel()[cells] + 1.0) / np.log(50.0)
+        v = M.speed(rci * self.decay.ravel()[cells], sin_t, rep, self.paved.ravel()[cells], need)
+        return np.where(s > 0, v * c, 0.0)
+
+    def hours_graph(self, rci, rep, passes=None):
+        """Edge weights in hours: half of each edge at the speed of either end cell."""
+        us, vs, ws = [], [], []
+        for (u, v, step), sin_t in zip(self._edges, self._sin):
+            a = self._cell_speed(u, sin_t, rci, rep, passes)
+            b = self._cell_speed(v, sin_t, rci, rep, passes)
+            ok = (a > 0) & (b > 0)
+            us.append(u[ok]); vs.append(v[ok])
+            ws.append(step * 0.5 * (1 / a[ok] + 1 / b[ok]))
+        return csr_matrix((np.concatenate(ws), (np.concatenate(us), np.concatenate(vs))),
+                          shape=(self.n, self.n))
+
+    def path_hours(self, path, rci, rep, passes=None):
+        """Travel time of a path in hours on ground of plateau strength `rci`; inf if any
+        stretch of it is impassable."""
+        r, c = np.divmod(path, self.shape[1])
+        step = T.CELL_M / 1000 * np.hypot(np.diff(r), np.diff(c))
+        z = np.nan_to_num(self.t["elevation"]).ravel()[path]
+        sin_t = np.diff(z) / np.hypot(np.diff(z), step * 1000)
+        a = self._cell_speed(path[:-1], sin_t, rci, rep, passes)
+        b = self._cell_speed(path[1:], sin_t, rci, rep, passes)
+        if (a <= 0).any() or (b <= 0).any():
+            return np.inf
+        return float(np.sum(step * 0.5 * (1 / a + 1 / b)))
+
+    def fastest(self, rci, rep, sources, dests, passes=None):
+        """Routes that minimise travel time (hours) instead of the passability cost."""
+        G = self.hours_graph(rci, rep, passes)
+        dist, pred = dijkstra(G, directed=True, indices=sources, return_predecessors=True)
+        out = {}
+        for i, s in enumerate(sources):
+            for d in dests:
+                if not np.isfinite(dist[i, d]):
+                    out[(s, d)] = None
+                    continue
+                p, k = [d], d
+                while k != s:
+                    k = pred[i, k]
+                    p.append(k)
+                out[(s, d)] = np.array(p[::-1])
+        return out
 
 
 def _spread(xy, k, start):
@@ -212,7 +276,9 @@ def backtest(g, reps, fc, dec, sources, dests, methods=("min",)):
                             stuck += 1
                         else:
                             done += 1
-                            extra += tt / best - 1
+                            # the oracle comes from the map cached at the rounded RCI, so on
+                            # rare days its route fails at the exact value: no extra time then
+                            extra += tt / best - 1 if np.isfinite(best) else 0.0
                     rows.append(dict(date=day, h=h, band=band, planner=name, trips=len(routes),
                                      possible=possible, stuck=stuck, held=held, done=done,
                                      extra_time_sum=extra, rci_actual=r_act, rci_today=anchor[i]))
@@ -276,6 +342,100 @@ def main_tradeoff():
     s["stuck_pct"] = 100 * s.stuck / s.trips
     s["held_pct"] = 100 * s.held / s.possible
     print(s[["stuck_pct", "held_pct"]].round(2))
+
+
+# ---------------------------------------------------------------------- speed
+def speed_backtest(g, reps, fc, dec, sources, dests, horizons=(1, 3, 7)):
+    """Travel times from the speed model (traffic.mobility) on the forecast + margin map.
+    Two route choices: the passability routes the main backtest scores, and routes that
+    minimise travel time. Each trip records its predicted time (on the forecast map), its
+    actual time on the travel day, and the fastest time possible that day. A trip is
+    stuck if any stretch of it is impassable on the travel day: a NO-GO cell, or a slope
+    the soil cannot carry the vehicle up."""
+    actual, dates = fc["actual"], pd.to_datetime(fc["dates"])
+    q = lambda r: round(float(r) * 2) / 2                     # maps cached on a 0.5 psi grid
+    fast, pas = {}, {}
+    rows = []
+
+    def fastest(band, r):
+        k = (band, q(r))
+        if k not in fast:
+            fast[k] = g.fastest(k[1], reps[band], sources, dests)
+        return fast[k]
+
+    def passable(band, r):
+        k = (band, q(r))
+        if k not in pas:
+            rep = reps[band]
+            pas[k] = g.routes(g.passability(rep["kind"], g.soil(k[1], rep["vci1"], rep["vci50"])),
+                              sources, dests)
+        return pas[k]
+
+    for i, day in enumerate(dates):
+        for h in horizons:
+            r_act = actual[i, h - 1]
+            for band, rep in reps.items():
+                # the oracle routes come from the map cached at the rounded value, as in the
+                # main backtest; their times, like every other, use the exact travel-day RCI
+                best = {od: (np.inf if p is None else g.path_hours(p, r_act, rep))
+                        for od, p in fastest(band, r_act).items()}
+                r_fc = fc["GRU_Ridge"][i, h - 1] - _cross_year_margin(dec, "GRU+Ridge", band, h, day.year)
+                for name, routes in (("passability", passable(band, r_fc)), ("fastest", fastest(band, r_fc))):
+                    stuck = held = done = n_best = n_pred = no_pred = 0
+                    pred = pred_act = act = best_act = opt = 0.0
+                    for od, path in routes.items():
+                        b = best[od]
+                        if path is None:
+                            held += np.isfinite(b)
+                            continue
+                        a = g.path_hours(path, r_act, rep)
+                        if not np.isfinite(a):
+                            stuck += 1
+                            continue
+                        done += 1
+                        act += a
+                        if np.isfinite(b):
+                            n_best += 1
+                            best_act += a
+                            opt += b
+                        # a passability route can hold a climb the speed model rules out
+                        # on the forecast map itself: no predicted time for that trip
+                        p = g.path_hours(path, q(r_fc), rep)
+                        if np.isfinite(p):
+                            n_pred += 1
+                            pred += p
+                            pred_act += a
+                        else:
+                            no_pred += 1
+                    rows.append(dict(date=day, h=h, band=band, routing=name, trips=len(routes),
+                                     possible=int(np.isfinite(list(best.values())).sum()),
+                                     stuck=stuck, held=held, done=done, actual_h=act,
+                                     n_best=n_best, best_actual_h=best_act, best_h=opt,
+                                     n_pred=n_pred, no_pred=no_pred, pred_h=pred, pred_actual_h=pred_act))
+        if i % 60 == 0:
+            print(f"  speed {day.date()}  maps {len(fast) + len(pas)}", flush=True)
+    return pd.DataFrame(rows)
+
+
+def main_speed():
+    g = Grid(T.load())
+    reps = representatives(V.add_vci(V.load_vehicles()))
+    fc = dict(np.load(paths.FORECASTER_OUT / "test_forecasts.npz", allow_pickle=False))
+    dec = pd.read_csv(paths.FORECASTER_OUT / "decisions_by_band.csv")
+    st = json.load(open(OUT / "setup.json"))
+    sp = speed_backtest(g, reps, fc, dec, np.array(st["sources"]), np.array(st["dests"]))
+    sp.to_csv(OUT / "speed.csv", index=False)
+    s = sp.groupby(["h", "routing"])[["trips", "possible", "stuck", "held", "done", "actual_h",
+                                       "best_actual_h", "best_h", "n_pred", "no_pred", "pred_h",
+                                       "pred_actual_h"]].sum()
+    s["stuck_pct"] = 100 * s.stuck / s.trips
+    s["held_pct"] = 100 * s.held / s.possible
+    s["min_per_trip"] = 60 * s.actual_h / s.done
+    s["over_best_pct"] = 100 * (s.best_actual_h / s.best_h - 1)
+    s["pred_error_pct"] = 100 * (s.pred_h / s.pred_actual_h - 1)
+    s["no_pred_pct"] = 100 * s.no_pred / s.done
+    print(s[["stuck_pct", "held_pct", "min_per_trip", "over_best_pct", "pred_error_pct",
+             "no_pred_pct"]].round(2))
 
 
 # --------------------------------------------------------------------- convoy
@@ -396,5 +556,7 @@ if __name__ == "__main__":
         main_convoy()
     elif "--tradeoff" in sys.argv:
         main_tradeoff()
+    elif "--speed" in sys.argv:
+        main_speed()
     else:
         main()

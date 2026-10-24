@@ -60,6 +60,263 @@
    "GO"
   ]
  },
+ "outlook": {
+  "A": [
+   {
+    "day": 1,
+    "status": "GO",
+    "rci": 150.2,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 2,
+    "status": "GO",
+    "rci": 148.1,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 3,
+    "status": "GO",
+    "rci": 145.3,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 4,
+    "status": "GO",
+    "rci": 145.4,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 5,
+    "status": "GO",
+    "rci": 145.8,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 6,
+    "status": "GO",
+    "rci": 144.6,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 7,
+    "status": "GO",
+    "rci": 143.9,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   }
+  ],
+  "B": [
+   {
+    "day": 1,
+    "status": "GO",
+    "rci": 151.7,
+    "passes": "50+",
+    "speed_kmh": 55.3
+   },
+   {
+    "day": 2,
+    "status": "GO",
+    "rci": 150.4,
+    "passes": "50+",
+    "speed_kmh": 55.1
+   },
+   {
+    "day": 3,
+    "status": "GO",
+    "rci": 146.5,
+    "passes": "50+",
+    "speed_kmh": 54.7
+   },
+   {
+    "day": 4,
+    "status": "GO",
+    "rci": 145.1,
+    "passes": "50+",
+    "speed_kmh": 54.5
+   },
+   {
+    "day": 5,
+    "status": "GO",
+    "rci": 144.8,
+    "passes": "50+",
+    "speed_kmh": 54.5
+   },
+   {
+    "day": 6,
+    "status": "GO",
+    "rci": 143.8,
+    "passes": "50+",
+    "speed_kmh": 54.4
+   },
+   {
+    "day": 7,
+    "status": "GO",
+    "rci": 144.1,
+    "passes": "50+",
+    "speed_kmh": 54.4
+   }
+  ],
+  "C": [
+   {
+    "day": 1,
+    "status": "GO",
+    "rci": 152.5,
+    "passes": "50+",
+    "speed_kmh": 49.2
+   },
+   {
+    "day": 2,
+    "status": "GO",
+    "rci": 151.4,
+    "passes": "50+",
+    "speed_kmh": 49.1
+   },
+   {
+    "day": 3,
+    "status": "GO",
+    "rci": 147.8,
+    "passes": "50+",
+    "speed_kmh": 48.7
+   },
+   {
+    "day": 4,
+    "status": "GO",
+    "rci": 145.9,
+    "passes": "50+",
+    "speed_kmh": 48.5
+   },
+   {
+    "day": 5,
+    "status": "GO",
+    "rci": 144.6,
+    "passes": "50+",
+    "speed_kmh": 48.4
+   },
+   {
+    "day": 6,
+    "status": "GO",
+    "rci": 144.1,
+    "passes": "50+",
+    "speed_kmh": 48.3
+   },
+   {
+    "day": 7,
+    "status": "GO",
+    "rci": 143.4,
+    "passes": "50+",
+    "speed_kmh": 48.2
+   }
+  ],
+  "D": [
+   {
+    "day": 1,
+    "status": "GO",
+    "rci": 152.5,
+    "passes": "50+",
+    "speed_kmh": 54.9
+   },
+   {
+    "day": 2,
+    "status": "GO",
+    "rci": 152.6,
+    "passes": "50+",
+    "speed_kmh": 55.0
+   },
+   {
+    "day": 3,
+    "status": "GO",
+    "rci": 151.3,
+    "passes": "50+",
+    "speed_kmh": 54.8
+   },
+   {
+    "day": 4,
+    "status": "GO",
+    "rci": 148.9,
+    "passes": "50+",
+    "speed_kmh": 54.5
+   },
+   {
+    "day": 5,
+    "status": "GO",
+    "rci": 148.3,
+    "passes": "50+",
+    "speed_kmh": 54.5
+   },
+   {
+    "day": 6,
+    "status": "GO",
+    "rci": 145.8,
+    "passes": "50+",
+    "speed_kmh": 54.1
+   },
+   {
+    "day": 7,
+    "status": "GO",
+    "rci": 138.6,
+    "passes": "50+",
+    "speed_kmh": 53.2
+   }
+  ],
+  "E": [
+   {
+    "day": 1,
+    "status": "GO",
+    "rci": 152.5,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 2,
+    "status": "GO",
+    "rci": 152.6,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 3,
+    "status": "GO",
+    "rci": 152.8,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 4,
+    "status": "GO",
+    "rci": 152.9,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 5,
+    "status": "GO",
+    "rci": 153.6,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 6,
+    "status": "GO",
+    "rci": 151.3,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   },
+   {
+    "day": 7,
+    "status": "GO",
+    "rci": 146.1,
+    "passes": "50+",
+    "speed_kmh": 60.0
+   }
+  ]
+ },
  "routes": {
   "band": "D",
   "h": 3,
@@ -247,6 +504,193 @@
    }
   ]
  },
+ "routes_by_time": {
+  "band": "D",
+  "h": 3,
+  "rci_after_margin": 151.2702575262164,
+  "trips": [
+   {
+    "src": 2446,
+    "dst": 43473,
+    "cells": 360,
+    "hours": 0.8928259478078147
+   },
+   {
+    "src": 2446,
+    "dst": 49563,
+    "cells": 253,
+    "hours": 0.6478675804525299
+   },
+   {
+    "src": 2446,
+    "dst": 47620,
+    "cells": 308,
+    "hours": 0.7650317647149882
+   },
+   {
+    "src": 2446,
+    "dst": 43815,
+    "cells": 333,
+    "hours": 0.8225692342786525
+   },
+   {
+    "src": 2446,
+    "dst": 47647,
+    "cells": 280,
+    "hours": 0.7039332287687201
+   },
+   {
+    "src": 33256,
+    "dst": 43473,
+    "cells": 204,
+    "hours": 0.46166464284335595
+   },
+   {
+    "src": 33256,
+    "dst": 49563,
+    "cells": 97,
+    "hours": 0.2167062754880711
+   },
+   {
+    "src": 33256,
+    "dst": 47620,
+    "cells": 152,
+    "hours": 0.3338704597505295
+   },
+   {
+    "src": 33256,
+    "dst": 43815,
+    "cells": 177,
+    "hours": 0.39140792931419366
+   },
+   {
+    "src": 33256,
+    "dst": 47647,
+    "cells": 124,
+    "hours": 0.27277192380426135
+   },
+   {
+    "src": 9936,
+    "dst": 43473,
+    "cells": 287,
+    "hours": 0.6914927066504765
+   },
+   {
+    "src": 9936,
+    "dst": 49563,
+    "cells": 180,
+    "hours": 0.4465343392951917
+   },
+   {
+    "src": 9936,
+    "dst": 47620,
+    "cells": 235,
+    "hours": 0.5636985235576502
+   },
+   {
+    "src": 9936,
+    "dst": 43815,
+    "cells": 260,
+    "hours": 0.6212359931213144
+   },
+   {
+    "src": 9936,
+    "dst": 47647,
+    "cells": 207,
+    "hours": 0.5025999876113819
+   },
+   {
+    "src": 20048,
+    "dst": 43473,
+    "cells": 250,
+    "hours": 0.5719361149921802
+   },
+   {
+    "src": 20048,
+    "dst": 49563,
+    "cells": 143,
+    "hours": 0.32697774763689536
+   },
+   {
+    "src": 20048,
+    "dst": 47620,
+    "cells": 198,
+    "hours": 0.4441419318993538
+   },
+   {
+    "src": 20048,
+    "dst": 43815,
+    "cells": 223,
+    "hours": 0.5016794014630181
+   },
+   {
+    "src": 20048,
+    "dst": 47647,
+    "cells": 170,
+    "hours": 0.3830433959530857
+   },
+   {
+    "src": 6822,
+    "dst": 43473,
+    "cells": 323,
+    "hours": 0.7750609919414939
+   },
+   {
+    "src": 6822,
+    "dst": 49563,
+    "cells": 216,
+    "hours": 0.530102624586209
+   },
+   {
+    "src": 6822,
+    "dst": 47620,
+    "cells": 271,
+    "hours": 0.6472668088486675
+   },
+   {
+    "src": 6822,
+    "dst": 43815,
+    "cells": 296,
+    "hours": 0.7048042784123317
+   },
+   {
+    "src": 6822,
+    "dst": 47647,
+    "cells": 243,
+    "hours": 0.5861682729023994
+   },
+   {
+    "src": 27286,
+    "dst": 43473,
+    "cells": 224,
+    "hours": 0.5041974798515032
+   },
+   {
+    "src": 27286,
+    "dst": 49563,
+    "cells": 117,
+    "hours": 0.2592391124962183
+   },
+   {
+    "src": 27286,
+    "dst": 47620,
+    "cells": 172,
+    "hours": 0.37640329675867673
+   },
+   {
+    "src": 27286,
+    "dst": 43815,
+    "cells": 197,
+    "hours": 0.4339407663223409
+   },
+   {
+    "src": 27286,
+    "dst": 47647,
+    "cells": 144,
+    "hours": 0.31530476081240855
+   }
+  ]
+ },
  "convoy": {
   "rci": 48.0,
   "band": "D",
@@ -261,6 +705,8 @@
   "max_diff_vs_published_torch_psi": 0.01330812395661951,
   "max_diff_vs_published_numpy_psi": 0.01330812395661951,
   "max_diff_window_vs_full_psi": 1.6034607597248396e-07,
-  "routes_identical_to_repo_planner": "600/600"
+  "routes_identical_to_repo_planner": "600/600",
+  "time_routes_identical_to_repo_planner": "450/450",
+  "max_diff_travel_hours_vs_repo": 0.0
  }
 }

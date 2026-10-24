@@ -197,6 +197,7 @@ def run_infer(a):
         fc, rci, res = E.end_to_end(fc_model, pl, log, job["band"], [tuple(t) for t in job["trips"]], job["h"])
         result = {"job": job["job"], "forecast": E.Forecaster.message(fc).hex(),
                   "status": fc_model.assess(fc, band=job["band"]),
+                  "outlook": fc_model.outlook(fc, band=job["band"]),
                   "routes": [None if p is None else p.tolist() for p, _ in res]}
         t2 = time.perf_counter()
         n_out = send(sink, {"job": job["job"], "result": result, "fetch_s": t1 - t0,
