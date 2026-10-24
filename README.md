@@ -79,7 +79,7 @@ python -m traffic.planner --tradeoff      # margin-scale sweep (~15 min)
 python -m traffic.planner --speed         # travel times from the speed model, two route choices -> speed.csv
 python -m traffic.poster_figs     # poster figures -> poster/figures/
 python -m traffic.poster_build    # poster/poster.html, poster.pdf (A0), poster_preview.png
-python -m traffic.abstract_build  # paper/abstract.pdf: 2-page ACM sigconf abstract (needs tools/tectonic)
+python -m traffic.abstract_build  # paper/icdcn_2027_abstract/abstract.pdf: 2-page ACM sigconf abstract (needs tools/tectonic)
 python -m traffic.run             # trains everything -> outputs/forecasting/results_full.csv
 python -m traffic.report          # figures + outputs/forecasting/RESULTS.md
 python -m traffic.run --quick     # 1 seed, 60 epochs, for a fast check
@@ -95,7 +95,7 @@ data/
   vehicles/     army_vehicles_attributes.csv (War Thunder datamine, see caveats)
   terrain/      per-season 17-band GeoTIFF stacks (30 m, EPSG:32643) + parquet tables
     quicklooks/ maps.zip, the original PNG renders, superseded by the GeoTIFFs
-docs/           project explainer (ICDCN poster plan), August report
+docs/           project explainer (ICDCN poster plan), August report, literature_review.pptx
   references/   Liu et al. 2025 (inspiration); VCI and soil-speed sources: Rula & Nuttall 1971
                 (ANAMOB), Haley et al. 1979 (NRMM I users guide vol. I), Ciobotaru 2009,
                 Rosca & Ciobotaru 2017, Rosca et al. 2018
@@ -112,18 +112,26 @@ traffic/
   terrain.py    90 m terrain grid, fuzzy memberships (Liu et al. 2025 tables)
   planner.py    forecast-aware routing, 2024-25 backtest, trade-off sweep, convoy wear
   poster_*.py   ICDCN 2027 poster: figures, page copy, build to PDF
+  abstract_build.py  ICDCN 2027 abstract: fills the template, compiles with Tectonic
+  explainer_build.py docs/explainer.html and its PDF
+  edge_bundle.py     edge test bundle -> edge/, dist/*.zip
   check.py      setup check
 outputs/
   forecasting/  September model comparison. NOTE: computed with RCI_SAT = 25, before the
                 2026-10-11 change to 15; rerun traffic.run before quoting these numbers
   forecaster/   the deployed GRU+Ridge: forecasts, per-band margins, decisions, edge.json
   terrain/      terrain_90m.npz
-  planner/      backtest.csv, tradeoff.csv, convoy.csv, timing.json, run logs
+  planner/      backtest.csv, tradeoff.csv, convoy.csv, speed.csv, timing.json, run logs
   vehicles/     vehicles_vci.csv
   eda/          exploratory plots of the weather record
 poster/         poster.pdf (A0 portrait), figures/, fonts/ (IBM Plex, local)
-paper/          ICDCN 2027 submission: abstract_template.tex (edit this), refs.bib, acmart.cls v2.20,
-                figures/; abstract.tex/.pdf are generated. Folder uploads to Overleaf as-is
+edge/           standalone edge runtime: trafficability_edge.py, the two model pickles, benchmark,
+                train_trafficability.py (retrain from a weather log); see edge/README.md
+paper/
+  comsnets_2027/       COMSNETS 2027 full paper: COMSNETS_2027.tex (IEEEtran) and manuscript.pdf,
+                       the version submitted on 2026-10-24
+  icdcn_2027_abstract/ ICDCN 2027 poster abstract: abstract_template.tex (edit this), refs.bib,
+                       acmart.cls v2.20, figures/; abstract.tex/.pdf are generated. Uploads to Overleaf as-is
 tools/          tectonic LaTeX engine (from conda-forge), not in version control
 ```
 

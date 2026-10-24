@@ -1,6 +1,6 @@
 """
 The 2-page ICDCN 2027 poster abstract (ACM sigconf, acmart v2.20): fills
-paper/abstract_template.tex with numbers from outputs/ and compiles it with Tectonic.
+paper/icdcn_2027_abstract/abstract_template.tex with numbers from outputs/ and compiles it with Tectonic.
 
 Every number in the abstract comes from the same reader as the poster
 (traffic.poster_build.numbers), so the two cannot disagree.
@@ -16,7 +16,7 @@ import subprocess
 from traffic import paths
 from traffic import poster_build as B
 
-PAPER = paths.ROOT / "paper"
+PAPER = paths.ROOT / "paper" / "icdcn_2027_abstract"
 TECTONIC = paths.ROOT / "tools" / "tectonic" / "tectonic.exe"
 
 
@@ -57,7 +57,7 @@ def main():
         raise SystemExit(r.returncode)
     from pypdf import PdfReader
     pages = len(PdfReader(PAPER / "abstract.pdf").pages)
-    print(f"-> paper/abstract.pdf  {pages} page(s)")
+    print(f"-> paper/icdcn_2027_abstract/abstract.pdf  {pages} page(s)")
 
 
 if __name__ == "__main__":

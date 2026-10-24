@@ -13,3 +13,15 @@ dist/
 edge/benchmark_*.json
 edge/source_results_*.csv
 edge/__pycache__/
+# superseded paper drafts and personal notes: kept on disk only
+paper/**/drafts/
+docs/notes/
+# LaTeX build by-products
+paper/**/*.aux
+paper/**/*.bbl
+paper/**/*.blg
+paper/**/*.log
+paper/**/*.out
+paper/**/*.synctex.gz
+# Claude Code local state
+.claude/
